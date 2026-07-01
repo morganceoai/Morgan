@@ -1,0 +1,19 @@
+HEARTBEAT | Iniciado
+KILL_SWITCH | Pausado pelo Vasco
+MENSAGEM | Quero continuar a saber mais sobre a cidade
+RESPOSTA | Precisas de dar-me um pouco mais de contexto, Vasco. 😄
+
+**Sobre que cidade estás a falar?** E o que 
+HEARTBEAT | Iniciado
+KILL_SWITCH | Retomado pelo Vasco
+MENSAGEM | Que conversa estivemos a ter?
+TOOL | ver_memoria | {}
+RESPOSTA | Vasco, esta é a **primeira conversa** desta sessão — não houve nada antes.
+
+O que tenho guardado sob
+HEARTBEAT_CHECK | moreirense_noticias
+TOOL | pesquisar_web | {'query': 'Moreirense FC 2026 notícias'}
+TOOL | pesquisar_web | {'query': 'Moreirense FC transferências mercado julho 2026'}
+TOOL | pesquisar_web | {'query': 'Moreirense FC lesões declarações rumores 2026'}
+TOOL | resultados_recentes | {'equipa': 'Moreirense'}
+HEARTBEAT_SILENCIO | Aqui tens o resumo das novidades mais relevantes sobre o Mor

@@ -1,0 +1,222 @@
+2026-06-30 07:55 — Heartbeat iniciado.
+2026-06-30 07:55 — Check: noticias_liga
+2026-06-30 07:55 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:55 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:55 — Mensagem enviada: 🔔 *Morgan*
+
+Encontrei algumas informações relevantes sobre o Moreirense. Vou con...
+2026-06-30 07:55 — Check: novidades_ia
+2026-06-30 07:55 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:56 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:56 — Mensagem enviada: 🔔 *Morgan*
+
+Há coisas relevantes aqui para o Vasco. Deixa-me compilar o que real...
+2026-06-30 07:59 — Heartbeat parado.
+2026-06-30 07:59 — Heartbeat iniciado.
+2026-06-30 07:59 — Check: noticias_liga
+2026-06-30 07:59 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:59 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 07:59 — Mensagem enviada: 🔔 *Morgan*
+
+Aqui está o briefing, Vasco. Há coisas importantes hoje — especialme...
+2026-06-30 07:59 — Check: novidades_ia
+2026-06-30 07:59 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:00 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:00 — Mensagem enviada: 🔔 *Morgan*
+
+Vasco, aqui tens o que vale a pena saber:
+
+---
+
+**🤖 Novidades de IA ...
+2026-06-30 08:08 — Heartbeat parado.
+2026-06-30 08:08 — Heartbeat iniciado.
+2026-06-30 08:08 — Check: moreirense_noticias
+2026-06-30 08:08 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:09 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:09 — Mensagem enviada: 🔔 *Morgan*
+
+Aqui está o resumo das novidades mais relevantes, Vasco:
+
+---
+
+**🔴 M...
+2026-06-30 08:09 — Check: primeira_liga_noticias
+2026-06-30 08:09 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:09 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:09 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:09 — Mensagem enviada: 🔔 *Morgan*
+
+Tenho muita informação sólida. Deixa-me organizar tudo de forma clar...
+2026-06-30 08:09 — Check: mencoes_vasco
+2026-06-30 08:10 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:10 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:10 — Mensagem enviada: 🔔 *Morgan*
+
+Bastante coisa para te reportar! Aqui vai o resumo completo, por fon...
+2026-06-30 08:10 — Check: novidades_ia
+2026-06-30 08:10 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:10 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:10 — Mensagem enviada: 🔔 *Morgan*
+
+Aqui tens o que é genuinamente novo e relevante, Vasco:
+
+---
+
+**🤖 IA...
+2026-06-30 08:12 — Heartbeat parado.
+2026-06-30 08:12 — Heartbeat iniciado.
+2026-06-30 08:12 — Check: moreirense_noticias
+2026-06-30 08:12 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:12 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:12 — Mensagem enviada: 🔔 *Morgan*
+
+Aqui tens um resumo completo do que encontrei, Vasco:
+
+---
+
+### 🟢 FA...
+2026-06-30 08:12 — Check: primeira_liga_noticias
+2026-06-30 08:12 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:12 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:13 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:13 — Mensagem enviada: 🔔 *Morgan*
+
+Tenho tudo o que preciso. Aqui vai o resumo completo, Vasco:
+
+---
+
+#...
+2026-06-30 08:13 — Check: mencoes_vasco
+2026-06-30 08:13 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:13 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:13 — Mensagem enviada: 🔔 *Morgan*
+
+Muita coisa encontrada! Vou separar por categorias:
+
+---
+
+### 📰 FONT...
+2026-06-30 08:13 — Check: novidades_ia
+2026-06-30 08:13 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:14 — HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-06-30 08:14 — Mensagem enviada: 🔔 *Morgan*
+
+Aqui vai o que é genuinamente relevante e novo, Vasco:
+
+---
+
+**🤖 IA ...
+2026-06-30 08:17 — Heartbeat parado.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Connection error.
+Erro heartbeat: Can't parse entities: can't find end of the entity starting at byte offset 1513
+Erro heartbeat: Can't parse entities: can't find end of the entity starting at byte offset 1353

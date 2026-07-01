@@ -1,0 +1,15 @@
+confirmacao_obrigatoria:
+- enviar mensagem
+- apagar ficheiro
+- criar ficheiro
+- editar ficheiro
+- gastar dinheiro
+intervalos:
+  mencoes_vasco: 90
+  moreirense_noticias: 60
+  novidades_ia: 360
+  primeira_liga_noticias: 120
+modelo: claude-sonnet-4-6
+pausado: false
+silencio_fim: 7
+silencio_inicio: 23
