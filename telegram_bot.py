@@ -425,7 +425,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 voice_id=ELEVENLABS_VOICE_ID,
                 text=reply,
                 model_id="eleven_flash_v2_5",
-                language_code="pt",
+                language_code="pt-PT",
             )
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
                 for chunk in audio:
