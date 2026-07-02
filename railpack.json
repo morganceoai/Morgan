@@ -1,0 +1,3 @@
+{
+  "buildAptPackages": ["portaudio19-dev"]
+}
