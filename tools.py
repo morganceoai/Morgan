@@ -216,6 +216,20 @@ TOOLS = [
             "properties": {},
             "required": []
         }
+    },
+    {
+        "name": "pedir_confirmacao",
+        "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "acao": {
+                    "type": "string",
+                    "description": "Descrição clara e concisa da ação a confirmar. Ex: 'enviar email ao teu agente a dizer que estás disponível para conversas'"
+                }
+            },
+            "required": ["acao"]
+        }
     }
 ]
 
@@ -228,4 +242,5 @@ TOOL_FUNCTIONS = {
     "guardar_facto": lambda facto: save_fact(facto),
     "remover_facto": lambda facto: remove_fact(facto),
     "ver_memoria": list_memory,
+    "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
 }

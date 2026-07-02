@@ -8,7 +8,7 @@ from datetime import date, datetime
 from dotenv import load_dotenv
 import yaml
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 import anthropic
 import requests as req
 from deepgram import DeepgramClient
@@ -45,6 +45,7 @@ audit_logger.setLevel(logging.INFO)
 FONTES_CREDÍVEIS = ["record.pt", "abola.pt", "ojogo.pt", "maisfutebol.iol.pt", "zerozero.pt", "sporttv.pt", "rtp.pt", "cmjornal.pt", "sapo.pt"]
 
 conversation_histories = {}  # Cache em memória durante a sessão
+pending_confirmations = {}   # {user_id: acao_pendente}
 
 
 # ── Config ──────────────────────────────────────────────────────────────────
@@ -155,6 +156,16 @@ Tens acesso a ferramentas para pesquisar na web, obter dados da Primeira Liga, e
 
 Para cada pesquisa, distingue factos confirmados de rumores. Só partilha notícias de 2026.
 
+## Ações que REQUEREM confirmação — usa SEMPRE pedir_confirmacao antes:
+- Enviar qualquer mensagem (email, SMS, Telegram, WhatsApp) em nome do Vasco
+- Apagar ou modificar ficheiros e documentos
+- Criar documentos para partilha externa
+- Qualquer ação financeira ou pagamento
+- Alterar configurações do sistema ou de serviços
+- Qualquer ação irreversível
+
+Nunca faças estas ações sem chamar pedir_confirmacao primeiro. Uma aprovação não vale para a próxima — cada ação pede por si própria.
+
 ## Kill switch:
 Se o Vasco disser "morgan pausa", responde "Pausado. Fico quieto até dizeres 'morgan continua'." e não tomes mais iniciativas.
 Se o Vasco disser "morgan continua", responde "Estou de volta." e retoma o comportamento normal.
@@ -208,16 +219,27 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         if response.stop_reason == "tool_use":
             history.append({"role": "assistant", "content": response.content})
             tool_results = []
+            confirmacao_pedida = None
             for block in response.content:
                 if block.type == "tool_use":
                     result = run_tool(block.name, block.input)
+                    # Interceta pedidos de confirmação
+                    if isinstance(result, str) and result.startswith("__CONFIRMACAO__:"):
+                        confirmacao_pedida = result[len("__CONFIRMACAO__:"):]
+                        result = f"Confirmação pendente. Pergunta ao Vasco se quer que faças: {confirmacao_pedida}"
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
                         "content": result
                     })
-            history.append({"role": "user", "content": tool_results})
-            continue
+            if confirmacao_pedida:
+                pending_confirmations[user_id] = confirmacao_pedida
+                audit("CONFIRMACAO_PEDIDA", confirmacao_pedida)
+                history.append({"role": "user", "content": tool_results})
+                # Deixa o Morgan gerar a pergunta de confirmação naturalmente
+            else:
+                history.append({"role": "user", "content": tool_results})
+                continue
 
         reply = response.content[0].text
         history.append({"role": "assistant", "content": reply})
@@ -371,6 +393,32 @@ async def transcribe_audio(file_path: str) -> str:
     return response.results.channels[0].alternatives[0].transcript
 
 
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /status — mostra o estado atual do Morgan."""
+    config = load_config()
+    pausado = config.get("pausado", False)
+    modelo = config.get("modelo", "claude-sonnet-4-6")
+    silencio_i = config.get("silencio_inicio", 23)
+    silencio_f = config.get("silencio_fim", 7)
+    hora_atual = datetime.now().hour
+    em_silencio = is_quiet_hours()
+    user_id = str(update.effective_user.id)
+    pendente = pending_confirmations.get(user_id)
+
+    linhas = [
+        "**Estado do Morgan**\n",
+        f"{'🔴 Pausado' if pausado else '🟢 Ativo'}",
+        f"{'🔇 Horas de silêncio ativas' if em_silencio else f'🔔 Briefings: 7h e 20h'}",
+        f"Silêncio: {silencio_i}h–{silencio_f}h",
+        f"Modelo: `{modelo}`",
+        f"Hora atual: {hora_atual}h",
+    ]
+    if pendente:
+        linhas.append(f"\n⏳ Confirmação pendente: _{pendente}_")
+
+    await update.message.reply_text("\n".join(linhas), parse_mode="Markdown")
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
@@ -392,6 +440,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             audit("KILL_SWITCH", "Retomado pelo Vasco")
             await update.message.reply_text("Estou de volta.")
             return
+
+        # Fluxo de confirmação pendente
+        if user_id in pending_confirmations:
+            acao = pending_confirmations[user_id]
+            if any(p in texto for p in ("sim", "s", "yes", "confirmo", "vai", "prossegue", "faz")):
+                del pending_confirmations[user_id]
+                audit("CONFIRMACAO_ACEITE", acao)
+                reply = get_morgan_reply(user_id, f"O Vasco confirmou. Prossegue com: {acao}")
+                await update.message.reply_text(reply, parse_mode="Markdown")
+                return
+            elif any(p in texto for p in ("não", "nao", "n", "no", "cancela", "para", "esquece")):
+                del pending_confirmations[user_id]
+                audit("CONFIRMACAO_RECUSADA", acao)
+                await update.message.reply_text(f"Entendido, Vasco. Não vou {acao}.")
+                return
+            # Se não é sim/não, cancela a confirmação pendente e trata como mensagem normal
+            del pending_confirmations[user_id]
 
     # Mensagem de voz
     if update.message.voice:
@@ -449,6 +514,7 @@ def main():
     print("Ctrl+C para terminar.")
 
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).post_init(post_init).build()
+    app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
     app.run_polling()
 
