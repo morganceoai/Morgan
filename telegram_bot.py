@@ -357,7 +357,10 @@ async def transcribe_audio(file_path: str) -> str:
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
-    await update.message.chat.send_action("typing")
+    try:
+        await update.message.chat.send_action("typing")
+    except Exception:
+        pass
 
     # Kill switch via Telegram
     if update.message.text:
@@ -409,7 +412,7 @@ def main():
     print("Kill switch: envia 'morgan pausa' / 'morgan continua' no Telegram")
     print("Ctrl+C para terminar.")
 
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).post_init(post_init).build()
     app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
     app.run_polling()
 
