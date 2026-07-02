@@ -404,11 +404,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply = f"Ocorreu um erro: {e}"
 
     if update.message.voice and ELEVENLABS_VOICE_ID:
+        # Envia texto imediatamente enquanto gera o áudio
+        await update.message.reply_text(reply)
         try:
             audio = elevenlabs_client.text_to_speech.convert(
                 voice_id=ELEVENLABS_VOICE_ID,
                 text=reply,
-                model_id="eleven_multilingual_v2",
+                model_id="eleven_flash_v2_5",
                 language_code="pt",
             )
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
@@ -420,7 +422,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.unlink(tmp_path)
         except Exception as e:
             audit("ELEVENLABS_ERRO", str(e))
-            await update.message.reply_text(reply)
     else:
         await update.message.reply_text(reply)
 
