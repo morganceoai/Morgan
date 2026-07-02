@@ -12,6 +12,7 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 import anthropic
 import requests as req
 from deepgram import DeepgramClient
+from elevenlabs import ElevenLabs
 from tools import TOOLS, TOOL_FUNCTIONS
 from memory_store import load_memory
 from conversation_store import get_context_messages, save_message
@@ -24,6 +25,8 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 deepgram_client = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
+elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
 
 BASE_DIR = os.path.dirname(__file__)
 STATE_FILE = os.path.join(BASE_DIR, "memory", "heartbeat_state.json")
@@ -400,7 +403,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         reply = f"Ocorreu um erro: {e}"
 
-    await update.message.reply_text(reply)
+    if update.message.voice and ELEVENLABS_VOICE_ID:
+        try:
+            audio = elevenlabs_client.text_to_speech.convert(
+                voice_id=ELEVENLABS_VOICE_ID,
+                text=reply,
+                model_id="eleven_multilingual_v2",
+            )
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+                for chunk in audio:
+                    f.write(chunk)
+                tmp_path = f.name
+            with open(tmp_path, "rb") as f:
+                await update.message.reply_voice(voice=f)
+            os.unlink(tmp_path)
+        except Exception as e:
+            audit("ELEVENLABS_ERRO", str(e))
+            await update.message.reply_text(reply)
+    else:
+        await update.message.reply_text(reply)
 
 
 async def post_init(app):
