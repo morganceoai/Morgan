@@ -232,31 +232,31 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
 
 # ── Heartbeat ────────────────────────────────────────────────────────────────
 
-def get_checks() -> list:
-    config = load_config()
-    intervalos = config.get("intervalos", {})
-    return [
-        {
-            "nome": "moreirense_noticias",
-            "descricao": "Pesquisa notícias recentes de 2026 sobre o Moreirense FC. Resultados, lesões, transferências, declarações, rumores.",
-            "intervalo_minutos": intervalos.get("moreirense_noticias", 60),
-        },
-        {
-            "nome": "primeira_liga_noticias",
-            "descricao": "Pesquisa notícias recentes de 2026 da Primeira Liga portuguesa — todos os clubes. Resultados, transferências, rumores, destaques.",
-            "intervalo_minutos": intervalos.get("primeira_liga_noticias", 120),
-        },
-        {
-            "nome": "mencoes_vasco",
-            "descricao": 'Pesquisa menções a "Vasco Botelho da Costa" em todas as plataformas em 2026.',
-            "intervalo_minutos": intervalos.get("mencoes_vasco", 90),
-        },
-        {
-            "nome": "novidades_ia",
-            "descricao": "Pesquisa novidades importantes de inteligência artificial em 2026 — novos modelos, ferramentas úteis para treinadores.",
-            "intervalo_minutos": intervalos.get("novidades_ia", 360),
-        },
-    ]
+CHECKS = [
+    {
+        "nome": "moreirense_noticias",
+        "descricao": "Pesquisa notícias recentes de hoje sobre o Moreirense FC em 2026. Resultados, lesões, transferências, declarações, rumores. Se não houver nada genuinamente novo hoje, responde apenas: NADA",
+    },
+    {
+        "nome": "primeira_liga_noticias",
+        "descricao": "Pesquisa notícias recentes de hoje da Primeira Liga portuguesa em 2026 — todos os clubes. Resultados, transferências, rumores, destaques. Se não houver nada genuinamente novo hoje, responde apenas: NADA",
+    },
+    {
+        "nome": "mencoes_vasco",
+        "descricao": 'Pesquisa menções a "Vasco Botelho da Costa" em todas as plataformas em 2026. Se não houver nenhuma menção nova, responde apenas: NADA',
+    },
+    {
+        "nome": "novidades_ia",
+        "descricao": "Pesquisa novidades importantes de inteligência artificial em 2026 — novos modelos, ferramentas úteis para treinadores. Se não houver nada genuinamente novo, responde apenas: NADA",
+    },
+]
+
+PREFIXOS = {
+    "moreirense_noticias": "Vasco, em relação ao Moreirense",
+    "primeira_liga_noticias": "Vasco, em relação à Primeira Liga",
+    "mencoes_vasco": "Vasco, encontrei referências ao teu nome",
+    "novidades_ia": "Vasco, em relação à inteligência artificial",
+}
 
 
 def run_heartbeat_check(check: dict) -> str | None:
@@ -291,9 +291,28 @@ def run_heartbeat_check(check: dict) -> str | None:
         return None if reply.upper() == "NADA" else reply
 
 
+def should_run_briefing() -> bool:
+    """Verifica se está na hora do briefing (7h ou 20h) e se ainda não foi enviado hoje."""
+    agora = datetime.now()
+    hora = agora.hour
+    if hora not in (7, 20):
+        return False
+    state = load_state()
+    chave = f"briefing_{agora.strftime('%Y-%m-%d_%H')}"
+    return not state.get(chave, False)
+
+
+def mark_briefing_done():
+    agora = datetime.now()
+    chave = f"briefing_{agora.strftime('%Y-%m-%d_%H')}"
+    state = load_state()
+    state[chave] = True
+    save_state(state)
+
+
 async def heartbeat_loop(app):
     await asyncio.sleep(10)
-    audit("HEARTBEAT", "Iniciado")
+    audit("HEARTBEAT", "Iniciado — briefings às 7h e 20h")
 
     while True:
         try:
@@ -301,41 +320,36 @@ async def heartbeat_loop(app):
                 await asyncio.sleep(60)
                 continue
 
-            state = load_state()
-            checks = get_checks()
+            if not should_run_briefing():
+                await asyncio.sleep(60)
+                continue
 
-            for check in checks:
+            mark_briefing_done()
+            audit("HEARTBEAT", f"Briefing das {datetime.now().hour}h iniciado")
+
+            for check in CHECKS:
                 nome = check["nome"]
-                intervalo = check["intervalo_minutos"] * 60
-                ultima_vez = state.get(nome, 0)
-
-                if time.time() - ultima_vez < intervalo:
-                    continue
+                prefixo = PREFIXOS.get(nome, "Vasco")
 
                 audit("HEARTBEAT_CHECK", nome)
                 resultado = run_heartbeat_check(check)
-                state[nome] = time.time()
-                save_state(state)
 
                 if resultado:
-                    if already_sent(resultado):
-                        audit("HEARTBEAT_IGNORADO", resultado[:60])
-                    elif is_quiet_hours():
-                        audit("HEARTBEAT_SILENCIO", resultado[:60])
-                    else:
-                        await app.bot.send_message(
-                            chat_id=TELEGRAM_CHAT_ID,
-                            text=f"🔔 *Morgan*\n\n{resultado}",
-                            parse_mode="Markdown"
-                        )
-                        mark_sent(resultado)
-                        if TELEGRAM_CHAT_ID not in conversation_histories:
-                            conversation_histories[TELEGRAM_CHAT_ID] = []
-                        conversation_histories[TELEGRAM_CHAT_ID].append({
-                            "role": "assistant",
-                            "content": resultado
-                        })
-                        audit("HEARTBEAT_ENVIADO", resultado[:60])
+                    mensagem = f"{prefixo}, tenho isto para te dizer:\n\n{resultado}"
+                    await app.bot.send_message(
+                        chat_id=TELEGRAM_CHAT_ID,
+                        text=mensagem,
+                        parse_mode="Markdown"
+                    )
+                    if TELEGRAM_CHAT_ID not in conversation_histories:
+                        conversation_histories[TELEGRAM_CHAT_ID] = []
+                    conversation_histories[TELEGRAM_CHAT_ID].append({
+                        "role": "assistant",
+                        "content": mensagem
+                    })
+                    audit("HEARTBEAT_ENVIADO", resultado[:60])
+                else:
+                    audit("HEARTBEAT_NADA", nome)
 
             await asyncio.sleep(60)
 
