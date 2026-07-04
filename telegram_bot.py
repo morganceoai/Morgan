@@ -369,9 +369,11 @@ A data de hoje é {TODAY}.
 {contexto_historico}
 
 ## Tarefa:
-Usa SEMPRE estas duas ferramentas antes de produzir o relatório:
+Usa SEMPRE estas quatro ferramentas antes de produzir o relatório:
 1. `product_hunt_trending` — produtos de IA mais votados esta semana
-2. `scout_oportunidades` — pesquisa de mercado ampla
+2. `hacker_news_trending` — tendências da comunidade tech
+3. `reddit_trending` — conversas de empreendedores e criadores
+4. `scout_oportunidades` — pesquisa de mercado ampla
 
 Cruza os resultados com o histórico acima. Produz um relatório estruturado com:
 

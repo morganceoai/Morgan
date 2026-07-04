@@ -127,6 +127,84 @@ def resultados_recentes(equipa: str) -> str:
         return f"Erro ao obter resultados: {e}"
 
 
+def hacker_news_trending() -> str:
+    """Busca os posts mais relevantes de IA no Hacker News."""
+    try:
+        # Top stories do HN
+        top = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=10).json()
+        best = requests.get("https://hacker-news.firebaseio.com/v0/beststories.json", timeout=10).json()
+        ids = list(dict.fromkeys(top[:50] + best[:50]))[:60]
+
+        palavras_chave = ["ai", "llm", "gpt", "claude", "openai", "anthropic", "machine learning",
+                          "artificial intelligence", "agent", "saas", "startup", "revenue", "passive income",
+                          "automation", "business", "tool", "product"]
+        encontrados = []
+        for item_id in ids:
+            try:
+                item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json", timeout=5).json()
+                titulo = (item.get("title") or "").lower()
+                url = item.get("url", "")
+                score = item.get("score", 0)
+                comentarios = item.get("descendants", 0)
+                if any(p in titulo for p in palavras_chave) and score > 50:
+                    encontrados.append({
+                        "titulo": item.get("title"),
+                        "url": url,
+                        "score": score,
+                        "comentarios": comentarios
+                    })
+                    if len(encontrados) >= 10:
+                        break
+            except Exception:
+                continue
+
+        if not encontrados:
+            return "Nenhum post relevante de IA no Hacker News hoje."
+
+        linhas = ["**Hacker News — Top IA hoje:**\n"]
+        for p in encontrados:
+            linhas.append(
+                f"• **{p['titulo']}** ({p['score']} pontos, {p['comentarios']} comentários)\n"
+                f"  {p['url']}"
+            )
+        return "\n\n".join(linhas)
+    except Exception as e:
+        return f"Erro Hacker News: {e}"
+
+
+def reddit_trending() -> str:
+    """Busca posts populares de IA e negócios no Reddit via Tavily."""
+    try:
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        queries = [
+            "site:reddit.com r/artificial OR r/MachineLearning AI tools 2026",
+            "site:reddit.com r/SideProject OR r/entrepreneur AI business revenue 2026",
+            "site:reddit.com r/passive_income OR r/indiehackers AI automation 2026",
+        ]
+        encontrados = []
+        vistas = set()
+        for query in queries:
+            try:
+                result = client.search(query=query, search_depth="basic", max_results=4)
+                for r in result.get("results", []):
+                    url = r.get("url", "")
+                    titulo = r.get("title", "")
+                    conteudo = r.get("content", "")[:200]
+                    if not url or url in vistas or "reddit.com" not in url:
+                        continue
+                    vistas.add(url)
+                    encontrados.append(f"• **{titulo}**\n  {conteudo}\n  {url}")
+            except Exception:
+                continue
+
+        if not encontrados:
+            return "Nenhum post relevante no Reddit encontrado."
+
+        return "**Reddit — Discussões de IA e negócio:**\n\n" + "\n\n".join(encontrados[:8])
+    except Exception as e:
+        return f"Erro Reddit: {e}"
+
+
 def product_hunt_trending() -> str:
     """Busca os produtos de IA mais votados no Product Hunt esta semana."""
     try:
@@ -366,6 +444,16 @@ TOOLS = [
         }
     },
     {
+        "name": "hacker_news_trending",
+        "description": "Busca os posts mais relevantes de IA, startups e negócios no Hacker News. Gratuito, sem API key. Usa no relatório do Scout para captar tendências da comunidade tech.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "reddit_trending",
+        "description": "Busca posts populares de IA e negócios em subreddits relevantes: artificial, MachineLearning, SideProject, entrepreneur, indiehackers, passive_income, AItools. Gratuito, sem API key.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "product_hunt_trending",
         "description": "Busca os produtos de IA mais votados no Product Hunt esta semana. Usa no relatório do Scout para identificar ferramentas e negócios de IA em crescimento antes de explodirem.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -425,6 +513,8 @@ TOOL_FUNCTIONS = {
     "ver_memoria": list_memory,
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
     "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
+    "hacker_news_trending": hacker_news_trending,
+    "reddit_trending": reddit_trending,
     "product_hunt_trending": product_hunt_trending,
     "scout_oportunidades": scout_oportunidades,
     "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
