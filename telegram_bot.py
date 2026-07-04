@@ -376,6 +376,7 @@ Usa SEMPRE estas ferramentas antes de produzir o relatório:
 4. `scout_oportunidades` — pesquisa de mercado ampla
 5. `indiehackers_trending` — valida quais as oportunidades com receita REAL declarada por fundadores (dados honestos)
 6. `google_trends` — valida as top 3 oportunidades que identificares (confirma se o interesse está a crescer)
+7. `monitorizar_oportunidades_aprovadas` — OBRIGATÓRIO se houver oportunidades aprovadas no histórico acima. Faz pesquisa aprofundada sobre cada uma e inclui os resultados no relatório numa secção separada "Acompanhamento aprovadas".
 
 Cruza os resultados com o histórico acima. Produz um relatório estruturado com:
 

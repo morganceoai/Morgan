@@ -435,6 +435,70 @@ def indiehackers_trending() -> str:
         return f"Erro IndieHackers: {e}"
 
 
+def aprovar_oportunidade_scout(nome: str) -> str:
+    """Marca uma oportunidade do Scout como aprovada pelo Vasco para acompanhamento semanal contínuo."""
+    try:
+        from scout_memory import aprovar_oportunidade, _load
+        data = _load()
+        if nome not in data["oportunidades"]:
+            return f"Oportunidade '{nome}' não encontrada no histórico do Scout. Verifica o nome exato com `ver_historico_scout`."
+        aprovar_oportunidade(nome)
+        return f"✅ '{nome}' aprovada. O Scout vai acompanhá-la de perto em cada relatório semanal."
+    except Exception as e:
+        return f"Erro ao aprovar oportunidade: {e}"
+
+
+def monitorizar_oportunidades_aprovadas() -> str:
+    """Faz pesquisa aprofundada sobre cada oportunidade aprovada pelo Vasco — novidades, concorrentes, receita real, casos de sucesso recentes."""
+    try:
+        from scout_memory import _load, _save
+        from datetime import date
+        data = _load()
+        aprovadas = data.get("aprovadas", [])
+        if not aprovadas:
+            return "Nenhuma oportunidade aprovada ainda. Aprova uma oportunidade do relatório do Scout para acompanhamento contínuo."
+
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        semana = date.today().strftime("%Y-W%W")
+        relatorio = ["**Acompanhamento de oportunidades aprovadas:**\n"]
+
+        for ap in aprovadas:
+            nome = ap["nome"]
+            linhas_op = [f"### {nome}"]
+            queries = [
+                f"{nome} revenue MRR 2025 2026 founder",
+                f"{nome} market growth competition 2026",
+                f"{nome} how to start build tutorial 2026",
+            ]
+            resumos = []
+            for q in queries:
+                try:
+                    r = client.search(query=q, search_depth="basic", max_results=3)
+                    for item in r.get("results", [])[:2]:
+                        conteudo = item.get("content", "")[:250]
+                        url = item.get("url", "")
+                        resumos.append(f"  • {conteudo} ({url})")
+                except Exception:
+                    continue
+            if resumos:
+                linhas_op.extend(resumos[:4])
+            else:
+                linhas_op.append("  Sem novidades encontradas esta semana.")
+
+            # Guardar update no histórico
+            update_entry = {"semana": semana, "resumo": " | ".join(resumos[:2])}
+            ap.setdefault("updates", [])
+            ap["updates"].append(update_entry)
+            ap["updates"] = ap["updates"][-12:]
+
+            relatorio.append("\n".join(linhas_op))
+
+        _save(data)
+        return "\n\n".join(relatorio)
+    except Exception as e:
+        return f"Erro na monitorização de aprovadas: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -589,6 +653,25 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "aprovar_oportunidade_scout",
+        "description": "Marca uma oportunidade do Morgan AI Scout como aprovada pelo Vasco para acompanhamento semanal contínuo. Usa quando o Vasco disser 'aprova esta', 'quero acompanhar X', 'marca X para seguimento'. Requer o nome exato da oportunidade.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {
+                    "type": "string",
+                    "description": "Nome exato da oportunidade a aprovar, conforme aparece no histórico do Scout."
+                }
+            },
+            "required": ["nome"]
+        }
+    },
+    {
+        "name": "monitorizar_oportunidades_aprovadas",
+        "description": "Faz pesquisa aprofundada sobre cada oportunidade aprovada pelo Vasco — novidades, concorrentes, receita real, casos de sucesso recentes. Usa automaticamente no relatório semanal do Scout se houver oportunidades aprovadas.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "pedir_confirmacao",
         "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
         "input_schema": {
@@ -622,4 +705,6 @@ TOOL_FUNCTIONS = {
     "scout_oportunidades": scout_oportunidades,
     "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
     "indiehackers_trending": indiehackers_trending,
+    "aprovar_oportunidade_scout": lambda nome: aprovar_oportunidade_scout(nome),
+    "monitorizar_oportunidades_aprovadas": monitorizar_oportunidades_aprovadas,
 }
