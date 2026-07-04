@@ -279,64 +279,48 @@ async def speak(request: Request):
 
 @app.websocket("/ws/transcribe")
 async def ws_transcribe(websocket: WebSocket):
-    """Transcrição live via Deepgram WebSocket — PCM linear16 em streaming."""
+    """Proxy WebSocket: browser → Deepgram Live API → browser. Bypassa o SDK (bug Python 3.12)."""
     await websocket.accept()
+    sample_rate = int(websocket.query_params.get("sr", "44100"))
+
+    dg_url = (
+        f"wss://api.deepgram.com/v1/listen"
+        f"?model=nova-2-general&language=pt&encoding=linear16"
+        f"&sample_rate={sample_rate}&channels=1"
+        f"&interim_results=true&endpointing=600&smart_format=true&vad_events=true"
+    )
+
     try:
-        from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
+        import websockets as ws_lib
+        async with ws_lib.connect(dg_url, additional_headers={"Authorization": f"Token {DEEPGRAM_KEY}"}) as dg_ws:
 
-        sample_rate = int(websocket.query_params.get("sr", "44100"))
-        dg = DeepgramClient(DEEPGRAM_KEY)
-        connection = dg.listen.asyncwebsocket.v("1")
+            async def dg_to_browser():
+                async for msg in dg_ws:
+                    try:
+                        data = json.loads(msg)
+                        if data.get("type") != "Results":
+                            continue
+                        alts = data.get("channel", {}).get("alternatives", [{}])
+                        text = (alts[0].get("transcript", "") if alts else "").strip()
+                        is_final = data.get("is_final", False)
+                        speech_final = data.get("speech_final", False)
+                        if text:
+                            t = "speech_final" if speech_final else ("final" if is_final else "interim")
+                            await websocket.send_text(json.dumps({"type": t, "text": text}))
+                    except Exception:
+                        pass
 
-        async def on_transcript(self, result, **kwargs):
-            try:
-                alt = result.channel.alternatives[0]
-                text = alt.transcript.strip()
-                if not text:
-                    return
-                speech_final = getattr(result, "speech_final", False)
-                is_final = result.is_final
-                msg_type = "speech_final" if speech_final else ("final" if is_final else "interim")
-                await websocket.send_text(json.dumps({"type": msg_type, "text": text}))
-            except Exception:
-                pass
+            async def browser_to_dg():
+                try:
+                    while True:
+                        audio = await websocket.receive_bytes()
+                        await dg_ws.send(audio)
+                except WebSocketDisconnect:
+                    pass
+                except Exception:
+                    pass
 
-        async def on_error(self, error, **kwargs):
-            try:
-                await websocket.send_text(json.dumps({"type": "error", "text": str(error)}))
-            except Exception:
-                pass
-
-        connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
-        connection.on(LiveTranscriptionEvents.Error, on_error)
-
-        options = LiveOptions(
-            model="nova-2-general",
-            language="pt",
-            smart_format=True,
-            interim_results=True,
-            endpointing=600,
-            vad_events=True,
-            encoding="linear16",
-            sample_rate=sample_rate,
-            channels=1,
-        )
-
-        await connection.start(options)
-
-        try:
-            while True:
-                data = await websocket.receive_bytes()
-                await connection.send(data)
-        except WebSocketDisconnect:
-            pass
-        except Exception:
-            pass
-        finally:
-            try:
-                await connection.finish()
-            except Exception:
-                pass
+            await asyncio.gather(dg_to_browser(), browser_to_dg())
 
     except Exception as e:
         try:
