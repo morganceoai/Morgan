@@ -805,33 +805,15 @@ async function speakText(text) {
   if (!text) { resetVAD(); setState('listening'); return; }
   setState('speaking');
   try {
-    const r = await fetch('/api/speak', {
+    // Python toca o áudio com afplay (macOS) — fetch só retorna quando termina
+    await fetch('/api/speak', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({text})
     });
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-    currentAudio = new Audio(url);
-
-    const backToListening = () => {
-      resetVAD();       // limpar qualquer estado VAD acumulado durante a fala
-      setState('listening');
-    };
-
-    currentAudio.onended = backToListening;
-    currentAudio.onerror = backToListening;
-
-    // Segurança: se onended não disparar em 60s, desbloquear na mesma
-    const safetyTimer = setTimeout(backToListening, 60000);
-    currentAudio.onended = () => { clearTimeout(safetyTimer); backToListening(); };
-
-    await currentAudio.play();
-  } catch(e) {
-    resetVAD();
-    setState('listening');
-  }
+  } catch(e) { /* ignorar */ }
+  resetVAD();
+  setState('listening');
 }
 
 // ─── TEXT INPUT ───────────────────────────────────────

@@ -234,11 +234,14 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 
 @app.post("/api/speak")
 async def speak(request: Request):
+    """Gera áudio com ElevenLabs e toca com afplay (macOS). Bloqueante até terminar."""
     body = await request.json()
     text = body.get("text", "").strip()
     if not text:
-        return JSONResponse({"error": "no text"}, status_code=400)
+        return JSONResponse({"ok": True})
     try:
+        import subprocess
+        import tempfile
         from elevenlabs import ElevenLabs
         el = ElevenLabs(api_key=ELEVENLABS_KEY)
         chunks = []
@@ -250,6 +253,16 @@ async def speak(request: Request):
         ):
             chunks.append(chunk)
         audio_bytes = b"".join(chunks)
-        return StreamingResponse(iter([audio_bytes]), media_type="audio/mpeg")
+
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            f.write(audio_bytes)
+            tmp_path = f.name
+
+        # afplay é nativo no macOS — bloqueia até terminar
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: subprocess.run(["afplay", tmp_path], check=True)
+        )
+        os.unlink(tmp_path)
+        return JSONResponse({"ok": True})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
