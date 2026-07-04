@@ -127,6 +127,58 @@ def resultados_recentes(equipa: str) -> str:
         return f"Erro ao obter resultados: {e}"
 
 
+def monitorizar_nome(nome: str = "Vasco Botelho da Costa") -> str:
+    """Pesquisa menções ao nome em múltiplas plataformas."""
+    try:
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        queries = [
+            f'"{nome}" site:reddit.com 2026',
+            f'"{nome}" site:youtube.com 2026',
+            f'"{nome}" site:x.com OR site:twitter.com 2026',
+            f'"{nome}" site:facebook.com 2026',
+            f'"{nome}" site:instagram.com 2026',
+            f'"{nome}" site:tiktok.com 2026',
+            f'"{nome}" site:linkedin.com 2026',
+            f'"{nome}" site:zerozero.pt OR site:maisfutebol.iol.pt OR site:abola.pt 2026',
+            f'"{nome}" site:transfermarkt.pt OR site:transfermarkt.com 2026',
+            f'"{nome}" -site:reddit.com -site:youtube.com -site:twitter.com -site:x.com -site:facebook.com -site:instagram.com -site:tiktok.com 2026',
+        ]
+        encontradas = []
+        vistas = set()
+        for query in queries:
+            try:
+                result = client.search(query=query, search_depth="basic", max_results=3)
+                for r in result.get("results", []):
+                    url = r.get("url", "")
+                    titulo = r.get("title", "")
+                    conteudo = r.get("content", "")[:200]
+                    if not url or url in vistas:
+                        continue
+                    if nome.lower() not in (titulo + conteudo).lower():
+                        continue
+                    vistas.add(url)
+                    plataforma = (
+                        "Reddit" if "reddit.com" in url else
+                        "YouTube" if "youtube.com" in url else
+                        "X/Twitter" if "x.com" in url or "twitter.com" in url else
+                        "Facebook" if "facebook.com" in url else
+                        "Instagram" if "instagram.com" in url else
+                        "TikTok" if "tiktok.com" in url else
+                        "LinkedIn" if "linkedin.com" in url else
+                        "Transfermarkt" if "transfermarkt" in url else
+                        "ZeroZero" if "zerozero.pt" in url else
+                        "Web"
+                    )
+                    encontradas.append(f"**{plataforma}** — {titulo}\n{conteudo}\nFonte: {url}")
+            except Exception:
+                continue
+        if not encontradas:
+            return "Não encontrei menções ao teu nome em nenhuma plataforma."
+        return f"**Menções a '{nome}'**\n\n" + "\n\n---\n\n".join(encontradas)
+    except Exception as e:
+        return f"Erro na monitorização do nome: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -218,6 +270,20 @@ TOOLS = [
         }
     },
     {
+        "name": "monitorizar_nome",
+        "description": "Pesquisa menções ao nome 'Vasco Botelho da Costa' em múltiplas plataformas: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero, e web em geral. Usa nos briefings e sempre que o Vasco pedir para verificar o que se diz sobre ele.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {
+                    "type": "string",
+                    "description": "Nome a pesquisar. Por defeito: 'Vasco Botelho da Costa'."
+                }
+            },
+            "required": []
+        }
+    },
+    {
         "name": "pedir_confirmacao",
         "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
         "input_schema": {
@@ -243,4 +309,5 @@ TOOL_FUNCTIONS = {
     "remover_facto": lambda facto: remove_fact(facto),
     "ver_memoria": list_memory,
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
+    "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
 }

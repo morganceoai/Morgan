@@ -265,7 +265,7 @@ CHECKS = [
     },
     {
         "nome": "mencoes_vasco",
-        "descricao": 'Pesquisa menções a "Vasco Botelho da Costa" em todas as plataformas em 2026. Se não houver nenhuma menção nova, responde apenas: NADA',
+        "descricao": 'Usa a ferramenta monitorizar_nome para pesquisar menções a "Vasco Botelho da Costa" em todas as plataformas: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero e web em geral. Apresenta o que encontrares de forma clara, indicando a plataforma e o contexto de cada menção. Se não houver nenhuma menção, responde apenas: NADA',
     },
     {
         "nome": "novidades_ia",
@@ -504,89 +504,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(reply)
 
 
-MENCOES_FILE = os.path.join(BASE_DIR, "memory", "mencoes_enviadas.json")
-
-MENCOES_CHECKS = [
-    'site:reddit.com "Vasco Botelho da Costa" 2026',
-    'site:youtube.com "Vasco Botelho da Costa" 2026',
-    '"Vasco Botelho da Costa" site:x.com OR site:twitter.com 2026',
-    '"Vasco Botelho da Costa" -site:record.pt -site:abola.pt 2026',
-]
-
-
-def load_mencoes_enviadas() -> list:
-    if not os.path.exists(MENCOES_FILE):
-        return []
-    with open(MENCOES_FILE, "r") as f:
-        return json.load(f)
-
-
-def mencao_ja_enviada(url: str) -> bool:
-    return url in load_mencoes_enviadas()
-
-
-def marcar_mencao_enviada(url: str):
-    enviadas = load_mencoes_enviadas()
-    if url not in enviadas:
-        enviadas.append(url)
-        enviadas = enviadas[-500:]
-        with open(MENCOES_FILE, "w") as f:
-            json.dump(enviadas, f, indent=2)
-
-
-async def mencoes_loop(app):
-    await asyncio.sleep(30)
-    audit("MENCOES", "Loop de monitorização do nome iniciado — verifica a cada 2h")
-
-    while True:
-        try:
-            if is_pausado() or is_quiet_hours():
-                await asyncio.sleep(600)
-                continue
-
-            from tavily import TavilyClient
-            tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-            for query in MENCOES_CHECKS:
-                try:
-                    result = tavily.search(query=query, search_depth="basic", max_results=3)
-                    for r in result.get("results", []):
-                        url = r.get("url", "")
-                        titulo = r.get("title", "")
-                        conteudo = r.get("content", "")[:300]
-                        if not url or mencao_ja_enviada(url):
-                            continue
-                        # Confirma que é mesmo sobre Vasco
-                        if "vasco botelho da costa" not in (titulo + conteudo).lower():
-                            continue
-                        marcar_mencao_enviada(url)
-                        plataforma = "Reddit" if "reddit" in url else "YouTube" if "youtube" in url else "X/Twitter" if "twitter" in url or "x.com" in url else "Web"
-                        mensagem = (
-                            f"⚠️ *Vasco, encontrei uma menção ao teu nome*\n\n"
-                            f"*Plataforma:* {plataforma}\n"
-                            f"*Título:* {titulo}\n"
-                            f"*Resumo:* {conteudo}\n"
-                            f"*Link:* {url}"
-                        )
-                        await app.bot.send_message(
-                            chat_id=TELEGRAM_CHAT_ID,
-                            text=mensagem,
-                            parse_mode="Markdown"
-                        )
-                        audit("MENCAO_ENCONTRADA", f"{plataforma} | {url}")
-                except Exception as e:
-                    audit("MENCOES_ERRO", str(e))
-
-            await asyncio.sleep(7200)  # verifica a cada 2 horas
-
-        except Exception as e:
-            audit("MENCOES_LOOP_ERRO", str(e))
-            await asyncio.sleep(600)
-
-
 async def post_init(app):
     asyncio.create_task(heartbeat_loop(app))
-    asyncio.create_task(mencoes_loop(app))
 
 
 def main():
