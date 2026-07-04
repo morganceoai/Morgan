@@ -234,14 +234,17 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 
 @app.post("/api/speak")
 async def speak(request: Request):
-    """Gera áudio com ElevenLabs e toca com afplay (macOS). Bloqueante até terminar."""
+    """Toca texto em voz. Tenta ElevenLabs; se falhar usa 'say' nativo do macOS."""
     body = await request.json()
     text = body.get("text", "").strip()
     if not text:
         return JSONResponse({"ok": True})
+
+    import subprocess
+    import tempfile
+
+    # Tentar ElevenLabs primeiro
     try:
-        import subprocess
-        import tempfile
         from elevenlabs import ElevenLabs
         el = ElevenLabs(api_key=ELEVENLABS_KEY)
         chunks = []
@@ -253,16 +256,22 @@ async def speak(request: Request):
         ):
             chunks.append(chunk)
         audio_bytes = b"".join(chunks)
-
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
             f.write(audio_bytes)
             tmp_path = f.name
-
-        # afplay é nativo no macOS — bloqueia até terminar
         await asyncio.get_event_loop().run_in_executor(
             None, lambda: subprocess.run(["afplay", tmp_path], check=True)
         )
         os.unlink(tmp_path)
-        return JSONResponse({"ok": True})
+        return JSONResponse({"ok": True, "engine": "elevenlabs"})
+    except Exception as e_el:
+        pass  # fallback para say
+
+    # Fallback: say nativo do macOS (voz Joana PT)
+    try:
+        await asyncio.get_event_loop().run_in_executor(
+            None, lambda: subprocess.run(["say", "-v", "Joana", text], check=True)
+        )
+        return JSONResponse({"ok": True, "engine": "say"})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
