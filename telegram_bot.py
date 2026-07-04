@@ -14,6 +14,7 @@ import requests as req
 from deepgram import DeepgramClient
 from elevenlabs import ElevenLabs
 from tools import TOOLS, TOOL_FUNCTIONS
+from scout_memory import get_contexto_scout, get_resumo_para_vasco, registar_oportunidades
 from memory_store import load_memory
 from conversation_store import get_context_messages, save_message
 
@@ -352,25 +353,50 @@ def mark_briefing_done():
 
 def build_scout_system() -> str:
     TODAY = date.today().strftime("%d de %B de %Y")
+    contexto_historico = get_contexto_scout()
     return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
-A data de hoje é {TODAY}. O objetivo do Vasco é atingir €10.000/mês de rendimento passivo.
+A data de hoje é {TODAY}.
 
-Usa a ferramenta scout_oportunidades para recolher dados de mercado. Com base nesses dados, produz um relatório semanal estruturado com:
+## Objectivo do Vasco — marcos progressivos de rendimento passivo:
+- M1: €1.000/mês — primeiro negócio a funcionar
+- M2: €3.000/mês — rendimento real
+- M3: €10.000/mês — liberdade financeira base
+- M4: €25.000/mês — primeiro império a escalar
+- M5: €50.000/mês — múltiplos Morgans a operar
+- M6: Sem teto — o Scout continua, o império continua a crescer
 
-1. **Top 3 oportunidades da semana** — cada uma com:
-   - Nome e descrição do negócio
+## Histórico acumulado — usa isto para identificar tendências:
+{contexto_historico}
+
+## Tarefa:
+Usa a ferramenta scout_oportunidades para recolher dados de mercado frescos. Cruza com o histórico acima. Produz um relatório estruturado com:
+
+1. **Top 3 oportunidades desta semana** — para cada uma:
+   - Nome e descrição
    - Potencial de receita estimado (€/mês)
-   - Nível de esforço inicial (baixo/médio/alto)
+   - Esforço inicial (baixo/médio/alto)
    - Concorrência (baixa/média/alta)
-   - Possibilidade de automatizar com IA (%)
-   - Adequação ao mercado PT/BR/ES
+   - Automação com IA (%)
+   - Adequação PT/BR/ES
+   - Se já apareceu em semanas anteriores: quantas vezes e o que mudou
    - Próximo passo concreto para começar
 
-2. **Tendência da semana** — o movimento mais relevante no mercado de IA que pode criar oportunidades
+2. **Sinal mais forte do histórico** — a oportunidade que apareceu mais vezes e porquê merece atenção agora (omite se for a primeira semana)
 
-3. **Proposta de novo Morgan** — se identificares uma oportunidade que justifique um agente especializado, descreve-o: nome, função, como geraria receita
+3. **Tendência da semana** — o movimento mais relevante no mercado de IA
 
-Sê direto e concreto. Dados reais, não generalidades. O Vasco decide — o Scout informa."""
+4. **Proposta de novo Morgan** — se identificares algo que justifique um agente especializado
+
+No final, lista as 3 oportunidades num bloco JSON para registo interno:
+```json
+[
+  {{"nome": "...", "descricao": "...", "receita_estimada": "...", "notas": "..."}},
+  {{"nome": "...", "descricao": "...", "receita_estimada": "...", "notas": "..."}},
+  {{"nome": "...", "descricao": "...", "receita_estimada": "...", "notas": "..."}}
+]
+```
+
+Sê direto e concreto. Dados reais, não generalidades. O Vasco decide — o Scout informa com máxima fiabilidade."""
 
 
 async def run_scout_report(app):
@@ -399,10 +425,24 @@ async def run_scout_report(app):
         relatorio = response.content[0].text.strip()
         break
 
+    # Extrai JSON de oportunidades para guardar na memória
+    import re
+    json_match = re.search(r"```json\s*(\[.*?\])\s*```", relatorio, re.DOTALL)
+    if json_match:
+        try:
+            oportunidades = json.loads(json_match.group(1))
+            registar_oportunidades(oportunidades)
+            audit("SCOUT_MEMORIA", f"{len(oportunidades)} oportunidades registadas")
+        except Exception as e:
+            audit("SCOUT_MEMORIA_ERRO", str(e))
+
+    # Remove o bloco JSON do relatório antes de enviar ao Vasco
+    relatorio_limpo = re.sub(r"```json\s*\[.*?\]\s*```", "", relatorio, flags=re.DOTALL).strip()
+
     header = "🔍 *Morgan AI Scout — Relatório Semanal*\n\n"
     await app.bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
-        text=header + relatorio,
+        text=header + relatorio_limpo,
         parse_mode="Markdown"
     )
     audit("SCOUT_RELATORIO", "Relatório semanal enviado")

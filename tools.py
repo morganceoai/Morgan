@@ -314,6 +314,11 @@ TOOLS = [
         }
     },
     {
+        "name": "ver_historico_scout",
+        "description": "Mostra o histórico acumulado do Morgan AI Scout: todas as oportunidades identificadas, quantas vezes cada uma apareceu, e quais foram aprovadas pelo Vasco. Usa quando o Vasco pedir para ver o histórico ou acompanhar uma oportunidade específica.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "monitorizar_nome",
         "description": "Pesquisa menções ao nome 'Vasco Botelho da Costa' em múltiplas plataformas: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero, e web em geral. Usa nos briefings e sempre que o Vasco pedir para verificar o que se diz sobre ele.",
         "input_schema": {
@@ -355,4 +360,5 @@ TOOL_FUNCTIONS = {
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
     "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
     "scout_oportunidades": scout_oportunidades,
+    "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
 }
