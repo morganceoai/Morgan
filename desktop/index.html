@@ -650,7 +650,15 @@ function showTranscript(userText, morganText) {
 // ─── VAD — ESCUTA CONTÍNUA ────────────────────────────
 async function initVAD() {
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
+    // echoCancellation evita que o mic capte o áudio dos altifalantes
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 512;
@@ -664,13 +672,25 @@ async function initVAD() {
   }
 }
 
+function resetVAD() {
+  clearTimeout(silenceTimer);
+  silenceTimer = null;
+  isSpeechActive = false;
+  audioChunks = [];
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+    try { mediaRecorder.stop(); } catch(e) {}
+  }
+}
+
 function vadLoop() {
   const buf = new Float32Array(analyser.fftSize);
 
   function tick() {
-    // Não ouvir enquanto Morgan fala ou pensa
+    // Pausa total quando Morgan fala ou pensa
     if (morganState === 'thinking' || morganState === 'speaking') {
-      requestAnimationFrame(tick);
+      setTimeout(tick, 100);
       return;
     }
 
@@ -680,7 +700,6 @@ function vadLoop() {
     rms = Math.sqrt(rms / buf.length);
 
     if (rms > SPEECH_THRESHOLD) {
-      // VOZ DETETADA
       if (!isSpeechActive) {
         isSpeechActive = true;
         speechStartTime = Date.now();
@@ -689,15 +708,14 @@ function vadLoop() {
       clearTimeout(silenceTimer);
       silenceTimer = null;
     } else if (isSpeechActive && !silenceTimer) {
-      // SILÊNCIO — iniciar contagem
       silenceTimer = setTimeout(() => {
-        isSpeechActive = false;
         silenceTimer = null;
         const duration = Date.now() - speechStartTime;
+        isSpeechActive = false;
         if (duration >= MIN_SPEECH_MS) {
-          stopCapture(); // envia para processar
+          stopCapture();
         } else {
-          cancelCapture(); // muito curto, ignorar
+          cancelCapture();
         }
       }, SILENCE_DELAY);
     }
@@ -718,6 +736,7 @@ function startCapture() {
     setState('recording');
   } catch(e) {
     isSpeechActive = false;
+    setState('listening');
   }
 }
 
@@ -725,6 +744,8 @@ function stopCapture() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
     setState('thinking');
+  } else {
+    setState('listening');
   }
 }
 
@@ -732,7 +753,7 @@ function cancelCapture() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.ondataavailable = null;
     mediaRecorder.onstop = null;
-    mediaRecorder.stop();
+    try { mediaRecorder.stop(); } catch(e) {}
   }
   audioChunks = [];
   setState('listening');
@@ -781,7 +802,7 @@ async function sendMessage(text) {
 }
 
 async function speakText(text) {
-  if (!text) { setState('listening'); return; }
+  if (!text) { resetVAD(); setState('listening'); return; }
   setState('speaking');
   try {
     const r = await fetch('/api/speak', {
@@ -793,9 +814,22 @@ async function speakText(text) {
     const url = URL.createObjectURL(blob);
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     currentAudio = new Audio(url);
-    currentAudio.onended = () => setState('listening'); // volta a ouvir automaticamente
-    currentAudio.play();
+
+    const backToListening = () => {
+      resetVAD();       // limpar qualquer estado VAD acumulado durante a fala
+      setState('listening');
+    };
+
+    currentAudio.onended = backToListening;
+    currentAudio.onerror = backToListening;
+
+    // Segurança: se onended não disparar em 60s, desbloquear na mesma
+    const safetyTimer = setTimeout(backToListening, 60000);
+    currentAudio.onended = () => { clearTimeout(safetyTimer); backToListening(); };
+
+    await currentAudio.play();
   } catch(e) {
+    resetVAD();
     setState('listening');
   }
 }
