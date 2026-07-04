@@ -369,7 +369,11 @@ A data de hoje é {TODAY}.
 {contexto_historico}
 
 ## Tarefa:
-Usa a ferramenta scout_oportunidades para recolher dados de mercado frescos. Cruza com o histórico acima. Produz um relatório estruturado com:
+Usa SEMPRE estas duas ferramentas antes de produzir o relatório:
+1. `product_hunt_trending` — produtos de IA mais votados esta semana
+2. `scout_oportunidades` — pesquisa de mercado ampla
+
+Cruza os resultados com o histórico acima. Produz um relatório estruturado com:
 
 1. **Top 3 oportunidades desta semana** — para cada uma:
    - Nome e descrição

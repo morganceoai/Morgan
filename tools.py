@@ -127,6 +127,67 @@ def resultados_recentes(equipa: str) -> str:
         return f"Erro ao obter resultados: {e}"
 
 
+def product_hunt_trending() -> str:
+    """Busca os produtos de IA mais votados no Product Hunt esta semana."""
+    try:
+        token = os.getenv("PRODUCT_HUNT_TOKEN")
+        if not token:
+            return "Product Hunt API não configurada (falta PRODUCT_HUNT_TOKEN)."
+
+        query = """
+        {
+          posts(order: VOTES, topic: "artificial-intelligence", first: 15) {
+            edges {
+              node {
+                name
+                tagline
+                description
+                votesCount
+                website
+                reviewsCount
+                createdAt
+                topics {
+                  edges { node { name } }
+                }
+              }
+            }
+          }
+        }
+        """
+        response = requests.post(
+            "https://api.producthunt.com/v2/api/graphql",
+            json={"query": query},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            timeout=15,
+        )
+        data = response.json()
+        posts = data.get("data", {}).get("posts", {}).get("edges", [])
+        if not posts:
+            return "Não foi possível obter dados do Product Hunt."
+
+        linhas = ["**Product Hunt — Top IA desta semana:**\n"]
+        for edge in posts[:10]:
+            p = edge["node"]
+            nome = p.get("name", "")
+            tagline = p.get("tagline", "")
+            votos = p.get("votesCount", 0)
+            site = p.get("website", "")
+            topicos = [t["node"]["name"] for t in p.get("topics", {}).get("edges", [])]
+            linhas.append(
+                f"• **{nome}** ({votos} votos)\n"
+                f"  {tagline}\n"
+                f"  Tópicos: {', '.join(topicos[:3])}\n"
+                f"  {site}"
+            )
+        return "\n\n".join(linhas)
+    except Exception as e:
+        return f"Erro Product Hunt: {e}"
+
+
 def scout_oportunidades() -> str:
     """Analisa o mercado de IA e identifica oportunidades de negócio com potencial de rendimento passivo."""
     try:
@@ -305,6 +366,11 @@ TOOLS = [
         }
     },
     {
+        "name": "product_hunt_trending",
+        "description": "Busca os produtos de IA mais votados no Product Hunt esta semana. Usa no relatório do Scout para identificar ferramentas e negócios de IA em crescimento antes de explodirem.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "scout_oportunidades",
         "description": "Analisa o mercado de IA e identifica as melhores oportunidades de negócio com potencial de rendimento passivo. Pesquisa SaaS, afiliados, nichos de conteúdo, automação, mercados PT/BR/ES. Usa no relatório semanal do Morgan AI Scout ou quando o Vasco pede análise de oportunidades.",
         "input_schema": {
@@ -359,6 +425,7 @@ TOOL_FUNCTIONS = {
     "ver_memoria": list_memory,
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
     "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
+    "product_hunt_trending": product_hunt_trending,
     "scout_oportunidades": scout_oportunidades,
     "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
 }
