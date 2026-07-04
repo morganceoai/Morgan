@@ -205,6 +205,54 @@ def reddit_trending() -> str:
         return f"Erro Reddit: {e}"
 
 
+def google_trends(termos: list) -> str:
+    """Verifica se um conjunto de termos está a crescer ou a decrescer no Google Trends."""
+    try:
+        from pytrends.request import TrendReq
+        pytrends = TrendReq(hl="pt-PT", tz=0, timeout=(10, 25))
+
+        # Máximo 5 termos por chamada
+        termos = termos[:5]
+        pytrends.build_payload(termos, timeframe="today 3-m", geo="")
+
+        df = pytrends.interest_over_time()
+        if df.empty:
+            return "Não foi possível obter dados do Google Trends para estes termos."
+
+        linhas = ["**Google Trends — últimos 3 meses:**\n"]
+        for termo in termos:
+            if termo not in df.columns:
+                continue
+            serie = df[termo]
+            valor_atual = int(serie.iloc[-1])
+            valor_inicio = int(serie.iloc[0])
+            maximo = int(serie.max())
+            if valor_atual > valor_inicio * 1.2:
+                tendencia = "↑ Em crescimento"
+            elif valor_atual < valor_inicio * 0.8:
+                tendencia = "↓ Em declínio"
+            else:
+                tendencia = "→ Estável"
+            linhas.append(
+                f"• **{termo}**\n"
+                f"  {tendencia} | Agora: {valor_atual}/100 | Pico: {maximo}/100"
+            )
+
+        # Regiões com mais interesse
+        try:
+            by_region = pytrends.interest_by_region(resolution="COUNTRY", inc_low_vol=False)
+            if not by_region.empty:
+                top = by_region[termos[0]].nlargest(5)
+                paises = ", ".join([f"{p} ({v})" for p, v in top.items()])
+                linhas.append(f"\nPaíses com mais interesse em **{termos[0]}**: {paises}")
+        except Exception:
+            pass
+
+        return "\n\n".join(linhas)
+    except Exception as e:
+        return f"Erro Google Trends: {e}"
+
+
 def product_hunt_trending() -> str:
     """Busca os produtos de IA mais votados no Product Hunt esta semana."""
     try:
@@ -353,6 +401,40 @@ def monitorizar_nome(nome: str = "Vasco Botelho da Costa") -> str:
         return f"Erro na monitorização do nome: {e}"
 
 
+def indiehackers_trending() -> str:
+    """Pesquisa no IndieHackers negócios reais com receita declarada pelos fundadores."""
+    try:
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        queries = [
+            "site:indiehackers.com \"making\" OR \"revenue\" OR \"MRR\" 2025 OR 2026 AI SaaS",
+            "site:indiehackers.com passive income AI tools revenue 2026",
+            "site:indiehackers.com solo founder $10k MRR 2025 2026",
+        ]
+        resultados = []
+        vistos = set()
+        for q in queries:
+            try:
+                r = client.search(query=q, search_depth="basic", max_results=5)
+                for item in r.get("results", []):
+                    url = item.get("url", "")
+                    if url in vistos:
+                        continue
+                    vistos.add(url)
+                    titulo = item.get("title", "")
+                    conteudo = item.get("content", "")[:300]
+                    resultados.append(f"• **{titulo}**\n  {conteudo}\n  {url}")
+            except Exception:
+                continue
+
+        if not resultados:
+            return "Não foi possível obter dados do IndieHackers."
+
+        header = "**IndieHackers — negócios reais com receita declarada:**\n"
+        return header + "\n\n".join(resultados[:10])
+    except Exception as e:
+        return f"Erro IndieHackers: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -444,6 +526,21 @@ TOOLS = [
         }
     },
     {
+        "name": "google_trends",
+        "description": "Verifica se termos ou nichos de negócio estão a crescer ou a decrescer no Google Trends nos últimos 3 meses. Usa para validar oportunidades antes de recomendar — se o interesse está a crescer é um bom sinal, se está a cair é um alerta. Máximo 5 termos por chamada.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "termos": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lista de termos a analisar, ex: ['AI automation', 'passive income AI', 'micro SaaS']. Máximo 5."
+                }
+            },
+            "required": ["termos"]
+        }
+    },
+    {
         "name": "hacker_news_trending",
         "description": "Busca os posts mais relevantes de IA, startups e negócios no Hacker News. Gratuito, sem API key. Usa no relatório do Scout para captar tendências da comunidade tech.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -487,6 +584,11 @@ TOOLS = [
         }
     },
     {
+        "name": "indiehackers_trending",
+        "description": "Pesquisa no IndieHackers negócios reais com receita declarada pelos fundadores. Fonte de dados honestos sobre quanto dinheiro cada nicho/produto gera na prática. Usa no relatório do Scout para validar se uma oportunidade tem provas reais de receita.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "pedir_confirmacao",
         "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
         "input_schema": {
@@ -513,9 +615,11 @@ TOOL_FUNCTIONS = {
     "ver_memoria": list_memory,
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
     "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
+    "google_trends": google_trends,
     "hacker_news_trending": hacker_news_trending,
     "reddit_trending": reddit_trending,
     "product_hunt_trending": product_hunt_trending,
     "scout_oportunidades": scout_oportunidades,
     "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
+    "indiehackers_trending": indiehackers_trending,
 }
