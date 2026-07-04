@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MORGAN</title>
+<style>
+  :root {
+    --blue: #00d4ff;
+    --blue-dim: #0077aa;
+    --blue-glow: #00d4ff40;
+    --bg: #020b18;
+    --bg2: #040f20;
+    --panel: #03111f;
+    --border: #00d4ff22;
+    --green: #00ff88;
+    --yellow: #ffd700;
+    --red: #ff4444;
+    --text: #a0d8ef;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--blue);
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    cursor: default;
+  }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    grid-template-rows: 54px 1fr 1fr 54px;
+    height: 100vh;
+    gap: 1px;
+    background: var(--border);
+    padding: 1px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    grid-column: 1 / -1;
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--blue);
+    opacity: 0.7;
+  }
+  .header-status {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-time {
+    font-size: 20px;
+    letter-spacing: 3px;
+    color: var(--blue);
+    text-shadow: 0 0 10px var(--blue);
+  }
+  .header-date {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  /* ─── PANELS ─── */
+  .panel {
+    background: var(--panel);
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    opacity: 0.4;
+  }
+  .panel-title {
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--blue-dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .panel-value {
+    font-size: 26px;
+    color: var(--blue);
+    text-shadow: 0 0 15px var(--blue-glow);
+    line-height: 1;
+  }
+  .panel-sub {
+    font-size: 9px;
+    color: var(--text);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .panel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--text);
+  }
+  .panel-highlight { color: var(--blue); }
+  .tag {
+    font-size: 8px;
+    padding: 2px 6px;
+    border: 1px solid var(--blue-dim);
+    color: var(--blue-dim);
+    letter-spacing: 1px;
+  }
+  .tag.green { border-color: var(--green); color: var(--green); }
+  .tag.yellow { border-color: var(--yellow); color: var(--yellow); }
+
+  /* ─── LEFT PANELS ─── */
+  .left-top { grid-column: 1; grid-row: 2; }
+  .left-bottom { grid-column: 1; grid-row: 3; }
+
+  /* ─── RIGHT PANELS ─── */
+  .right-top { grid-column: 3; grid-row: 2; }
+  .right-bottom { grid-column: 3; grid-row: 3; }
+
+  /* ─── CENTER ─── */
+  .center {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    gap: 20px;
+  }
+
+  /* ─── AVATAR ─── */
+  .avatar-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--blue);
+    opacity: 0.3;
+  }
+  .ring-1 { width: 220px; height: 220px; animation: spin 20s linear infinite; border-style: dashed; }
+  .ring-2 { width: 190px; height: 190px; animation: spin-r 15s linear infinite; opacity: 0.2; }
+  .ring-3 { width: 160px; height: 160px; animation: spin 10s linear infinite; border-color: var(--blue-dim); }
+
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes spin-r { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+
+  .ring-tick {
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--blue);
+    border-right-color: var(--blue);
+    opacity: 0.6;
+    animation: spin 3s linear infinite;
+  }
+
+  .avatar-core {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #1a5f7a, #020b18);
+    border: 2px solid var(--blue);
+    box-shadow:
+      0 0 20px var(--blue-glow),
+      0 0 40px var(--blue-glow),
+      inset 0 0 20px var(--blue-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: box-shadow 0.3s;
+  }
+
+  /* Triângulo interno — arco reator */
+  .avatar-core svg {
+    width: 60px;
+    height: 60px;
+    filter: drop-shadow(0 0 8px var(--blue));
+  }
+
+  /* Estados do Morgan */
+  body.listening .avatar-core {
+    box-shadow: 0 0 30px #00ff8880, 0 0 60px #00ff8840, inset 0 0 20px #00ff8820;
+    border-color: var(--green);
+  }
+  body.listening .avatar-core svg { filter: drop-shadow(0 0 8px var(--green)); }
+  body.listening .ring-tick { border-top-color: var(--green); border-right-color: var(--green); }
+
+  body.thinking .avatar-core {
+    box-shadow: 0 0 30px #ffd70080, 0 0 60px #ffd70040, inset 0 0 20px #ffd70020;
+    border-color: var(--yellow);
+  }
+  body.thinking .avatar-core svg { filter: drop-shadow(0 0 8px var(--yellow)); }
+  body.thinking .ring-tick { border-top-color: var(--yellow); border-right-color: var(--yellow); animation-duration: 0.8s; }
+
+  body.speaking .avatar-core {
+    animation: pulse-speak 0.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-speak {
+    from { box-shadow: 0 0 20px var(--blue-glow), 0 0 40px var(--blue-glow), inset 0 0 20px var(--blue-glow); }
+    to   { box-shadow: 0 0 40px #00d4ffaa, 0 0 80px #00d4ff60, inset 0 0 30px #00d4ff40; }
+  }
+
+  /* ─── STATE LABEL ─── */
+  .state-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--blue-dim);
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  body.listening .state-label { color: var(--green); }
+  body.thinking .state-label { color: var(--yellow); }
+  body.speaking .state-label { color: var(--blue); }
+
+  /* ─── TRANSCRIPT ─── */
+  .transcript-area {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    min-height: 40px;
+    font-size: 12px;
+    color: var(--text);
+    letter-spacing: 0.5px;
+    line-height: 1.6;
+    padding: 0 20px;
+    transition: opacity 0.3s;
+  }
+  .transcript-area .user-line {
+    color: var(--blue-dim);
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .transcript-area .morgan-line {
+    color: var(--text);
+  }
+
+  /* ─── MIC BUTTON ─── */
+  .mic-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--blue-dim);
+    background: transparent;
+    color: var(--blue);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 18px;
+  }
+  .mic-btn:hover { border-color: var(--blue); box-shadow: 0 0 10px var(--blue-glow); }
+  .mic-btn.recording { border-color: var(--green); color: var(--green); box-shadow: 0 0 15px #00ff8860; animation: pulse-mic 1s infinite; }
+  @keyframes pulse-mic { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+  /* ─── TEXT INPUT ─── */
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 0 20px;
+  }
+  .text-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--blue);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 6px 0;
+    outline: none;
+    letter-spacing: 1px;
+  }
+  .text-input::placeholder { color: var(--blue-dim); opacity: 0.5; }
+  .text-input:focus { border-bottom-color: var(--blue); }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    grid-column: 1 / -1;
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-info { font-size: 9px; letter-spacing: 2px; color: var(--blue-dim); }
+  .mini-btn {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--blue-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .mini-btn:hover { color: var(--blue); border-color: var(--blue); }
+
+  /* ─── SCAN LINE EFFECT ─── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 212, 255, 0.01) 2px,
+      rgba(0, 212, 255, 0.01) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ─── MINI MODE ─── */
+  body.mini-mode .layout {
+    display: none;
+  }
+  .mini-avatar {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 80px;
+    height: 80px;
+    z-index: 9999;
+    cursor: pointer;
+  }
+  body.mini-mode .mini-avatar { display: flex; align-items: center; justify-content: center; }
+  .mini-core {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #1a5f7a, #020b18);
+    border: 1px solid var(--blue);
+    box-shadow: 0 0 15px var(--blue-glow), 0 0 30px var(--blue-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse-idle 3s ease-in-out infinite;
+  }
+  @keyframes pulse-idle {
+    0%,100%{box-shadow: 0 0 15px var(--blue-glow), 0 0 30px var(--blue-glow);}
+    50%{box-shadow: 0 0 25px #00d4ff60, 0 0 50px #00d4ff40;}
+  }
+  .mini-core svg { width: 30px; height: 30px; filter: drop-shadow(0 0 5px var(--blue)); }
+
+  /* ─── GRID LINES decoration ─── */
+  .scan-h {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--blue) 50%, transparent 100%);
+    opacity: 0;
+    animation: scan-h 4s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scan-h {
+    0%{top:0;opacity:0} 5%{opacity:0.3} 95%{opacity:0.3} 100%{top:100%;opacity:0}
+  }
+
+  .bar {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--blue));
+    margin-top: 4px;
+    opacity: 0.4;
+  }
+
+  /* Scout alert pulse */
+  .scout-alert {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink 1.5s infinite;
+    margin-right: 4px;
+  }
+
+  /* Result colors */
+  .win { color: var(--green); }
+  .loss { color: var(--red); }
+  .draw { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<!-- MINI MODE -->
+<div class="mini-avatar" onclick="toggleMini()" title="Clica para expandir">
+  <div class="mini-core">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="30,8 54,48 6,48" stroke="#00d4ff" stroke-width="2" fill="#00d4ff15"/>
+      <circle cx="30" cy="30" r="10" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff20"/>
+      <circle cx="30" cy="30" r="4" fill="#00d4ff" opacity="0.8"/>
+    </svg>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <span class="header-logo">MORGAN OS</span>
+      <span class="header-status" id="statusLabel">● ATIVO</span>
+    </div>
+    <div style="text-align:center">
+      <div class="header-time" id="clock">--:--:--</div>
+      <div class="header-date" id="dateLabel">--</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:9px;letter-spacing:2px;color:var(--blue-dim)">VASCO BOTELHO DA COSTA</div>
+      <div style="font-size:8px;color:var(--text);margin-top:2px">MOREIRENSE FC</div>
+    </div>
+  </div>
+
+  <!-- LEFT TOP: WEATHER -->
+  <div class="panel left-top">
+    <div class="panel-title">CLIMA</div>
+    <div class="panel-value" id="weatherTemp">--°</div>
+    <div class="panel-sub" id="weatherDesc">Moreira de Cónegos</div>
+    <div class="bar" id="weatherBar" style="width:60%"></div>
+  </div>
+
+  <!-- LEFT BOTTOM: SCOUT -->
+  <div class="panel left-bottom">
+    <div class="panel-title">MORGAN SCOUT</div>
+    <div style="font-size:11px;color:var(--text);margin-top:4px">
+      <div class="panel-row">
+        <span>Oportunidades</span>
+        <span class="panel-highlight" id="scoutTotal">--</span>
+      </div>
+      <div class="panel-row">
+        <span>Aprovadas</span>
+        <span class="panel-highlight" id="scoutAprovadas">--</span>
+      </div>
+      <div style="margin-top:8px;font-size:8px;color:var(--blue-dim)" id="scoutRec"></div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="scan-h"></div>
+
+    <!-- Avatar -->
+    <div class="avatar-wrap">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="ring-tick"></div>
+      <div class="avatar-core">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="30,6 56,50 4,50" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff10"/>
+          <line x1="30" y1="6" x2="30" y2="50" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+          <line x1="4" y1="50" x2="56" y2="50" stroke="#00d4ff" stroke-width="0.5" opacity="0.4"/>
+          <circle cx="30" cy="32" r="12" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff15"/>
+          <circle cx="30" cy="32" r="5" fill="#00d4ff" opacity="0.9"/>
+          <circle cx="30" cy="32" r="8" stroke="#00d4ff" stroke-width="0.5" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Estado -->
+    <div class="state-label" id="stateLabel">AGUARDAR</div>
+
+    <!-- Transcript -->
+    <div class="transcript-area" id="transcript"></div>
+
+    <!-- Input row -->
+    <div class="input-row">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Gravar voz">🎙</button>
+      <input
+        class="text-input"
+        id="textInput"
+        type="text"
+        placeholder="escreve ou usa o microfone..."
+        onkeydown="handleKey(event)"
+      />
+    </div>
+  </div>
+
+  <!-- RIGHT TOP: PRÓXIMO JOGO -->
+  <div class="panel right-top">
+    <div class="panel-title">PRÓXIMO JOGO</div>
+    <div style="font-size:12px;color:var(--blue);margin-top:4px;line-height:1.6" id="nextGame">
+      <div>--</div>
+    </div>
+    <div class="panel-sub" id="nextGameDate">--</div>
+    <div class="panel-sub" id="nextGameComp" style="margin-top:2px;font-size:8px"></div>
+  </div>
+
+  <!-- RIGHT BOTTOM: ÚLTIMO RESULTADO -->
+  <div class="panel right-bottom">
+    <div class="panel-title">ÚLTIMO RESULTADO</div>
+    <div style="margin-top:4px">
+      <div style="font-size:10px;color:var(--text)" id="lastOpponent">--</div>
+      <div style="font-size:22px;margin-top:4px" id="lastScore">--</div>
+      <div class="bar" style="width:50%;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-info">MORGAN v1.0 ● DESKTOP INTERFACE ● RAILWAY CONNECTED</div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="footer-info" id="footerStatus">PRONTO</div>
+      <div class="mini-btn" onclick="toggleMini()">[ MINI MODE ]</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── ESTADO ───────────────────────────────────────────
+let morganState = 'idle';     // idle | listening | thinking | speaking
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let currentAudio = null;
+
+function setState(s) {
+  morganState = s;
+  document.body.className = s === 'idle' ? '' : s;
+  const labels = {
+    idle: 'AGUARDAR',
+    listening: 'A OUVIR',
+    thinking: 'A PENSAR',
+    speaking: 'A FALAR',
+  };
+  document.getElementById('stateLabel').textContent = labels[s] || 'AGUARDAR';
+}
+
+// ─── CLOCK ────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toTimeString().slice(0, 8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── WIDGETS ──────────────────────────────────────────
+async function loadWidgets() {
+  try {
+    const r = await fetch('/api/widgets');
+    const d = await r.json();
+
+    document.getElementById('dateLabel').textContent = d.date || '--';
+    document.getElementById('weatherTemp').textContent = d.weather?.temp || '--°';
+    document.getElementById('weatherDesc').textContent = d.weather?.desc || 'Moreira de Cónegos';
+
+    document.getElementById('scoutTotal').textContent = d.scout?.total ?? '--';
+    document.getElementById('scoutAprovadas').textContent = d.scout?.aprovadas ?? '--';
+    const rec = d.scout?.recorrentes || [];
+    if (rec.length) {
+      document.getElementById('scoutRec').innerHTML =
+        '<span class="scout-alert"></span>' + rec[0];
+    }
+
+    const pj = d.proximo_jogo;
+    if (pj && pj.adversario !== '--') {
+      document.getElementById('nextGame').innerHTML =
+        `<div>vs <span style="color:var(--blue)">${pj.adversario}</span></div>`;
+      document.getElementById('nextGameDate').textContent = pj.data;
+      document.getElementById('nextGameComp').textContent = pj.competicao || '';
+    }
+
+    const ur = d.ultimo_resultado;
+    if (ur && ur.adversario !== '--') {
+      document.getElementById('lastOpponent').textContent = 'vs ' + ur.adversario;
+      const cls = ur.ganhou === true ? 'win' : ur.ganhou === false ? 'loss' : 'draw';
+      document.getElementById('lastScore').innerHTML =
+        `<span class="${cls}">${ur.resultado}</span>`;
+    }
+  } catch(e) {
+    console.error('Widgets error:', e);
+  }
+}
+loadWidgets();
+setInterval(loadWidgets, 30000);
+
+// ─── TRANSCRIPT ───────────────────────────────────────
+function showTranscript(userText, morganText) {
+  const el = document.getElementById('transcript');
+  el.innerHTML = '';
+  if (userText) {
+    const u = document.createElement('div');
+    u.className = 'user-line';
+    u.textContent = '> ' + userText;
+    el.appendChild(u);
+  }
+  if (morganText) {
+    const m = document.createElement('div');
+    m.className = 'morgan-line';
+    m.textContent = morganText;
+    el.appendChild(m);
+  }
+}
+
+// ─── SEND MESSAGE ─────────────────────────────────────
+async function sendMessage(text) {
+  if (!text.trim() || morganState === 'thinking') return;
+
+  showTranscript(text, '');
+  setState('thinking');
+  document.getElementById('footerStatus').textContent = 'A PROCESSAR...';
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    const d = await r.json();
+    const reply = d.response || '';
+    showTranscript(text, reply);
+    await speakText(reply);
+  } catch(e) {
+    setState('idle');
+    document.getElementById('footerStatus').textContent = 'ERRO DE LIGAÇÃO';
+  }
+}
+
+async function speakText(text) {
+  if (!text) { setState('idle'); return; }
+  setState('speaking');
+  try {
+    const r = await fetch('/api/speak', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text})
+    });
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => {
+      setState('idle');
+      document.getElementById('footerStatus').textContent = 'PRONTO';
+    };
+    currentAudio.play();
+  } catch(e) {
+    setState('idle');
+    document.getElementById('footerStatus').textContent = 'ERRO ÁUDIO';
+  }
+}
+
+// ─── TEXT INPUT ───────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter') {
+    const input = document.getElementById('textInput');
+    const text = input.value.trim();
+    input.value = '';
+    if (text) sendMessage(text);
+  }
+}
+
+// ─── MIC / VOZ ────────────────────────────────────────
+async function toggleMic() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = processAudio;
+    mediaRecorder.start();
+    isRecording = true;
+    setState('listening');
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('footerStatus').textContent = 'A OUVIR...';
+  } catch(e) {
+    document.getElementById('footerStatus').textContent = 'ERRO MICROFONE';
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    setState('thinking');
+    document.getElementById('footerStatus').textContent = 'A TRANSCREVER...';
+  }
+}
+
+async function processAudio() {
+  const blob = new Blob(audioChunks, {type: 'audio/webm'});
+  const form = new FormData();
+  form.append('audio', blob, 'audio.webm');
+
+  try {
+    const r = await fetch('/api/transcribe', {method: 'POST', body: form});
+    const d = await r.json();
+    const transcript = d.transcript?.trim();
+    if (transcript) {
+      await sendMessage(transcript);
+    } else {
+      setState('idle');
+      document.getElementById('footerStatus').textContent = 'NÃO PERCEBI';
+    }
+  } catch(e) {
+    setState('idle');
+    document.getElementById('footerStatus').textContent = 'ERRO TRANSCRIÇÃO';
+  }
+}
+
+// ─── MINI MODE ────────────────────────────────────────
+function toggleMini() {
+  document.body.classList.toggle('mini-mode');
+}
+
+// Atalho de teclado: Escape = mini/full, Space = mic (quando não está no input)
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') toggleMini();
+  if (e.key === ' ' && document.activeElement !== document.getElementById('textInput')) {
+    e.preventDefault();
+    toggleMic();
+  }
+});
+</script>
+</body>
+</html>
