@@ -551,23 +551,20 @@
 
 <script>
 // ─── ESTADO ───────────────────────────────────────────
-let morganState = 'listening'; // listening | recording | thinking | speaking
-let currentAudio = null;
+let morganState = 'listening';
+let isMorganActive = false;     // true quando pensa ou fala (bloqueia VAD)
+let isSpeechDetected = false;   // já detetou início de fala
 
-// VAD
+// Áudio
 let audioContext, analyser, micStream, micSource;
-let mediaRecorder = null;
-let audioChunks = [];
-let isSpeechActive = false;
-let silenceTimer = null;
-const SPEECH_THRESHOLD = 0.012;   // sensibilidade (0.01 = muito sensível)
-const SILENCE_DELAY    = 1200;    // ms de silêncio antes de enviar
-const MIN_SPEECH_MS    = 400;     // fala mínima para não ignorar
-let speechStartTime    = 0;
+let scriptProcessor = null;
+let transcribeWS = null;
+
+// VAD — só para detetar INÍCIO de fala (Deepgram deteta o fim)
+const SPEECH_THRESHOLD = 0.010;
 
 function setState(s) {
   morganState = s;
-  // Manter mini-mode se ativo
   const isMini = document.body.classList.contains('mini-mode');
   document.body.className = (isMini ? 'mini-mode ' : '') + s;
   const labels = {
@@ -647,16 +644,11 @@ function showTranscript(userText, morganText) {
   }
 }
 
-// ─── VAD — ESCUTA CONTÍNUA ────────────────────────────
+// ─── ARRANQUE ────────────────────────────────────────
 async function initVAD() {
   try {
-    // echoCancellation evita que o mic capte o áudio dos altifalantes
     micStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: false,
     });
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -668,123 +660,84 @@ async function initVAD() {
     vadLoop();
   } catch(e) {
     document.getElementById('stateLabel').textContent = 'SEM MICROFONE';
-    document.getElementById('footerStatus').textContent = 'ERRO: ' + e.message;
   }
 }
 
-function resetVAD() {
-  clearTimeout(silenceTimer);
-  silenceTimer = null;
-  isSpeechActive = false;
-  audioChunks = [];
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.ondataavailable = null;
-    mediaRecorder.onstop = null;
-    try { mediaRecorder.stop(); } catch(e) {}
-  }
-}
-
+// ─── VAD — deteta início de fala, Deepgram deteta fim ─
 function vadLoop() {
   const buf = new Float32Array(analyser.fftSize);
-
   function tick() {
-    // Pausa total quando Morgan fala ou pensa
-    if (morganState === 'thinking' || morganState === 'speaking') {
-      setTimeout(tick, 100);
-      return;
-    }
-
+    if (isMorganActive || transcribeWS) { setTimeout(tick, 80); return; }
     analyser.getFloatTimeDomainData(buf);
     let rms = 0;
     for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
     rms = Math.sqrt(rms / buf.length);
-
-    if (rms > SPEECH_THRESHOLD) {
-      if (!isSpeechActive) {
-        isSpeechActive = true;
-        speechStartTime = Date.now();
-        startCapture();
-      }
-      clearTimeout(silenceTimer);
-      silenceTimer = null;
-    } else if (isSpeechActive && !silenceTimer) {
-      silenceTimer = setTimeout(() => {
-        silenceTimer = null;
-        const duration = Date.now() - speechStartTime;
-        isSpeechActive = false;
-        if (duration >= MIN_SPEECH_MS) {
-          stopCapture();
-        } else {
-          cancelCapture();
-        }
-      }, SILENCE_DELAY);
+    if (rms > SPEECH_THRESHOLD && !isSpeechDetected) {
+      isSpeechDetected = true;
+      openTranscriptionStream();
+    } else if (rms <= SPEECH_THRESHOLD * 0.5) {
+      isSpeechDetected = false;
     }
-
     requestAnimationFrame(tick);
   }
-
   requestAnimationFrame(tick);
 }
 
-function startCapture() {
-  audioChunks = [];
-  try {
-    mediaRecorder = new MediaRecorder(micStream, {mimeType: 'audio/webm'});
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-    mediaRecorder.onstop = processAudio;
-    mediaRecorder.start(100);
+// ─── DEEPGRAM LIVE TRANSCRIPTION ─────────────────────
+function openTranscriptionStream() {
+  const sr = audioContext.sampleRate;
+  transcribeWS = new WebSocket(`ws://127.0.0.1:8765/ws/transcribe?sr=${Math.round(sr)}`);
+
+  transcribeWS.onopen = () => {
     setState('recording');
-  } catch(e) {
-    isSpeechActive = false;
-    setState('listening');
-  }
-}
+    startPCMStream();
+  };
 
-function stopCapture() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-    setState('thinking');
-  } else {
-    setState('listening');
-  }
-}
-
-function cancelCapture() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.ondataavailable = null;
-    mediaRecorder.onstop = null;
-    try { mediaRecorder.stop(); } catch(e) {}
-  }
-  audioChunks = [];
-  setState('listening');
-}
-
-async function processAudio() {
-  const blob = new Blob(audioChunks, {type: 'audio/webm'});
-  if (blob.size < 1000) { setState('listening'); return; }
-
-  const form = new FormData();
-  form.append('audio', blob, 'audio.webm');
-
-  try {
-    const r = await fetch('/api/transcribe', {method: 'POST', body: form});
-    const d = await r.json();
-    const transcript = (d.transcript || '').trim();
-    if (transcript) {
-      await sendMessage(transcript);
-    } else {
-      setState('listening');
+  transcribeWS.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if ((data.type === 'interim' || data.type === 'final') && data.text) {
+      showTranscript(data.text, '');
+    } else if (data.type === 'speech_final' && data.text.trim()) {
+      const text = data.text.trim();
+      closeTranscriptionStream();
+      handleUserSpeech(text);
     }
-  } catch(e) {
-    setState('listening');
-  }
+  };
+
+  transcribeWS.onclose = () => { transcribeWS = null; stopPCMStream(); };
+  transcribeWS.onerror = () => { transcribeWS = null; stopPCMStream(); setState('listening'); isSpeechDetected = false; };
 }
 
-// ─── SEND + SPEAK ─────────────────────────────────────
-async function sendMessage(text) {
-  if (!text) return;
-  showTranscript(text, '');
+function startPCMStream() {
+  scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+  micSource.connect(scriptProcessor);
+  scriptProcessor.connect(audioContext.destination);
+  scriptProcessor.onaudioprocess = (e) => {
+    if (!transcribeWS || transcribeWS.readyState !== WebSocket.OPEN) return;
+    const pcm = e.inputBuffer.getChannelData(0);
+    const int16 = new Int16Array(pcm.length);
+    for (let i = 0; i < pcm.length; i++) {
+      int16[i] = Math.max(-32768, Math.min(32767, Math.round(pcm[i] * 32767)));
+    }
+    transcribeWS.send(int16.buffer);
+  };
+}
+
+function stopPCMStream() {
+  if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+}
+
+function closeTranscriptionStream() {
+  stopPCMStream();
+  if (transcribeWS) { try { transcribeWS.close(); } catch(e) {} transcribeWS = null; }
+}
+
+// ─── RESPOSTA DO MORGAN ───────────────────────────────
+async function handleUserSpeech(text) {
+  isMorganActive = true;
+  isSpeechDetected = false;
   setState('thinking');
+  showTranscript(text, '');
 
   try {
     const r = await fetch('/api/chat', {
@@ -795,49 +748,34 @@ async function sendMessage(text) {
     const d = await r.json();
     const reply = d.response || '';
     showTranscript(text, reply);
-    await speakText(reply);
-  } catch(e) {
-    setState('listening');
-  }
-}
-
-async function speakText(text) {
-  if (!text) { resetVAD(); setState('listening'); return; }
-  setState('speaking');
-  try {
-    // Python toca o áudio com afplay (macOS) — fetch só retorna quando termina
+    setState('speaking');
     await fetch('/api/speak', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text})
+      body: JSON.stringify({text: reply})
     });
   } catch(e) { /* ignorar */ }
-  resetVAD();
+
+  isMorganActive = false;
+  isSpeechDetected = false;
   setState('listening');
 }
 
-// ─── TEXT INPUT ───────────────────────────────────────
+// ─── TEXTO ────────────────────────────────────────────
 function handleKey(e) {
   if (e.key === 'Enter') {
     const input = document.getElementById('textInput');
     const text = input.value.trim();
     input.value = '';
-    if (text) sendMessage(text);
+    if (text && !isMorganActive) handleUserSpeech(text);
   }
 }
 
 // ─── MINI MODE ────────────────────────────────────────
-function toggleMini() {
-  document.body.classList.toggle('mini-mode');
-}
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') toggleMini();
-});
+function toggleMini() { document.body.classList.toggle('mini-mode'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMini(); });
 
-// ─── ARRANQUE — pedir microfone e iniciar VAD ─────────
-window.addEventListener('load', () => {
-  initVAD();
-});
+window.addEventListener('load', () => { initVAD(); });
 </script>
 </body>
 </html>

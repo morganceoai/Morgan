@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
@@ -275,3 +275,71 @@ async def speak(request: Request):
         return JSONResponse({"ok": True, "engine": "say"})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.websocket("/ws/transcribe")
+async def ws_transcribe(websocket: WebSocket):
+    """Transcrição live via Deepgram WebSocket — PCM linear16 em streaming."""
+    await websocket.accept()
+    try:
+        from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
+
+        sample_rate = int(websocket.query_params.get("sr", "44100"))
+        dg = DeepgramClient(DEEPGRAM_KEY)
+        connection = dg.listen.asyncwebsocket.v("1")
+
+        async def on_transcript(self, result, **kwargs):
+            try:
+                alt = result.channel.alternatives[0]
+                text = alt.transcript.strip()
+                if not text:
+                    return
+                speech_final = getattr(result, "speech_final", False)
+                is_final = result.is_final
+                msg_type = "speech_final" if speech_final else ("final" if is_final else "interim")
+                await websocket.send_text(json.dumps({"type": msg_type, "text": text}))
+            except Exception:
+                pass
+
+        async def on_error(self, error, **kwargs):
+            try:
+                await websocket.send_text(json.dumps({"type": "error", "text": str(error)}))
+            except Exception:
+                pass
+
+        connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
+        connection.on(LiveTranscriptionEvents.Error, on_error)
+
+        options = LiveOptions(
+            model="nova-2-general",
+            language="pt",
+            smart_format=True,
+            interim_results=True,
+            endpointing=600,
+            vad_events=True,
+            encoding="linear16",
+            sample_rate=sample_rate,
+            channels=1,
+        )
+
+        await connection.start(options)
+
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                await connection.send(data)
+        except WebSocketDisconnect:
+            pass
+        except Exception:
+            pass
+        finally:
+            try:
+                await connection.finish()
+            except Exception:
+                pass
+
+    except Exception as e:
+        try:
+            await websocket.send_text(json.dumps({"type": "error", "text": str(e)}))
+        except Exception:
+            pass
