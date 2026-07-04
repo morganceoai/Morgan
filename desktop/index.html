@@ -501,19 +501,18 @@
     </div>
 
     <!-- Estado -->
-    <div class="state-label" id="stateLabel">AGUARDAR</div>
+    <div class="state-label" id="stateLabel">A OUVIR</div>
 
     <!-- Transcript -->
     <div class="transcript-area" id="transcript"></div>
 
-    <!-- Input row -->
+    <!-- Input row (só texto, sem botão mic) -->
     <div class="input-row">
-      <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Gravar voz">🎙</button>
       <input
         class="text-input"
         id="textInput"
         type="text"
-        placeholder="escreve ou usa o microfone..."
+        placeholder="ou escreve aqui..."
         onkeydown="handleKey(event)"
       />
     </div>
@@ -552,22 +551,33 @@
 
 <script>
 // ─── ESTADO ───────────────────────────────────────────
-let morganState = 'idle';     // idle | listening | thinking | speaking
+let morganState = 'listening'; // listening | recording | thinking | speaking
+let currentAudio = null;
+
+// VAD
+let audioContext, analyser, micStream, micSource;
 let mediaRecorder = null;
 let audioChunks = [];
-let isRecording = false;
-let currentAudio = null;
+let isSpeechActive = false;
+let silenceTimer = null;
+const SPEECH_THRESHOLD = 0.012;   // sensibilidade (0.01 = muito sensível)
+const SILENCE_DELAY    = 1200;    // ms de silêncio antes de enviar
+const MIN_SPEECH_MS    = 400;     // fala mínima para não ignorar
+let speechStartTime    = 0;
 
 function setState(s) {
   morganState = s;
-  document.body.className = s === 'idle' ? '' : s;
+  // Manter mini-mode se ativo
+  const isMini = document.body.classList.contains('mini-mode');
+  document.body.className = (isMini ? 'mini-mode ' : '') + s;
   const labels = {
-    idle: 'AGUARDAR',
     listening: 'A OUVIR',
-    thinking: 'A PENSAR',
-    speaking: 'A FALAR',
+    recording: 'A OUVIR',
+    thinking:  'A PENSAR',
+    speaking:  'A FALAR',
   };
-  document.getElementById('stateLabel').textContent = labels[s] || 'AGUARDAR';
+  document.getElementById('stateLabel').textContent = labels[s] || 'A OUVIR';
+  document.getElementById('footerStatus').textContent = labels[s] || 'A OUVIR';
 }
 
 // ─── CLOCK ────────────────────────────────────────────
@@ -637,13 +647,123 @@ function showTranscript(userText, morganText) {
   }
 }
 
-// ─── SEND MESSAGE ─────────────────────────────────────
-async function sendMessage(text) {
-  if (!text.trim() || morganState === 'thinking') return;
+// ─── VAD — ESCUTA CONTÍNUA ────────────────────────────
+async function initVAD() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 512;
+    micSource = audioContext.createMediaStreamSource(micStream);
+    micSource.connect(analyser);
+    setState('listening');
+    vadLoop();
+  } catch(e) {
+    document.getElementById('stateLabel').textContent = 'SEM MICROFONE';
+    document.getElementById('footerStatus').textContent = 'ERRO: ' + e.message;
+  }
+}
 
+function vadLoop() {
+  const buf = new Float32Array(analyser.fftSize);
+
+  function tick() {
+    // Não ouvir enquanto Morgan fala ou pensa
+    if (morganState === 'thinking' || morganState === 'speaking') {
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    analyser.getFloatTimeDomainData(buf);
+    let rms = 0;
+    for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / buf.length);
+
+    if (rms > SPEECH_THRESHOLD) {
+      // VOZ DETETADA
+      if (!isSpeechActive) {
+        isSpeechActive = true;
+        speechStartTime = Date.now();
+        startCapture();
+      }
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+    } else if (isSpeechActive && !silenceTimer) {
+      // SILÊNCIO — iniciar contagem
+      silenceTimer = setTimeout(() => {
+        isSpeechActive = false;
+        silenceTimer = null;
+        const duration = Date.now() - speechStartTime;
+        if (duration >= MIN_SPEECH_MS) {
+          stopCapture(); // envia para processar
+        } else {
+          cancelCapture(); // muito curto, ignorar
+        }
+      }, SILENCE_DELAY);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function startCapture() {
+  audioChunks = [];
+  try {
+    mediaRecorder = new MediaRecorder(micStream, {mimeType: 'audio/webm'});
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = processAudio;
+    mediaRecorder.start(100);
+    setState('recording');
+  } catch(e) {
+    isSpeechActive = false;
+  }
+}
+
+function stopCapture() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+    setState('thinking');
+  }
+}
+
+function cancelCapture() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+    mediaRecorder.stop();
+  }
+  audioChunks = [];
+  setState('listening');
+}
+
+async function processAudio() {
+  const blob = new Blob(audioChunks, {type: 'audio/webm'});
+  if (blob.size < 1000) { setState('listening'); return; }
+
+  const form = new FormData();
+  form.append('audio', blob, 'audio.webm');
+
+  try {
+    const r = await fetch('/api/transcribe', {method: 'POST', body: form});
+    const d = await r.json();
+    const transcript = (d.transcript || '').trim();
+    if (transcript) {
+      await sendMessage(transcript);
+    } else {
+      setState('listening');
+    }
+  } catch(e) {
+    setState('listening');
+  }
+}
+
+// ─── SEND + SPEAK ─────────────────────────────────────
+async function sendMessage(text) {
+  if (!text) return;
   showTranscript(text, '');
   setState('thinking');
-  document.getElementById('footerStatus').textContent = 'A PROCESSAR...';
 
   try {
     const r = await fetch('/api/chat', {
@@ -656,13 +776,12 @@ async function sendMessage(text) {
     showTranscript(text, reply);
     await speakText(reply);
   } catch(e) {
-    setState('idle');
-    document.getElementById('footerStatus').textContent = 'ERRO DE LIGAÇÃO';
+    setState('listening');
   }
 }
 
 async function speakText(text) {
-  if (!text) { setState('idle'); return; }
+  if (!text) { setState('listening'); return; }
   setState('speaking');
   try {
     const r = await fetch('/api/speak', {
@@ -674,14 +793,10 @@ async function speakText(text) {
     const url = URL.createObjectURL(blob);
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     currentAudio = new Audio(url);
-    currentAudio.onended = () => {
-      setState('idle');
-      document.getElementById('footerStatus').textContent = 'PRONTO';
-    };
+    currentAudio.onended = () => setState('listening'); // volta a ouvir automaticamente
     currentAudio.play();
   } catch(e) {
-    setState('idle');
-    document.getElementById('footerStatus').textContent = 'ERRO ÁUDIO';
+    setState('listening');
   }
 }
 
@@ -695,76 +810,17 @@ function handleKey(e) {
   }
 }
 
-// ─── MIC / VOZ ────────────────────────────────────────
-async function toggleMic() {
-  if (isRecording) {
-    stopRecording();
-  } else {
-    startRecording();
-  }
-}
-
-async function startRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-    audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = processAudio;
-    mediaRecorder.start();
-    isRecording = true;
-    setState('listening');
-    document.getElementById('micBtn').classList.add('recording');
-    document.getElementById('footerStatus').textContent = 'A OUVIR...';
-  } catch(e) {
-    document.getElementById('footerStatus').textContent = 'ERRO MICROFONE';
-  }
-}
-
-function stopRecording() {
-  if (mediaRecorder && isRecording) {
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    isRecording = false;
-    document.getElementById('micBtn').classList.remove('recording');
-    setState('thinking');
-    document.getElementById('footerStatus').textContent = 'A TRANSCREVER...';
-  }
-}
-
-async function processAudio() {
-  const blob = new Blob(audioChunks, {type: 'audio/webm'});
-  const form = new FormData();
-  form.append('audio', blob, 'audio.webm');
-
-  try {
-    const r = await fetch('/api/transcribe', {method: 'POST', body: form});
-    const d = await r.json();
-    const transcript = d.transcript?.trim();
-    if (transcript) {
-      await sendMessage(transcript);
-    } else {
-      setState('idle');
-      document.getElementById('footerStatus').textContent = 'NÃO PERCEBI';
-    }
-  } catch(e) {
-    setState('idle');
-    document.getElementById('footerStatus').textContent = 'ERRO TRANSCRIÇÃO';
-  }
-}
-
 // ─── MINI MODE ────────────────────────────────────────
 function toggleMini() {
   document.body.classList.toggle('mini-mode');
 }
-
-// Atalho de teclado: Escape = mini/full, Space = mic (quando não está no input)
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') toggleMini();
-  if (e.key === ' ' && document.activeElement !== document.getElementById('textInput')) {
-    e.preventDefault();
-    toggleMic();
-  }
+});
+
+// ─── ARRANQUE — pedir microfone e iniciar VAD ─────────
+window.addEventListener('load', () => {
+  initVAD();
 });
 </script>
 </body>
