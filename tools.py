@@ -127,6 +127,41 @@ def resultados_recentes(equipa: str) -> str:
         return f"Erro ao obter resultados: {e}"
 
 
+def scout_oportunidades() -> str:
+    """Analisa o mercado de IA e identifica oportunidades de negócio com potencial de rendimento passivo."""
+    try:
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        queries = [
+            "AI SaaS tools fastest growing revenue 2026 passive income",
+            "best AI business opportunities 2026 low competition high margin",
+            "AI tools trending Product Hunt 2026 monetization",
+            "AI automation business ideas 2026 recurring revenue",
+            "AI tools for sports coaches market opportunity 2026",
+            "Portuguese Brazilian Spanish AI market opportunities 2026",
+            "AI affiliate programs high commission 2026",
+            "AI newsletter creator tools audience monetization 2026",
+            "micro SaaS AI 2026 solopreneur revenue",
+            "AI content creation business profitable niche 2026",
+        ]
+        resultados = []
+        for query in queries:
+            try:
+                result = client.search(query=query, search_depth="advanced", max_results=3)
+                for r in result.get("results", []):
+                    titulo = r.get("title", "")
+                    conteudo = r.get("content", "")[:300]
+                    url = r.get("url", "")
+                    if titulo and conteudo:
+                        resultados.append(f"• {titulo}\n  {conteudo}\n  Fonte: {url}")
+            except Exception:
+                continue
+        if not resultados:
+            return "Não foi possível obter dados de mercado neste momento."
+        return "**Dados de mercado recolhidos pelo Morgan AI Scout:**\n\n" + "\n\n".join(resultados[:20])
+    except Exception as e:
+        return f"Erro no scout de oportunidades: {e}"
+
+
 def monitorizar_nome(nome: str = "Vasco Botelho da Costa") -> str:
     """Pesquisa menções ao nome em múltiplas plataformas."""
     try:
@@ -270,6 +305,15 @@ TOOLS = [
         }
     },
     {
+        "name": "scout_oportunidades",
+        "description": "Analisa o mercado de IA e identifica as melhores oportunidades de negócio com potencial de rendimento passivo. Pesquisa SaaS, afiliados, nichos de conteúdo, automação, mercados PT/BR/ES. Usa no relatório semanal do Morgan AI Scout ou quando o Vasco pede análise de oportunidades.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
         "name": "monitorizar_nome",
         "description": "Pesquisa menções ao nome 'Vasco Botelho da Costa' em múltiplas plataformas: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero, e web em geral. Usa nos briefings e sempre que o Vasco pedir para verificar o que se diz sobre ele.",
         "input_schema": {
@@ -310,4 +354,5 @@ TOOL_FUNCTIONS = {
     "ver_memoria": list_memory,
     "pedir_confirmacao": lambda acao: f"__CONFIRMACAO__:{acao}",
     "monitorizar_nome": lambda nome="Vasco Botelho da Costa": monitorizar_nome(nome),
+    "scout_oportunidades": scout_oportunidades,
 }

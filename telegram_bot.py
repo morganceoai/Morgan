@@ -313,6 +313,24 @@ def run_heartbeat_check(check: dict) -> str | None:
         return None if reply.upper() == "NADA" else reply
 
 
+def should_run_scout() -> bool:
+    """Corre todos os domingos às 20h."""
+    agora = datetime.now()
+    if agora.weekday() != 6 or agora.hour != 20:
+        return False
+    state = load_state()
+    chave = f"scout_{agora.strftime('%Y-%W')}"
+    return not state.get(chave, False)
+
+
+def mark_scout_done():
+    agora = datetime.now()
+    chave = f"scout_{agora.strftime('%Y-%W')}"
+    state = load_state()
+    state[chave] = True
+    save_state(state)
+
+
 def should_run_briefing() -> bool:
     """Verifica se está na hora do briefing (7h ou 20h) e se ainda não foi enviado hoje."""
     agora = datetime.now()
@@ -332,15 +350,82 @@ def mark_briefing_done():
     save_state(state)
 
 
+def build_scout_system() -> str:
+    TODAY = date.today().strftime("%d de %B de %Y")
+    return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
+A data de hoje é {TODAY}. O objetivo do Vasco é atingir €10.000/mês de rendimento passivo.
+
+Usa a ferramenta scout_oportunidades para recolher dados de mercado. Com base nesses dados, produz um relatório semanal estruturado com:
+
+1. **Top 3 oportunidades da semana** — cada uma com:
+   - Nome e descrição do negócio
+   - Potencial de receita estimado (€/mês)
+   - Nível de esforço inicial (baixo/médio/alto)
+   - Concorrência (baixa/média/alta)
+   - Possibilidade de automatizar com IA (%)
+   - Adequação ao mercado PT/BR/ES
+   - Próximo passo concreto para começar
+
+2. **Tendência da semana** — o movimento mais relevante no mercado de IA que pode criar oportunidades
+
+3. **Proposta de novo Morgan** — se identificares uma oportunidade que justifique um agente especializado, descreve-o: nome, função, como geraria receita
+
+Sê direto e concreto. Dados reais, não generalidades. O Vasco decide — o Scout informa."""
+
+
+async def run_scout_report(app):
+    """Gera e envia o relatório semanal do Morgan AI Scout."""
+    config = load_config()
+    modelo = config.get("modelo", "claude-sonnet-4-6")
+    messages = [{"role": "user", "content": "Gera o relatório semanal de oportunidades de negócio com IA."}]
+
+    while True:
+        response = anthropic_client.messages.create(
+            model=modelo,
+            max_tokens=2048,
+            system=build_scout_system(),
+            tools=TOOLS,
+            messages=messages,
+        )
+        if response.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": response.content})
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = run_tool(block.name, block.input)
+                    tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+            messages.append({"role": "user", "content": tool_results})
+            continue
+        relatorio = response.content[0].text.strip()
+        break
+
+    header = "🔍 *Morgan AI Scout — Relatório Semanal*\n\n"
+    await app.bot.send_message(
+        chat_id=TELEGRAM_CHAT_ID,
+        text=header + relatorio,
+        parse_mode="Markdown"
+    )
+    audit("SCOUT_RELATORIO", "Relatório semanal enviado")
+
+
 async def heartbeat_loop(app):
     await asyncio.sleep(10)
-    audit("HEARTBEAT", "Iniciado — briefings às 7h e 20h")
+    audit("HEARTBEAT", "Iniciado — briefings às 7h e 20h, scout aos domingos às 20h")
 
     while True:
         try:
             if is_pausado():
                 await asyncio.sleep(60)
                 continue
+
+            # Scout semanal — domingos às 20h
+            if should_run_scout():
+                mark_scout_done()
+                audit("SCOUT", "Relatório semanal iniciado")
+                try:
+                    await run_scout_report(app)
+                except Exception as e:
+                    audit("SCOUT_ERRO", str(e))
 
             if not should_run_briefing():
                 await asyncio.sleep(60)
