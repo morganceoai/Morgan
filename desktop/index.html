@@ -6,384 +6,296 @@
 <title>BC INDUSTRIES</title>
 <style>
   :root {
-    --blue:     #00d4ff;
-    --blue-dim: #005f7a;
-    --blue-g:   #00d4ff30;
-    --green:    #00ff88;
-    --yellow:   #ffd700;
-    --red:      #ff4455;
-    --bg:       #010912;
-    --bg2:      #020e1c;
-    --border:   #00d4ff18;
-    --text:     #6aacca;
-    --text-dim: #2a5060;
+    --blue:    #00d4ff;
+    --blue-g:  #00d4ff28;
+    --teal:    #00ffcc;
+    --green:   #00ff88;
+    --amber:   #ffb300;
+    --violet:  #9b6dff;
+    --red:     #ff4455;
+    --bg:      #010912;
+    --bg2:     #020e1c;
+    --border:  #00d4ff15;
+    --text:    #6aacca;
+    --dim:     #2a5060;
   }
-
   * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
     background: var(--bg);
     color: var(--blue);
     font-family: 'Courier New', monospace;
-    height: 100vh;
-    overflow: hidden;
-    user-select: none;
-    cursor: default;
+    height: 100vh; overflow: hidden;
+    user-select: none; cursor: default;
   }
 
-  /* ─── TITLEBAR ─── */
+  /* TITLEBAR */
   .titlebar {
-    position: fixed;
-    top:0; left:0; right:0; height:36px;
-    -webkit-app-region: drag;
-    z-index: 10000;
-    display: flex; align-items: center;
-    padding: 0 14px; gap: 8px;
+    position: fixed; top:0; left:0; right:0; height:36px;
+    -webkit-app-region: drag; z-index:10000;
+    display:flex; align-items:center; padding:0 14px; gap:8px;
   }
-  .tb-btn {
-    width:12px; height:12px; border-radius:50%; border:none;
-    cursor:pointer; -webkit-app-region: no-drag;
-    transition: filter .15s, transform .1s;
-  }
-  .tb-btn:hover { filter:brightness(1.4); transform:scale(1.1); }
-  .tb-close  { background:#8b3a38; }
-  .tb-sleep  { background:#8b6f28; }
-  .tb-mini   { background:#1e6b2e; }
+  .tb { width:12px; height:12px; border-radius:50%; border:none; cursor:pointer; -webkit-app-region:no-drag; transition:.15s; }
+  .tb:hover { filter:brightness(1.5); transform:scale(1.1); }
+  .tb-x { background:#8b3a38; }
+  .tb-y { background:#8b6f28; }
+  .tb-g { background:#1e6b2e; }
   body.mini-mode .titlebar { display:none; }
 
-  /* ─── LAYOUT ─── */
+  /* LAYOUT */
   .layout {
-    display: grid;
-    grid-template-columns: 1fr 185px;
+    display:grid;
+    grid-template-columns: 1fr 180px;
     grid-template-rows: 50px 1fr 44px;
-    height: 100vh;
+    height:100vh;
   }
 
-  /* ─── HEADER ─── */
+  /* HEADER */
   .header {
-    grid-column: 1/-1;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center;
-    justify-content: space-between;
-    padding: 0 18px 0 76px;
-    position: relative;
+    grid-column:1/-1;
+    background:linear-gradient(180deg, #020f1e 0%, #010912 100%);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px 0 76px;
   }
-  .header::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background: linear-gradient(90deg, transparent, var(--blue) 40%, var(--blue) 60%, transparent);
-    opacity: .1;
+  .hdr-l { display:flex; align-items:center; gap:12px; }
+  .hdr-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 10px var(--green);
+    animation:breathe 3s ease-in-out infinite;
   }
-  .hdr-left  { display:flex; align-items:center; gap:12px; }
-  .hdr-dot   { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pdot 2s infinite; }
-  @keyframes pdot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+  @keyframes breathe { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(.7);opacity:.5} }
   .hdr-title { font-size:12px; letter-spacing:5px; color:var(--blue); }
   .hdr-status { font-size:8px; letter-spacing:3px; color:var(--green); }
-  .hdr-center { text-align:center; }
-  .hdr-time  { font-size:22px; letter-spacing:4px; color:var(--blue); text-shadow:0 0 20px var(--blue-g); }
-  .hdr-date  { font-size:8px; letter-spacing:3px; color:var(--text-dim); margin-top:1px; }
-  .hdr-right { text-align:right; }
-  .hdr-name  { font-size:10px; letter-spacing:2px; color:var(--text); }
-  .hdr-org   { font-size:8px; letter-spacing:2px; color:var(--text-dim); margin-top:2px; }
+  .hdr-c { text-align:center; }
+  .hdr-time { font-size:22px; letter-spacing:4px; color:var(--blue); text-shadow:0 0 30px #00d4ff50; }
+  .hdr-date { font-size:8px; letter-spacing:3px; color:var(--dim); margin-top:1px; }
+  .hdr-r { text-align:right; }
+  .hdr-name { font-size:10px; letter-spacing:2px; color:var(--text); }
+  .hdr-org  { font-size:8px; letter-spacing:2px; color:var(--dim); margin-top:2px; }
 
-  /* ─── CENTER ─── */
-  .center {
-    grid-column:1; grid-row:2;
-    position: relative;
-    overflow: hidden;
-    background: var(--bg);
-  }
-
-  /* star canvas */
+  /* CENTER */
+  .center { grid-column:1; grid-row:2; position:relative; overflow:hidden; background:var(--bg); }
   #starCanvas { position:absolute; inset:0; width:100%; height:100%; }
+  #constSvg   { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 
-  /* constellation SVG */
-  #constSvg {
-    position:absolute; inset:0; width:100%; height:100%;
-    pointer-events:none;
-  }
-
-  /* ─── NODES ─── */
+  /* NODES */
   .node {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    display: flex; flex-direction:column; align-items:center;
-    gap: 8px;
-    cursor: pointer;
-    transition: transform .2s;
+    position:absolute; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1);
   }
-  .node:hover { transform: translate(-50%,-50%) scale(1.05); }
+  .node:hover { transform:translate(-50%,-50%) scale(1.08); }
 
-  .node-ring {
-    position:absolute;
-    border-radius:50%;
-    border:1px solid currentColor;
-    opacity:.15;
-    animation: spin 20s linear infinite;
+  /* Organic blob shape */
+  .node-blob {
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
   }
-  .node-ring-2 { animation: spin-r 14s linear infinite; }
+
+  /* Orbiting ring — organic, not a full circle */
+  .orbit {
+    position:absolute; border-radius:50%;
+    border:1px solid currentColor; opacity:.12;
+  }
+  .orbit-1 { animation:spin 18s linear infinite; }
+  .orbit-2 { animation:spin-r 12s linear infinite; opacity:.07; }
+
   @keyframes spin   { from{transform:rotate(0)}   to{transform:rotate(360deg)} }
   @keyframes spin-r { from{transform:rotate(0)}   to{transform:rotate(-360deg)} }
 
-  .node-arc {
-    position:absolute;
-    border-radius:50%;
-    border:1.5px solid transparent;
-    opacity:.5;
-    animation: spin 4s linear infinite;
+  /* Sweeping arc */
+  .arc {
+    position:absolute; border-radius:50%;
+    border:1.5px solid transparent; opacity:.55;
+    animation:spin 5s linear infinite;
+    transition:border-color .4s, animation-duration .4s;
   }
 
-  .node-core {
-    border-radius:50%;
-    background: radial-gradient(circle at 38% 32%, #0d4a62, #010912 70%);
-    border:1.5px solid var(--blue);
+  /* Core — organic morphing shape */
+  .core {
+    border-radius:60% 40% 55% 45% / 45% 55% 45% 55%;
+    animation:morph 9s ease-in-out infinite;
     display:flex; align-items:center; justify-content:center;
-    box-shadow: 0 0 20px var(--blue-g), 0 0 40px #00d4ff15, inset 0 0 20px #00d4ff15;
-    transition: all .4s;
-    position: relative;
+    transition:box-shadow .4s, border-color .4s;
+    position:relative; z-index:1;
   }
-  .node-core svg { filter: drop-shadow(0 0 8px var(--blue)); transition: filter .4s; }
-
-  /* CEO node */
-  .node-ceo .node-ring   { width:160px; height:160px; }
-  .node-ceo .node-ring-2 { width:136px; height:136px; }
-  .node-ceo .node-arc    { width:160px; height:160px; border-top-color:var(--blue); border-right-color:var(--blue); }
-  .node-ceo .node-core   { width:90px; height:90px; }
-  .node-ceo .node-core svg { width:44px; height:44px; }
-
-  /* Sub nodes */
-  .node-sub .node-ring   { width:90px; height:90px; }
-  .node-sub .node-arc    { width:90px; height:90px; border-top-color:currentColor; border-right-color:currentColor; animation-duration:6s; }
-  .node-sub .node-core   { width:54px; height:54px; }
-  .node-sub .node-core svg { width:26px; height:26px; }
-
-  /* Node labels */
-  .node-label {
-    font-size:8px; letter-spacing:2.5px; color:var(--text);
-    transition: color .2s; text-align:center;
-    white-space:nowrap;
-  }
-  .node-role { font-size:6px; letter-spacing:1px; color:var(--text-dim); margin-top:1px; text-align:center; }
-
-  /* Active node */
-  .node.active .node-label { color:var(--blue); }
-  .node.active .node-core {
-    box-shadow: 0 0 30px #00d4ffaa, 0 0 60px var(--blue-g), inset 0 0 20px #00d4ff20;
-    animation: node-pulse 2s ease-in-out infinite alternate;
-  }
-  @keyframes node-pulse {
-    from { box-shadow: 0 0 25px var(--blue-g), 0 0 50px #00d4ff15; }
-    to   { box-shadow: 0 0 40px #00d4ffaa, 0 0 80px #00d4ff40; }
+  @keyframes morph {
+    0%,100% { border-radius:60% 40% 55% 45% / 45% 55% 45% 55%; }
+    33%      { border-radius:40% 60% 45% 55% / 55% 40% 60% 45%; }
+    66%      { border-radius:55% 45% 60% 40% / 40% 60% 50% 50%; }
   }
 
-  /* States */
-  body.listening .node.active .node-core { border-color:var(--green); box-shadow:0 0 30px #00ff8860,0 0 60px #00ff8820; animation:none; }
-  body.listening .node.active .node-core svg { filter:drop-shadow(0 0 8px var(--green)); }
-  body.listening .node.active .node-arc { border-top-color:var(--green); border-right-color:var(--green); animation-duration:2s; }
-
-  body.thinking .node.active .node-core { border-color:var(--yellow); box-shadow:0 0 30px #ffd70060,0 0 60px #ffd70020; animation:none; }
-  body.thinking .node.active .node-core svg { filter:drop-shadow(0 0 8px var(--yellow)); }
-  body.thinking .node.active .node-arc { border-top-color:var(--yellow); border-right-color:var(--yellow); animation-duration:.6s; }
-
-  body.speaking .node.active .node-core { animation: node-speak .6s ease-in-out infinite alternate; }
-  @keyframes node-speak {
-    from { box-shadow: 0 0 25px var(--blue-g), 0 0 50px #00d4ff20; }
-    to   { box-shadow: 0 0 50px #00d4ffcc, 0 0 100px #00d4ff60; }
-  }
-
-  /* Sub node building */
-  .node-building .node-core { border-color:var(--yellow); box-shadow:0 0 15px #ffd70030; }
-  .node-building .node-core svg { filter:drop-shadow(0 0 6px var(--yellow)); }
-  .node-building .node-arc { border-top-color:var(--yellow); border-right-color:var(--yellow); opacity:.3; animation-duration:8s; }
-  .node-building .node-label { color:#6a5a20; }
-
-  .node-offline .node-core { border-color:#1a3040; box-shadow:none; background:#010912; }
-  .node-offline .node-core svg { filter:none; opacity:.3; }
-  .node-offline .node-arc { display:none; }
-  .node-offline .node-label { color:#1a3040; }
-
-  /* ─── OVERLAY (transcript + input) ─── */
-  .overlay {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    padding: 0 0 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    pointer-events: none;
-  }
-
-  /* waveform */
-  .waveform {
-    display:flex; align-items:center; gap:3px; height:24px;
+  /* Inner glow pulse */
+  .core-glow {
+    position:absolute; inset:-8px; border-radius:50%;
+    animation:glow-pulse 3s ease-in-out infinite;
     pointer-events:none;
   }
-  .w-bar {
-    width:3px; background:var(--blue); border-radius:2px;
-    height:3px; opacity:.3; transition:height .15s, opacity .3s;
+  @keyframes glow-pulse {
+    0%,100%{opacity:.3;transform:scale(1)}
+    50%{opacity:.6;transform:scale(1.08)}
   }
-  body.listening .w-bar { opacity:.6; animation:widle 1.2s ease-in-out infinite; }
-  body.speaking  .w-bar { opacity:.9; animation:wspeak .45s ease-in-out infinite; }
-  body.thinking  .w-bar { opacity:.4; animation:wthink .9s ease-in-out infinite; }
-  .w-bar:nth-child(1){animation-delay:0s}
-  .w-bar:nth-child(2){animation-delay:.08s}
-  .w-bar:nth-child(3){animation-delay:.16s}
-  .w-bar:nth-child(4){animation-delay:.24s}
-  .w-bar:nth-child(5){animation-delay:.12s}
-  .w-bar:nth-child(6){animation-delay:.04s}
-  .w-bar:nth-child(7){animation-delay:.2s}
-  .w-bar:nth-child(8){animation-delay:.1s}
-  .w-bar:nth-child(9){animation-delay:.28s}
-  .w-bar:nth-child(10){animation-delay:.06s}
-  .w-bar:nth-child(11){animation-delay:.18s}
-  .w-bar:nth-child(12){animation-delay:.14s}
-  @keyframes widle  { 0%,100%{height:3px}  50%{height:14px} }
-  @keyframes wspeak { 0%,100%{height:5px}  50%{height:22px} }
-  @keyframes wthink { 0%,100%{height:3px}  50%{height:7px}  }
 
-  .state-txt {
-    font-size:8px; letter-spacing:5px; color:var(--text-dim);
-    transition:color .3s; pointer-events:none;
+  /* CEO */
+  .node-ceo .orbit-1 { width:170px; height:170px; color:var(--blue); }
+  .node-ceo .orbit-2 { width:145px; height:145px; color:var(--teal); }
+  .node-ceo .arc     { width:170px; height:170px; border-top-color:var(--blue); border-right-color:var(--teal); }
+  .node-ceo .core    { width:92px; height:92px; border:1.5px solid var(--blue); background:radial-gradient(circle at 35% 30%, #0d5570, #010912 70%); box-shadow:0 0 30px #00d4ff30, 0 0 60px #00d4ff15, inset 0 0 25px #00d4ff15; }
+  .node-ceo .core-glow { background:radial-gradient(circle, #00d4ff20, transparent 70%); }
+  .node-ceo .core svg { width:46px; height:46px; filter:drop-shadow(0 0 12px var(--blue)); }
+
+  /* SCOUT */
+  .node-scout .orbit-1 { width:100px; height:100px; color:var(--amber); }
+  .node-scout .arc     { width:100px; height:100px; border-top-color:var(--amber); border-right-color:transparent; animation-duration:7s; }
+  .node-scout .core    { width:58px; height:58px; border:1.5px solid var(--amber); background:radial-gradient(circle at 35% 30%, #3d2800, #010912 70%); box-shadow:0 0 20px #ffb30025, 0 0 40px #ffb30010, inset 0 0 18px #ffb30015; animation-delay:3s; }
+  .node-scout .core-glow { background:radial-gradient(circle, #ffb30018, transparent 70%); }
+  .node-scout .core svg { width:28px; height:28px; filter:drop-shadow(0 0 8px var(--amber)); }
+
+  /* SOLVER */
+  .node-solver .orbit-1 { width:100px; height:100px; color:var(--violet); opacity:.06; }
+  .node-solver .arc     { width:100px; height:100px; border-top-color:var(--violet); border-right-color:transparent; opacity:.15; animation-duration:12s; }
+  .node-solver .core    { width:58px; height:58px; border:1.5px solid #2a1a4a; background:radial-gradient(circle at 35% 30%, #0d0820, #010912 70%); box-shadow:0 0 10px #9b6dff10, inset 0 0 10px #9b6dff08; animation-delay:6s; }
+  .node-solver .core-glow { background:radial-gradient(circle, #9b6dff10, transparent 70%); opacity:.3; }
+  .node-solver .core svg { width:28px; height:28px; filter:drop-shadow(0 0 4px #9b6dff); opacity:.4; }
+
+  /* Active states */
+  .node.active .core { animation:morph 9s ease-in-out infinite, node-active 2.5s ease-in-out infinite alternate !important; }
+  @keyframes node-active {
+    from { box-shadow:0 0 25px var(--blue-g), 0 0 50px #00d4ff10; }
+    to   { box-shadow:0 0 45px #00d4ff90, 0 0 90px #00d4ff30; }
   }
+
+  body.listening .node.active .core { border-color:var(--green) !important; box-shadow:0 0 30px #00ff8840,0 0 60px #00ff8815 !important; animation:morph 9s ease-in-out infinite !important; }
+  body.listening .node.active .core svg { filter:drop-shadow(0 0 12px var(--green)) !important; }
+  body.listening .node.active .arc { border-top-color:var(--green) !important; border-right-color:var(--teal) !important; animation-duration:2s !important; }
+
+  body.thinking .node.active .core { border-color:var(--amber) !important; box-shadow:0 0 30px #ffb30040,0 0 60px #ffb30015 !important; animation:morph 9s ease-in-out infinite !important; }
+  body.thinking .node.active .arc { border-top-color:var(--amber) !important; border-right-color:transparent !important; animation-duration:.6s !important; }
+
+  body.speaking .node.active .core { animation:morph 9s ease-in-out infinite, speak-pulse .6s ease-in-out infinite alternate !important; }
+  @keyframes speak-pulse {
+    from { box-shadow:0 0 25px #00d4ff50, 0 0 50px #00d4ff20; }
+    to   { box-shadow:0 0 55px #00d4ffdd, 0 0 110px #00d4ff50; }
+  }
+
+  /* Labels */
+  .node-label { font-size:8px; letter-spacing:2.5px; color:var(--dim); transition:color .3s; text-align:center; white-space:nowrap; }
+  .node-role  { font-size:6.5px; letter-spacing:1px; color:#1a3040; text-align:center; margin-top:1px; }
+  .node.active .node-label { color:var(--blue); }
+
+  /* OVERLAY */
+  .overlay {
+    position:absolute; bottom:0; left:0; right:0;
+    padding:0 0 18px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    pointer-events:none;
+  }
+  .waveform { display:flex; align-items:center; gap:3px; height:26px; }
+  .w-bar { width:3px; background:var(--blue); border-radius:3px; height:3px; opacity:.25; transition:height .15s, opacity .3s; }
+  body.listening .w-bar { opacity:.55; animation:widle 1.3s ease-in-out infinite; }
+  body.speaking  .w-bar { opacity:.85; animation:wspeak .45s ease-in-out infinite; }
+  body.thinking  .w-bar { opacity:.35; animation:wthink 1s ease-in-out infinite; }
+  .w-bar:nth-child(1){animation-delay:.00s}.w-bar:nth-child(2){animation-delay:.08s}
+  .w-bar:nth-child(3){animation-delay:.16s}.w-bar:nth-child(4){animation-delay:.24s}
+  .w-bar:nth-child(5){animation-delay:.12s}.w-bar:nth-child(6){animation-delay:.04s}
+  .w-bar:nth-child(7){animation-delay:.20s}.w-bar:nth-child(8){animation-delay:.10s}
+  .w-bar:nth-child(9){animation-delay:.28s}.w-bar:nth-child(10){animation-delay:.06s}
+  .w-bar:nth-child(11){animation-delay:.18s}.w-bar:nth-child(12){animation-delay:.14s}
+  @keyframes widle  { 0%,100%{height:3px} 50%{height:16px} }
+  @keyframes wspeak { 0%,100%{height:5px} 50%{height:24px} }
+  @keyframes wthink { 0%,100%{height:3px} 50%{height:8px}  }
+
+  .state-txt { font-size:8px; letter-spacing:5px; color:var(--dim); transition:color .3s; pointer-events:none; }
   body.listening .state-txt { color:var(--green); }
-  body.thinking  .state-txt { color:var(--yellow); }
+  body.thinking  .state-txt { color:var(--amber); }
   body.speaking  .state-txt { color:var(--blue); }
 
-  .transcript {
-    max-width:500px; width:100%;
-    text-align:center; padding:0 24px;
-    pointer-events:none;
-  }
-  .t-user   { font-size:10px; color:var(--text-dim); letter-spacing:.5px; margin-bottom:5px; }
+  .transcript { max-width:480px; width:100%; text-align:center; padding:0 24px; pointer-events:none; }
+  .t-user   { font-size:10px; color:var(--dim); letter-spacing:.5px; margin-bottom:5px; }
   .t-morgan { font-size:12px; color:var(--text); letter-spacing:.3px; line-height:1.7; }
 
-  .input-wrap {
-    max-width:420px; width:100%;
-    padding:0 24px;
-    pointer-events:all;
-    position:relative;
-  }
-  .input-wrap::before {
-    content:'›'; position:absolute; left:24px; top:50%;
-    transform:translateY(-50%); color:var(--blue-dim);
-    font-size:14px; pointer-events:none;
-  }
+  .input-wrap { max-width:400px; width:100%; padding:0 24px; pointer-events:all; position:relative; }
+  .input-wrap::before { content:'›'; position:absolute; left:24px; top:50%; transform:translateY(-50%); color:var(--dim); font-size:14px; pointer-events:none; }
   .text-input {
-    width:100%;
-    background:rgba(2,14,28,.85);
-    border:1px solid var(--border);
-    border-radius:2px;
-    color:var(--text);
-    font-family:'Courier New',monospace;
-    font-size:11px;
-    padding:8px 12px 8px 22px;
-    outline:none; letter-spacing:.5px;
-    backdrop-filter:blur(8px);
-    transition:border-color .2s, box-shadow .2s;
+    width:100%; background:rgba(1,9,18,.9); border:1px solid var(--border);
+    border-radius:20px; color:var(--text); font-family:'Courier New',monospace;
+    font-size:11px; padding:9px 14px 9px 22px; outline:none; letter-spacing:.5px;
+    backdrop-filter:blur(12px); transition:border-color .2s, box-shadow .2s;
   }
-  .text-input::placeholder { color:var(--text-dim); opacity:.5; }
-  .text-input:focus { border-color:var(--blue-dim); box-shadow:0 0 12px var(--blue-g); }
+  .text-input::placeholder { color:var(--dim); opacity:.5; }
+  .text-input:focus { border-color:#00d4ff30; box-shadow:0 0 20px #00d4ff15; }
 
   #startBtn {
-    display:block; background:transparent;
-    border:1px solid var(--blue-dim); color:var(--blue);
-    padding:7px 24px; cursor:pointer;
-    font-family:inherit; font-size:10px; letter-spacing:3px;
-    pointer-events:all;
-    transition:all .2s;
+    display:block; background:transparent; border:1px solid #00d4ff25; color:var(--blue);
+    padding:8px 28px; cursor:pointer; font-family:inherit; font-size:10px; letter-spacing:3px;
+    border-radius:20px; pointer-events:all; transition:all .25s;
   }
-  #startBtn:hover { border-color:var(--blue); box-shadow:0 0 15px var(--blue-g); }
+  #startBtn:hover { border-color:var(--blue); box-shadow:0 0 20px var(--blue-g); }
 
-  /* ─── RIGHT PANELS ─── */
+  /* RIGHT */
   .right-col {
     grid-column:2; grid-row:2;
-    background:var(--bg2);
+    background:linear-gradient(180deg, #020e1c 0%, #010912 100%);
     border-left:1px solid var(--border);
     display:flex; flex-direction:column; overflow:hidden;
   }
-  .info-panel {
-    flex:1; padding:14px 14px 12px;
-    border-bottom:1px solid var(--border);
-    display:flex; flex-direction:column; justify-content:space-between;
-  }
+  .info-panel { flex:1; padding:14px 14px 12px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; }
   .info-panel:last-child { border-bottom:none; }
-  .i-label { font-size:7px; letter-spacing:3px; color:var(--text-dim); margin-bottom:8px; }
-  .i-value { font-size:26px; color:var(--blue); text-shadow:0 0 15px var(--blue-g); line-height:1; }
-  .i-sub   { font-size:8px; color:var(--text-dim); margin-top:4px; letter-spacing:1px; }
+  .i-label { font-size:7px; letter-spacing:3px; color:var(--dim); margin-bottom:8px; }
+  .i-value { font-size:26px; color:var(--blue); text-shadow:0 0 20px var(--blue-g); line-height:1; }
+  .i-sub   { font-size:8px; color:var(--dim); margin-top:4px; letter-spacing:1px; }
   .i-line  { display:flex; justify-content:space-between; margin-top:5px; font-size:9px; }
-  .i-line-l { color:var(--text-dim); }
-  .i-line-v { color:var(--text); }
-  .accent-bar { height:1px; margin-top:10px; background:linear-gradient(90deg, var(--blue-dim), transparent); opacity:.3; }
-  .win  { color:var(--green); }
-  .loss { color:var(--red); }
-  .draw { color:var(--yellow); }
+  .i-ll { color:var(--dim); } .i-lv { color:var(--text); }
+  .accent-bar { height:1px; margin-top:10px; background:linear-gradient(90deg, var(--blue-g), transparent); }
+  .win{color:var(--green)} .loss{color:var(--red)} .draw{color:var(--amber)}
 
-  /* ─── FOOTER ─── */
-  .footer {
-    grid-column:1/-1;
-    background:var(--bg2); border-top:1px solid var(--border);
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 16px;
-  }
-  .f-left  { font-size:8px; letter-spacing:2px; color:var(--text-dim); }
-  .f-right { display:flex; gap:14px; align-items:center; }
-  .f-status{ font-size:8px; letter-spacing:2px; color:var(--text-dim); }
-  .mini-btn {
-    font-size:8px; letter-spacing:2px; color:var(--text-dim);
-    cursor:pointer; padding:4px 10px; border:1px solid var(--border);
-    transition:all .2s;
-  }
-  .mini-btn:hover { color:var(--blue); border-color:var(--blue-dim); }
+  /* FOOTER */
+  .footer { grid-column:1/-1; background:var(--bg2); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
+  .f-l { font-size:8px; letter-spacing:2px; color:var(--dim); }
+  .f-r { display:flex; gap:14px; align-items:center; }
+  .f-s { font-size:8px; letter-spacing:2px; color:var(--dim); }
+  .mini-btn { font-size:8px; letter-spacing:2px; color:var(--dim); cursor:pointer; padding:4px 12px; border:1px solid var(--border); border-radius:10px; transition:all .2s; }
+  .mini-btn:hover { color:var(--blue); border-color:#00d4ff25; }
 
-  /* ─── MINI MODE ─── */
+  /* MINI */
   body.mini-mode .layout { display:none; }
   .mini-avatar { display:none; position:fixed; inset:0; align-items:center; justify-content:center; }
   body.mini-mode .mini-avatar { display:flex; }
   .mini-core {
-    width:80px; height:80px; border-radius:50%;
-    background:radial-gradient(circle at 38% 32%, #0d4a62, #010912);
+    width:80px; height:80px;
+    border-radius:60% 40% 55% 45%/45% 55% 45% 55%;
+    background:radial-gradient(circle at 35% 30%, #0d5570, #010912 70%);
     border:1.5px solid var(--blue);
-    box-shadow:0 0 20px var(--blue-g), 0 0 40px #00d4ff15;
+    box-shadow:0 0 25px var(--blue-g), 0 0 50px #00d4ff15;
     display:flex; align-items:center; justify-content:center;
-    animation:midle 3s ease-in-out infinite; cursor:pointer;
+    animation:morph 9s ease-in-out infinite, midle 3s ease-in-out infinite;
+    cursor:pointer;
   }
-  @keyframes midle { 0%,100%{box-shadow:0 0 20px var(--blue-g)} 50%{box-shadow:0 0 40px #00d4ff60} }
-  .mini-core svg { width:36px; height:36px; filter:drop-shadow(0 0 6px var(--blue)); }
+  @keyframes midle { 0%,100%{box-shadow:0 0 25px var(--blue-g)} 50%{box-shadow:0 0 45px #00d4ff60} }
+  .mini-core svg { width:36px; height:36px; filter:drop-shadow(0 0 8px var(--blue)); }
 
-  /* ─── WIP TOAST ─── */
-  .wip-toast {
-    display:none; position:fixed; bottom:54px; left:50%;
-    transform:translateX(-50%);
-    background:var(--bg2); border:1px solid #00d4ff30;
-    color:var(--text-dim); font-size:9px; letter-spacing:3px;
-    padding:8px 20px; z-index:9998; pointer-events:none;
-  }
+  .wip-toast { display:none; position:fixed; bottom:54px; left:50%; transform:translateX(-50%); background:var(--bg2); border:1px solid #00d4ff20; color:var(--dim); font-size:9px; letter-spacing:3px; padding:8px 22px; z-index:9998; pointer-events:none; border-radius:12px; }
   .wip-toast.show { display:block; animation:fadeio 2.5s forwards; }
   @keyframes fadeio { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
 
-  /* scan lines */
-  body::after {
-    content:''; position:fixed; inset:0;
-    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.006) 2px,rgba(0,212,255,.006) 4px);
-    pointer-events:none; z-index:998;
-  }
+  body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.005) 2px,rgba(0,212,255,.005) 4px); pointer-events:none; z-index:998; }
 </style>
 </head>
 <body>
 
 <div class="titlebar">
-  <button class="tb-btn tb-close" onclick="window.pywebview.api.close_app()"></button>
-  <button class="tb-btn tb-sleep" onclick="window.pywebview.api.sleep_app()"></button>
-  <button class="tb-btn tb-mini"  onclick="toggleMini()"></button>
+  <button class="tb tb-x" onclick="window.pywebview.api.close_app()"></button>
+  <button class="tb tb-y" onclick="window.pywebview.api.sleep_app()"></button>
+  <button class="tb tb-g" onclick="toggleMini()"></button>
 </div>
 
 <div class="mini-avatar" onclick="toggleMini()">
   <div class="mini-core">
     <svg viewBox="0 0 60 60" fill="none">
-      <polygon points="30,8 54,48 6,48" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff12"/>
-      <circle cx="30" cy="32" r="10" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff18"/>
-      <circle cx="30" cy="32" r="4" fill="#00d4ff" opacity=".9"/>
+      <path d="M30 10 C40 10 52 20 52 32 C52 44 42 52 30 50 C18 48 8 40 10 28 C12 16 20 10 30 10Z" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff10"/>
+      <circle cx="30" cy="32" r="8" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff18"/>
+      <circle cx="30" cy="32" r="3.5" fill="#00d4ff" opacity=".95"/>
     </svg>
   </div>
 </div>
@@ -392,154 +304,144 @@
 
 <div class="layout">
 
-  <!-- HEADER -->
   <div class="header">
-    <div class="hdr-left">
+    <div class="hdr-l">
       <div class="hdr-dot"></div>
       <span class="hdr-title" id="hdrTitle">MORGAN CEO</span>
-      <span class="hdr-status" id="hdrStatus">ATIVO</span>
+      <span class="hdr-status">ATIVO</span>
     </div>
-    <div class="hdr-center">
+    <div class="hdr-c">
       <div class="hdr-time" id="clock">--:--:--</div>
       <div class="hdr-date" id="dateLabel">--</div>
     </div>
-    <div class="hdr-right">
+    <div class="hdr-r">
       <div class="hdr-name">VASCO BOTELHO DA COSTA</div>
       <div class="hdr-org">BC INDUSTRIES</div>
     </div>
   </div>
 
-  <!-- CENTER: constellation -->
   <div class="center" id="centerEl">
-
     <canvas id="starCanvas"></canvas>
-
-    <!-- Connection lines SVG -->
     <svg id="constSvg">
       <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
+        <filter id="lineGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="lineGrad1" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00d4ff" stop-opacity=".4"/>
+          <stop offset="100%" stop-color="#ffb300" stop-opacity=".15"/>
+        </linearGradient>
+        <linearGradient id="lineGrad2" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00d4ff" stop-opacity=".4"/>
+          <stop offset="100%" stop-color="#9b6dff" stop-opacity=".1"/>
+        </linearGradient>
       </defs>
-      <line id="line-scout"  stroke="#00d4ff" stroke-width="1" opacity="0.15" filter="url(#glow)"/>
-      <line id="line-solver" stroke="#00d4ff" stroke-width="1" opacity="0.15" filter="url(#glow)"/>
+      <path id="path-scout"  stroke="url(#lineGrad1)" stroke-width="1" fill="none" filter="url(#lineGlow)" opacity=".8"/>
+      <path id="path-solver" stroke="url(#lineGrad2)" stroke-width="1" fill="none" filter="url(#lineGlow)" opacity=".8"/>
     </svg>
 
-    <!-- CEO node -->
+    <!-- CEO -->
     <div class="node node-ceo active" id="node-ceo" onclick="selectAgent('ceo')">
-      <div class="node-ring"></div>
-      <div class="node-ring node-ring-2"></div>
-      <div class="node-arc"></div>
-      <div class="node-core">
-        <svg viewBox="0 0 60 60" fill="none">
-          <polygon points="30,7 55,50 5,50" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff0d"/>
-          <line x1="30" y1="7" x2="30" y2="50" stroke="#00d4ff" stroke-width=".5" opacity=".3"/>
-          <line x1="5"  y1="50" x2="55" y2="50" stroke="#00d4ff" stroke-width=".5" opacity=".3"/>
-          <circle cx="30" cy="33" r="12" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff12"/>
-          <circle cx="30" cy="33" r="5"  fill="#00d4ff" opacity=".95"/>
-          <circle cx="30" cy="33" r="8"  stroke="#00d4ff" stroke-width=".5" opacity=".4"/>
-        </svg>
+      <div class="node-blob">
+        <div class="orbit orbit-1"></div>
+        <div class="orbit orbit-2"></div>
+        <div class="arc"></div>
+        <div class="core-glow"></div>
+        <div class="core">
+          <svg viewBox="0 0 60 60" fill="none">
+            <path d="M30 8 C36 14 50 18 54 30 C58 42 48 54 36 56 C24 58 10 50 8 38 C6 26 14 10 30 8Z" stroke="#00d4ff" stroke-width="1" fill="#00d4ff08"/>
+            <path d="M30 16 C34 20 42 22 44 30 C46 38 40 46 32 47 C24 48 16 42 16 34 C16 26 22 16 30 16Z" stroke="#00d4ff" stroke-width="1" fill="#00d4ff10" opacity=".5"/>
+            <circle cx="30" cy="32" r="7" fill="#00d4ff" opacity=".9"/>
+            <circle cx="30" cy="32" r="11" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".4"/>
+            <path d="M22 20 Q30 14 38 20" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".5"/>
+          </svg>
+        </div>
       </div>
       <div class="node-label">MORGAN CEO</div>
       <div class="node-role">Braço direito</div>
     </div>
 
-    <!-- SCOUT node -->
-    <div class="node node-sub node-building" id="node-scout" onclick="selectAgent('scout')">
-      <div class="node-arc" style="color:var(--yellow)"></div>
-      <div class="node-core" style="border-color:var(--yellow);box-shadow:0 0 15px #ffd70025">
-        <svg viewBox="0 0 60 60" fill="none">
-          <circle cx="30" cy="30" r="18" stroke="#ffd700" stroke-width="1.5" fill="#ffd70010"/>
-          <line x1="30" y1="12" x2="30" y2="48" stroke="#ffd700" stroke-width=".8" opacity=".4"/>
-          <line x1="12" y1="30" x2="48" y2="30" stroke="#ffd700" stroke-width=".8" opacity=".4"/>
-          <circle cx="30" cy="30" r="5" fill="#ffd700" opacity=".8"/>
-        </svg>
+    <!-- SCOUT -->
+    <div class="node node-scout" id="node-scout" onclick="selectAgent('scout')">
+      <div class="node-blob">
+        <div class="orbit orbit-1" style="color:var(--amber)"></div>
+        <div class="arc" style="border-top-color:var(--amber);border-right-color:transparent;animation-duration:7s"></div>
+        <div class="core-glow" style="background:radial-gradient(circle,#ffb30018,transparent 70%)"></div>
+        <div class="core" style="border-color:var(--amber);background:radial-gradient(circle at 35% 30%,#3d2800,#010912 70%);box-shadow:0 0 20px #ffb30025,inset 0 0 18px #ffb30015;animation-delay:3s">
+          <svg viewBox="0 0 60 60" fill="none">
+            <path d="M30 10 C42 12 52 20 52 32 C52 44 44 52 30 52 C16 52 8 42 10 30 C12 18 18 8 30 10Z" stroke="#ffb300" stroke-width="1" fill="#ffb30008"/>
+            <path d="M30 20 C36 21 40 26 39 32 C38 38 33 42 27 40 C21 38 18 32 21 26 C23 21 27 19 30 20Z" stroke="#ffb300" stroke-width=".8" fill="none" opacity=".5"/>
+            <circle cx="30" cy="30" r="5" fill="#ffb300" opacity=".85"/>
+            <line x1="30" y1="10" x2="30" y2="18" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
+            <line x1="30" y1="42" x2="30" y2="50" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
+            <line x1="10" y1="30" x2="18" y2="30" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
+            <line x1="42" y1="30" x2="50" y2="30" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
+          </svg>
+        </div>
       </div>
-      <div class="node-label" style="color:#6a5820">MORGAN SCOUT</div>
+      <div class="node-label" style="color:#5a4010">MORGAN SCOUT</div>
       <div class="node-role">Oportunidades</div>
     </div>
 
-    <!-- SOLVER node -->
-    <div class="node node-sub node-offline" id="node-solver" onclick="selectAgent('solver')">
-      <div class="node-arc"></div>
-      <div class="node-core">
-        <svg viewBox="0 0 60 60" fill="none">
-          <rect x="16" y="16" width="28" height="28" rx="3" stroke="#1a3040" stroke-width="1.5" fill="#1a304015"/>
-          <line x1="22" y1="24" x2="38" y2="24" stroke="#1a3040" stroke-width="1" opacity=".6"/>
-          <line x1="22" y1="30" x2="38" y2="30" stroke="#1a3040" stroke-width="1" opacity=".6"/>
-          <line x1="22" y1="36" x2="30" y2="36" stroke="#1a3040" stroke-width="1" opacity=".6"/>
-        </svg>
+    <!-- SOLVER -->
+    <div class="node node-solver" id="node-solver" onclick="selectAgent('solver')">
+      <div class="node-blob">
+        <div class="orbit orbit-1" style="color:var(--violet)"></div>
+        <div class="arc" style="border-top-color:var(--violet);border-right-color:transparent;opacity:.12;animation-duration:14s"></div>
+        <div class="core-glow" style="background:radial-gradient(circle,#9b6dff12,transparent 70%);opacity:.4"></div>
+        <div class="core" style="border-color:#2a1a4a;background:radial-gradient(circle at 35% 30%,#0d0820,#010912 70%);box-shadow:0 0 12px #9b6dff12,inset 0 0 10px #9b6dff08;animation-delay:6s">
+          <svg viewBox="0 0 60 60" fill="none">
+            <path d="M20 18 C22 14 28 12 32 14 C36 16 38 20 36 24 L44 36 C46 40 44 46 40 48 C36 50 30 48 28 44 L20 32 C16 28 16 22 20 18Z" stroke="#9b6dff" stroke-width="1" fill="#9b6dff08" opacity=".5"/>
+            <circle cx="24" cy="22" r="4" stroke="#9b6dff" stroke-width=".8" fill="#9b6dff15" opacity=".5"/>
+            <path d="M28 26 L38 44" stroke="#9b6dff" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+          </svg>
+        </div>
       </div>
-      <div class="node-label">MORGAN SOLVER</div>
+      <div class="node-label" style="color:#1a1030">MORGAN SOLVER</div>
       <div class="node-role">Manutenção</div>
     </div>
 
-    <!-- Overlay: waveform + state + transcript + input -->
     <div class="overlay">
       <div class="waveform">
-        <div class="w-bar"></div><div class="w-bar"></div>
-        <div class="w-bar"></div><div class="w-bar"></div>
-        <div class="w-bar"></div><div class="w-bar"></div>
-        <div class="w-bar"></div><div class="w-bar"></div>
-        <div class="w-bar"></div><div class="w-bar"></div>
-        <div class="w-bar"></div><div class="w-bar"></div>
+        <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+        <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+        <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+        <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
       </div>
-      <div class="state-txt" id="stateTxt">
-        <span id="stateLabelText">A LIGAR...</span>
+      <div class="state-txt"><span id="stateLabelText">A LIGAR...</span>
         <button id="startBtn" onclick="startMorgan()">▶ INICIAR</button>
       </div>
       <div class="transcript" id="transcript"></div>
       <div class="input-wrap">
-        <input class="text-input" id="textInput" type="text"
-          placeholder="escreve aqui..." onkeydown="handleKey(event)"/>
+        <input class="text-input" id="textInput" type="text" placeholder="escreve aqui..." onkeydown="handleKey(event)"/>
       </div>
     </div>
-
   </div>
 
-  <!-- RIGHT PANELS -->
   <div class="right-col">
     <div class="info-panel">
-      <div>
-        <div class="i-label">CLIMA</div>
-        <div class="i-value" id="weatherTemp">--°</div>
-        <div class="i-sub"   id="weatherDesc">Moreira de Cónegos</div>
-      </div>
+      <div><div class="i-label">CLIMA</div><div class="i-value" id="weatherTemp">--°</div><div class="i-sub" id="weatherDesc">Moreira de Cónegos</div></div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div>
-        <div class="i-label">PRÓXIMO JOGO</div>
-        <div style="font-size:11px;color:var(--text);margin-top:4px;line-height:1.7" id="nextGame">--</div>
-        <div class="i-sub" id="nextGameDate"></div>
-        <div style="font-size:7px;color:var(--text-dim);margin-top:2px" id="nextGameComp"></div>
-      </div>
+      <div><div class="i-label">PRÓXIMO JOGO</div><div style="font-size:11px;color:var(--text);margin-top:4px;line-height:1.7" id="nextGame">--</div><div class="i-sub" id="nextGameDate"></div><div style="font-size:7px;color:var(--dim);margin-top:2px" id="nextGameComp"></div></div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div>
-        <div class="i-label">ÚLTIMO RESULTADO</div>
-        <div class="i-sub" id="lastOpponent" style="margin-top:4px">--</div>
-        <div style="font-size:26px;margin-top:6px;letter-spacing:2px" id="lastScore">--</div>
-      </div>
+      <div><div class="i-label">ÚLTIMO RESULTADO</div><div class="i-sub" id="lastOpponent" style="margin-top:4px">--</div><div style="font-size:26px;margin-top:6px;letter-spacing:2px" id="lastScore">--</div></div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div>
-        <div class="i-label">SCOUT</div>
-        <div class="i-line"><span class="i-line-l">Oportunidades</span><span class="i-line-v" id="scoutTotal">--</span></div>
-        <div class="i-line"><span class="i-line-l">Aprovadas</span><span class="i-line-v" id="scoutAprovadas">--</span></div>
+      <div><div class="i-label">SCOUT</div>
+        <div class="i-line"><span class="i-ll">Oportunidades</span><span class="i-lv" id="scoutTotal">--</span></div>
+        <div class="i-line"><span class="i-ll">Aprovadas</span><span class="i-lv" id="scoutAprovadas">--</span></div>
       </div>
       <div class="accent-bar"></div>
     </div>
   </div>
 
-  <!-- FOOTER -->
   <div class="footer">
-    <div class="f-left">BC INDUSTRIES ● MORGAN SYSTEM v2.0</div>
-    <div class="f-right">
-      <span class="f-status" id="footerStatus">PRONTO</span>
+    <div class="f-l">BC INDUSTRIES ● MORGAN SYSTEM v2.0</div>
+    <div class="f-r">
+      <span class="f-s" id="footerStatus">PRONTO</span>
       <div class="mini-btn" onclick="toggleMini()">MINI</div>
     </div>
   </div>
@@ -547,80 +449,88 @@
 </div>
 
 <script>
-// ─── STARS ────────────────────────────────────────────
+// STARS + NEBULA
 const canvas = document.getElementById('starCanvas');
 const ctx = canvas.getContext('2d');
-let stars = [];
+let stars = [], nebulae = [];
 
-function initStars() {
+function initCanvas() {
   canvas.width  = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;
   stars = [];
-  for (let i = 0; i < 180; i++) {
-    stars.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.2 + 0.2,
-      a: Math.random(),
-      da: (Math.random() - 0.5) * 0.008,
-    });
+  nebulae = [];
+  for (let i = 0; i < 200; i++) {
+    stars.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*.9+.15, a:Math.random(), da:(Math.random()-.5)*.006, c:Math.random()>.7?'0,255,204':'0,212,255' });
+  }
+  // soft nebula clouds
+  for (let i = 0; i < 5; i++) {
+    nebulae.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:80+Math.random()*120, c:Math.random()>.5?'0,212,255':'0,255,204', a:.025+Math.random()*.03 });
   }
 }
 
-function drawStars() {
+function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  stars.forEach(s => {
-    s.a += s.da;
-    if (s.a > 1 || s.a < 0) s.da *= -1;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,212,255,${s.a * 0.6})`;
-    ctx.fill();
+  // nebulae
+  nebulae.forEach(n => {
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    g.addColorStop(0, `rgba(${n.c},${n.a})`);
+    g.addColorStop(1, `rgba(${n.c},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
   });
-  requestAnimationFrame(drawStars);
+  // stars
+  stars.forEach(s => {
+    s.a += s.da; if(s.a>1||s.a<0.05) s.da*=-1;
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(${s.c},${s.a*.7})`; ctx.fill();
+  });
+  requestAnimationFrame(drawCanvas);
 }
-initStars();
-drawStars();
-window.addEventListener('resize', initStars);
+initCanvas(); drawCanvas();
+window.addEventListener('resize', initCanvas);
 
-// ─── CONSTELLATION LAYOUT ─────────────────────────────
+// LAYOUT
 function layoutNodes() {
   const el = document.getElementById('centerEl');
   const W = el.offsetWidth, H = el.offsetHeight;
-  const cx = W / 2, cy = H / 2 - 60;
+  const cx = W/2, cy = H/2 - 50;
 
-  // CEO: center
-  const ceo = document.getElementById('node-ceo');
-  ceo.style.left = cx + 'px';
-  ceo.style.top  = cy + 'px';
+  pos('node-ceo', cx, cy);
 
-  // SCOUT: upper-right
-  const scoutX = cx + W * 0.22, scoutY = cy - H * 0.20;
-  const scout = document.getElementById('node-scout');
-  scout.style.left = scoutX + 'px';
-  scout.style.top  = scoutY + 'px';
+  const scoutX = cx + W*.22, scoutY = cy - H*.22;
+  pos('node-scout', scoutX, scoutY);
 
-  // SOLVER: lower-left
-  const solverX = cx - W * 0.24, solverY = cy + H * 0.18;
-  const solver = document.getElementById('node-solver');
-  solver.style.left = solverX + 'px';
-  solver.style.top  = solverY + 'px';
+  const solverX = cx - W*.24, solverY = cy + H*.20;
+  pos('node-solver', solverX, solverY);
 
-  // Lines
-  setLine('line-scout',  cx, cy, scoutX,  scoutY);
-  setLine('line-solver', cx, cy, solverX, solverY);
+  setCurve('path-scout',  cx, cy, scoutX,  scoutY);
+  setCurve('path-solver', cx, cy, solverX, solverY);
+
+  // update gradient coords
+  ['lineGrad1','lineGrad2'].forEach((id,i) => {
+    const g = document.getElementById(id);
+    if(!g) return;
+    const tx = i===0 ? scoutX : solverX;
+    const ty = i===0 ? scoutY : solverY;
+    g.setAttribute('x1',cx); g.setAttribute('y1',cy);
+    g.setAttribute('x2',tx); g.setAttribute('y2',ty);
+  });
 }
 
-function setLine(id, x1, y1, x2, y2) {
-  const l = document.getElementById(id);
-  l.setAttribute('x1', x1); l.setAttribute('y1', y1);
-  l.setAttribute('x2', x2); l.setAttribute('y2', y2);
+function pos(id, x, y) {
+  const el = document.getElementById(id);
+  el.style.left = x+'px'; el.style.top = y+'px';
+}
+
+function setCurve(id, x1, y1, x2, y2) {
+  const mx = (x1+x2)/2 + (y2-y1)*.15;
+  const my = (y1+y2)/2 - (x2-x1)*.15;
+  document.getElementById(id).setAttribute('d', `M${x1},${y1} Q${mx},${my} ${x2},${y2}`);
 }
 
 layoutNodes();
 window.addEventListener('resize', layoutNodes);
 
-// ─── AGENTS ───────────────────────────────────────────
+// AGENTS
 const AGENTS = {
   ceo:    { label:'MORGAN CEO',    online:true  },
   scout:  { label:'MORGAN SCOUT',  online:false },
@@ -629,165 +539,92 @@ const AGENTS = {
 let activeAgent = 'ceo';
 
 function selectAgent(id) {
-  if (!AGENTS[id].online) { showWip(); return; }
+  if(!AGENTS[id].online){ showWip(); return; }
   activeAgent = id;
-  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-  document.getElementById('node-' + id).classList.add('active');
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('active'));
+  document.getElementById('node-'+id).classList.add('active');
   document.getElementById('hdrTitle').textContent = AGENTS[id].label;
 }
 
 function showWip() {
-  const t = document.getElementById('wipToast');
+  const t=document.getElementById('wipToast');
   t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ─── ESTADO ───────────────────────────────────────────
-let morganState = 'idle';
+// STATE
+let morganState='idle';
 function setState(s) {
-  morganState = s;
-  const isMini = document.body.classList.contains('mini-mode');
-  document.body.className = (isMini ? 'mini-mode ' : '') + s;
-  const labels = { listening:'A OUVIR', thinking:'A PENSAR', speaking:'A FALAR' };
-  const txt = labels[s] || '';
-  document.getElementById('stateLabelText').textContent = txt;
-  document.getElementById('footerStatus').textContent = txt || 'PRONTO';
+  morganState=s;
+  const isMini=document.body.classList.contains('mini-mode');
+  document.body.className=(isMini?'mini-mode ':'')+s;
+  const L={listening:'A OUVIR',thinking:'A PENSAR',speaking:'A FALAR'};
+  document.getElementById('stateLabelText').textContent=L[s]||'';
+  document.getElementById('footerStatus').textContent=L[s]||'PRONTO';
 }
 
-// ─── CLOCK ────────────────────────────────────────────
-setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
-}, 1000);
-document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+// CLOCK
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8); },1000);
+document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);
 
-// ─── WIDGETS ──────────────────────────────────────────
+// WIDGETS
 async function loadWidgets() {
   try {
-    const d = await fetch('/api/widgets').then(r => r.json());
-    if (d.date) document.getElementById('dateLabel').textContent = d.date;
-    if (d.weather) {
-      document.getElementById('weatherTemp').textContent = d.weather.temp || '--°';
-      document.getElementById('weatherDesc').textContent = d.weather.desc || 'Moreira de Cónegos';
-    }
-    if (d.scout) {
-      document.getElementById('scoutTotal').textContent = d.scout.total ?? '--';
-      document.getElementById('scoutAprovadas').textContent = d.scout.aprovadas ?? '--';
-    }
-    const pj = d.proximo_jogo;
-    if (pj?.adversario && pj.adversario !== '--') {
-      document.getElementById('nextGame').innerHTML = `vs <span style="color:var(--blue)">${pj.adversario}</span>`;
-      document.getElementById('nextGameDate').textContent = pj.data || '';
-      document.getElementById('nextGameComp').textContent = pj.competicao || '';
-    }
-    const ur = d.ultimo_resultado;
-    if (ur?.adversario && ur.adversario !== '--') {
-      document.getElementById('lastOpponent').textContent = 'vs ' + ur.adversario;
-      const cls = ur.ganhou === true ? 'win' : ur.ganhou === false ? 'loss' : 'draw';
-      document.getElementById('lastScore').innerHTML = `<span class="${cls}">${ur.resultado}</span>`;
-    }
-  } catch(e) {}
+    const d=await fetch('/api/widgets').then(r=>r.json());
+    if(d.date) document.getElementById('dateLabel').textContent=d.date;
+    if(d.weather){ document.getElementById('weatherTemp').textContent=d.weather.temp||'--°'; document.getElementById('weatherDesc').textContent=d.weather.desc||'Moreira de Cónegos'; }
+    if(d.scout){ document.getElementById('scoutTotal').textContent=d.scout.total??'--'; document.getElementById('scoutAprovadas').textContent=d.scout.aprovadas??'--'; }
+    const pj=d.proximo_jogo;
+    if(pj?.adversario&&pj.adversario!=='--'){ document.getElementById('nextGame').innerHTML=`vs <span style="color:var(--blue)">${pj.adversario}</span>`; document.getElementById('nextGameDate').textContent=pj.data||''; document.getElementById('nextGameComp').textContent=pj.competicao||''; }
+    const ur=d.ultimo_resultado;
+    if(ur?.adversario&&ur.adversario!=='--'){ document.getElementById('lastOpponent').textContent='vs '+ur.adversario; const cls=ur.ganhou===true?'win':ur.ganhou===false?'loss':'draw'; document.getElementById('lastScore').innerHTML=`<span class="${cls}">${ur.resultado}</span>`; }
+  } catch(e){}
 }
-loadWidgets();
-setInterval(loadWidgets, 30000);
+loadWidgets(); setInterval(loadWidgets,30000);
 
-// ─── TRANSCRIPT ───────────────────────────────────────
-function showTranscript(userText, morganText) {
-  const el = document.getElementById('transcript');
-  el.innerHTML = '';
-  if (userText) {
-    const u = document.createElement('div');
-    u.className = 't-user'; u.textContent = '› ' + userText;
-    el.appendChild(u);
-  }
-  if (morganText) {
-    const m = document.createElement('div');
-    m.className = 't-morgan'; m.textContent = morganText;
-    el.appendChild(m);
-  }
+// TRANSCRIPT
+function showTranscript(u,m) {
+  const el=document.getElementById('transcript'); el.innerHTML='';
+  if(u){const d=document.createElement('div');d.className='t-user';d.textContent='› '+u;el.appendChild(d);}
+  if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
 }
 
-// ─── CONVAI ───────────────────────────────────────────
-let convaiWS = null, scriptProcessor = null;
-let audioContext, micStream, micSource;
-
-async function initConvai() {
-  try {
-    micStream = await navigator.mediaDevices.getUserMedia({
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}, video:false
-    });
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    micSource = audioContext.createMediaStreamSource(micStream);
-    convaiWS = new WebSocket('ws://127.0.0.1:8765/ws/convai');
-    convaiWS.onopen = () => { setState('listening'); startMicStream(); };
-    convaiWS.onmessage = (ev) => {
-      const d = JSON.parse(ev.data);
-      if (d.type==='user')        { showTranscript(d.text,''); setState('thinking'); }
-      else if(d.type==='agent')   { showTranscript('',d.text); setState('speaking'); }
-      else if(d.type==='interrupted') { setState('listening'); }
-    };
-    convaiWS.onclose = () => { stopMicStream(); setTimeout(initConvai, 2000); };
-    convaiWS.onerror = () => {};
-  } catch(e) {
-    document.getElementById('stateLabelText').textContent = 'SEM MICROFONE';
-  }
+// CONVAI
+let convaiWS=null,scriptProcessor=null,audioContext,micStream,micSource;
+async function initConvai(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+    audioContext=new(window.AudioContext||window.webkitAudioContext)();
+    micSource=audioContext.createMediaStreamSource(micStream);
+    convaiWS=new WebSocket('ws://127.0.0.1:8765/ws/convai');
+    convaiWS.onopen=()=>{setState('listening');startMicStream();};
+    convaiWS.onmessage=(ev)=>{const d=JSON.parse(ev.data);if(d.type==='user'){showTranscript(d.text,'');setState('thinking');}else if(d.type==='agent'){showTranscript('',d.text);setState('speaking');}else if(d.type==='interrupted'){setState('listening');}};
+    convaiWS.onclose=()=>{stopMicStream();setTimeout(initConvai,2000);};
+    convaiWS.onerror=()=>{};
+  }catch(e){document.getElementById('stateLabelText').textContent='SEM MICROFONE';}
 }
-
-function startMicStream() {
-  if (scriptProcessor) return;
-  scriptProcessor = audioContext.createScriptProcessor(4096,1,1);
-  micSource.connect(scriptProcessor);
-  scriptProcessor.connect(audioContext.destination);
-  const ratio = audioContext.sampleRate / 16000;
-  scriptProcessor.onaudioprocess = (e) => {
-    if (!convaiWS || convaiWS.readyState!==WebSocket.OPEN) return;
-    const inp = e.inputBuffer.getChannelData(0);
-    const out = new Int16Array(Math.round(inp.length/ratio));
-    for(let i=0;i<out.length;i++)
-      out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[Math.round(i*ratio)]*32767)));
+function startMicStream(){
+  if(scriptProcessor)return;
+  scriptProcessor=audioContext.createScriptProcessor(4096,1,1);
+  micSource.connect(scriptProcessor);scriptProcessor.connect(audioContext.destination);
+  const ratio=audioContext.sampleRate/16000;
+  scriptProcessor.onaudioprocess=(e)=>{
+    if(!convaiWS||convaiWS.readyState!==WebSocket.OPEN)return;
+    const inp=e.inputBuffer.getChannelData(0);const out=new Int16Array(Math.round(inp.length/ratio));
+    for(let i=0;i<out.length;i++) out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[Math.round(i*ratio)]*32767)));
     convaiWS.send(out.buffer);
   };
 }
+function stopMicStream(){if(scriptProcessor){scriptProcessor.disconnect();scriptProcessor=null;}}
+async function startMorgan(){const btn=document.getElementById('startBtn');if(btn)btn.remove();document.getElementById('stateLabelText').textContent='A LIGAR...';await initConvai();}
+function handleKey(e){if(e.key==='Enter'){const inp=document.getElementById('textInput');const txt=inp.value.trim();inp.value='';if(txt)fetch('/api/chat-speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:txt})});}}
 
-function stopMicStream() {
-  if(scriptProcessor){scriptProcessor.disconnect();scriptProcessor=null;}
-}
-
-async function startMorgan() {
-  const btn=document.getElementById('startBtn');
-  if(btn) btn.remove();
-  document.getElementById('stateLabelText').textContent='A LIGAR...';
-  await initConvai();
-}
-
-function handleKey(e) {
-  if(e.key==='Enter'){
-    const inp=document.getElementById('textInput');
-    const txt=inp.value.trim(); inp.value='';
-    if(txt) fetch('/api/chat-speak',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({message:txt})
-    });
-  }
-}
-
-// ─── MINI ─────────────────────────────────────────────
+// MINI
 let isMini=false;
-function toggleMini(){
-  isMini=!isMini;
-  if(isMini) window.pywebview.api.enter_mini();
-  else window.pywebview.api.exit_mini();
-}
+function toggleMini(){isMini=!isMini;if(isMini)window.pywebview.api.enter_mini();else window.pywebview.api.exit_mini();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&isMini)toggleMini();});
-
-function pauseConvai(){
-  stopMicStream();
-  if(convaiWS){convaiWS.onclose=null;convaiWS.close();convaiWS=null;}
-  document.getElementById('stateLabelText').textContent='EM PAUSA';
-}
-function resumeConvai(){
-  if(!convaiWS||convaiWS.readyState!==WebSocket.OPEN) startMorgan();
-}
-
+function pauseConvai(){stopMicStream();if(convaiWS){convaiWS.onclose=null;convaiWS.close();convaiWS=null;}document.getElementById('stateLabelText').textContent='EM PAUSA';}
+function resumeConvai(){if(!convaiWS||convaiWS.readyState!==WebSocket.OPEN)startMorgan();}
 setTimeout(()=>{if(morganState==='idle')startMorgan();},800);
 </script>
 </body>
