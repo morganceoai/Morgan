@@ -656,6 +656,18 @@ async def health():
     return {"status": "ok", "service": "morgan-ceo"}
 
 
+@llm_api.post("/morgan/responder")
+async def morgan_responder(request: FastAPIRequest):
+    """Ferramenta chamada pelo ElevenLabs ConvAI — corre o Morgan real."""
+    body = await request.json()
+    user_msg = body.get("mensagem", "") or body.get("message", "") or body.get("query", "")
+    if not user_msg:
+        return {"resposta": "Não percebi a mensagem."}
+    loop = asyncio.get_event_loop()
+    reply = await loop.run_in_executor(None, get_morgan_reply, "desktop", user_msg)
+    return {"resposta": reply}
+
+
 @llm_api.post("/v1/chat/completions")
 async def custom_llm(request: FastAPIRequest):
     body = await request.json()
