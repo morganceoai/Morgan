@@ -4,10 +4,13 @@ import time
 import logging
 import asyncio
 import tempfile
+import warnings
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import date, datetime
 import zoneinfo
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 TZ_LISBOA = zoneinfo.ZoneInfo("Europe/Lisbon")
 
