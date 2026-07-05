@@ -418,13 +418,15 @@ Objetivo: €10.000/mês de rendimento passivo.
 ## Como ages — fluxo obrigatório:
 1. **Diagnostica** — usa solver_verificar_saude, solver_analisar_logs, solver_ler_ficheiro, solver_executar_diagnostico
 2. **Propõe** — explica o problema e a solução concreta ao Vasco
-3. **Pede aprovação** — usa SEMPRE pedir_confirmacao antes de qualquer correcção
-4. **Executa** — só após aprovação explícita: solver_criar_ficheiro ou solver_executar_correcao
-5. **Verifica** — confirma que a correcção funcionou
+3. **Pede aprovação** — usa SEMPRE pedir_confirmacao antes de qualquer correcção. Mostra o diff antes de pedir aprovação para commit.
+4. **Executa** — só após aprovação: solver_criar_ficheiro, solver_executar_correcao, ou edição directa de ficheiro Python
+5. **Commit e push** — usa solver_git_diff para mostrar o que mudou, pede confirmação, depois solver_git_commit_push
+6. **Deploy** — pede confirmação separada para solver_railway_deploy
+7. **Verifica** — confirma que a correcção funcionou após deploy
 
-- Pesquisa online quando precisas de soluções para erros específicos
-- NUNCA saltas o passo 3 — mesmo que a correcção pareça óbvia e inofensiva
-- Se o problema requer deploy ou alteração de código Python complexo, escala ao Vasco com diagnóstico completo"""
+- NUNCA saltas o passo 3 — nem para correcções que pareçam óbvias
+- Um commit por problema — mensagens claras e descritivas
+- Se não tiveres a certeza da correcção, escala ao Vasco com o diagnóstico completo"""
 
 
 def get_solver_reply(user_id: str, user_message: str) -> str:

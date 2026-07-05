@@ -623,6 +623,61 @@ def solver_analisar_logs(linhas: int = 100) -> str:
         return f"Erro a ler audit.log: {e}"
 
 
+def solver_git_diff() -> str:
+    """Mostra as alterações pendentes no repositório (read-only, sem confirmação)."""
+    try:
+        result = subprocess.run(
+            "git diff HEAD --stat && git diff HEAD",
+            shell=True, capture_output=True, text=True,
+            cwd=str(MORGAN_DIR), timeout=30
+        )
+        output = (result.stdout + result.stderr).strip()
+        return output[:6000] if output else "Sem alterações pendentes."
+    except Exception as e:
+        return f"Erro: {e}"
+
+
+def solver_git_commit_push(mensagem: str) -> str:
+    """Faz git add, commit e push. REQUER confirmação prévia do Vasco."""
+    import os
+    token = os.getenv("GITHUB_TOKEN", "")
+    if not token:
+        return "GITHUB_TOKEN não configurado no Railway. Adiciona a variável de ambiente primeiro."
+    try:
+        # Configura remote com token para autenticação
+        remote_url = f"https://{token}@github.com/morganceoai/Morgan.git"
+        cmds = [
+            f"git remote set-url origin {remote_url}",
+            "git config user.email 'solver@morgan.ai'",
+            "git config user.name 'Morgan Solver'",
+            "git add -A",
+            f"git commit -m '{mensagem}'",
+            "git push origin main",
+        ]
+        for cmd in cmds:
+            r = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+                               cwd=str(MORGAN_DIR), timeout=60)
+            if r.returncode != 0 and "nothing to commit" not in r.stdout:
+                return f"Erro em '{cmd}':\n{r.stderr or r.stdout}"
+        return "Commit e push concluídos com sucesso."
+    except Exception as e:
+        return f"Erro: {e}"
+
+
+def solver_railway_deploy() -> str:
+    """Faz deploy no Railway. REQUER confirmação prévia do Vasco."""
+    try:
+        result = subprocess.run(
+            "railway up --detach",
+            shell=True, capture_output=True, text=True,
+            cwd=str(MORGAN_DIR), timeout=120
+        )
+        output = (result.stdout + result.stderr).strip()
+        return output or "Deploy iniciado."
+    except Exception as e:
+        return f"Erro: {e}"
+
+
 def solver_criar_ficheiro(caminho: str, conteudo: str) -> str:
     """Cria ou sobrescreve um ficheiro no sistema Morgan. REQUER confirmação prévia do Vasco."""
     try:
@@ -868,6 +923,27 @@ TOOLS = [
         }
     },
     {
+        "name": "solver_git_diff",
+        "description": "Mostra as alterações pendentes no repositório — o que mudou e ainda não foi commitado. Usa antes de fazer commit para confirmar o que vai ser enviado.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "solver_git_commit_push",
+        "description": "Faz git add, commit e push para o GitHub. APENAS após aprovação explícita do Vasco via pedir_confirmacao. Mostra sempre o diff antes de pedir aprovação.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mensagem": {"type": "string", "description": "Mensagem do commit. Descritiva e clara."}
+            },
+            "required": ["mensagem"]
+        }
+    },
+    {
+        "name": "solver_railway_deploy",
+        "description": "Faz deploy no Railway após commit e push. APENAS após aprovação explícita do Vasco. Usar sempre depois de solver_git_commit_push.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "solver_criar_ficheiro",
         "description": "Cria ou actualiza um ficheiro no sistema Morgan. APENAS usa após o Vasco aprovar explicitamente via pedir_confirmacao. Nunca uses sem aprovação.",
         "input_schema": {
@@ -932,4 +1008,7 @@ TOOL_FUNCTIONS = {
     "solver_analisar_logs": solver_analisar_logs,
     "solver_criar_ficheiro": solver_criar_ficheiro,
     "solver_executar_correcao": solver_executar_correcao,
+    "solver_git_diff": solver_git_diff,
+    "solver_git_commit_push": solver_git_commit_push,
+    "solver_railway_deploy": solver_railway_deploy,
 }
