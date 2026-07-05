@@ -4,7 +4,7 @@ import time
 import logging
 import asyncio
 import tempfile
-import threading
+from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import date, datetime
 import zoneinfo
@@ -1153,19 +1153,63 @@ def _task_error_handler(task: asyncio.Task):
         audit("ASYNCIO_TASK_ERRO", f"{task.get_name()}: {task.exception()}")
 
 
-async def post_init(app):
-    task = asyncio.create_task(heartbeat_loop(app), name="heartbeat_loop")
-    task.add_done_callback(_task_error_handler)
+# ── Aplicação Telegram (construída em main, usada no webhook) ────────────────
+
+_telegram_app = None
 
 
 # ── Custom LLM API — para ElevenLabs ConvAI (desktop) ───────────────────────
 
-llm_api = FastAPI()
+@asynccontextmanager
+async def lifespan(fastapi_app: "FastAPI"):
+    global _telegram_app
+    _telegram_app = (
+        ApplicationBuilder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .build()
+    )
+    _telegram_app.add_handler(CommandHandler("status", cmd_status))
+    _telegram_app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
+    _telegram_app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
+
+    await _telegram_app.initialize()
+    await _telegram_app.start()
+
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+    if railway_domain:
+        webhook_url = f"https://{railway_domain}/telegram/webhook"
+        await _telegram_app.bot.set_webhook(webhook_url, drop_pending_updates=True)
+        audit("WEBHOOK", f"Registado em {webhook_url}")
+    else:
+        audit("WEBHOOK_AVISO", "RAILWAY_PUBLIC_DOMAIN não definido — webhook não registado")
+
+    task = asyncio.create_task(heartbeat_loop(_telegram_app), name="heartbeat_loop")
+    task.add_done_callback(_task_error_handler)
+
+    yield
+
+    await _telegram_app.bot.delete_webhook()
+    await _telegram_app.stop()
+    await _telegram_app.shutdown()
+
+
+llm_api = FastAPI(lifespan=lifespan)
 
 
 @llm_api.get("/health")
 async def health():
     return {"status": "ok", "service": "morgan-ceo"}
+
+
+@llm_api.post("/telegram/webhook")
+async def telegram_webhook(request: FastAPIRequest):
+    data = await request.json()
+    update = Update.de_json(data, _telegram_app.bot)
+    await _telegram_app.process_update(update)
+    return {"ok": True}
 
 
 @llm_api.post("/morgan/responder")
@@ -1234,35 +1278,15 @@ async def custom_llm(request: FastAPIRequest):
     }
 
 
-def start_llm_api():
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(llm_api, host="0.0.0.0", port=port, log_level="warning")
 
 
 def main():
     print("Morgan — online (conversa + heartbeat + Tier 6 + LLM API)")
     print("Kill switch: envia 'morgan pausa' / 'morgan continua' no Telegram")
     print("Ctrl+C para terminar.")
-
-    # Arrancar API do LLM custom em thread separada
-    api_thread = threading.Thread(target=start_llm_api, daemon=True)
-    api_thread.start()
-    print(f"LLM API ativa na porta {os.getenv('PORT', 8000)}")
-
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).post_init(post_init).build()
-    app.add_handler(CommandHandler("status", cmd_status))
-    app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
-    app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
-
-    async def error_handler(update, context):
-        if isinstance(context.error, TelegramConflict):
-            audit("CONFLICT", "Outra instância detetada — a aguardar 10s antes de retomar")
-            await asyncio.sleep(10)
-        else:
-            audit("TELEGRAM_ERRO", str(context.error))
-
-    app.add_error_handler(error_handler)
-    app.run_polling(drop_pending_updates=True)
+    port = int(os.getenv("PORT", 8000))
+    print(f"LLM API + Telegram webhook na porta {port}")
+    uvicorn.run(llm_api, host="0.0.0.0", port=port, log_level="warning")
 
 
 if __name__ == "__main__":
