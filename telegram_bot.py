@@ -280,10 +280,6 @@ CHECKS_MANHA = [
         "descricao": "Usa as ferramentas proximos_jogos e resultados_recentes para o Moreirense FC. Apresenta: (1) último resultado com marcador, (2) próximo jogo com data e adversário. Sê conciso. Se não houver dados, responde apenas: NADA",
     },
     {
-        "nome": "analise_adversario",
-        "descricao": "Usa proximos_jogos para o Moreirense FC. Se houver jogo nos próximos 3 dias: pesquisa na web o adversário — forma recente (últimos 5 jogos), sistema tático habitual, jogadores-chave, pontos fracos. Apresenta análise tática concisa útil para preparação. Se não houver jogo nos próximos 3 dias, responde apenas: NADA",
-    },
-    {
         "nome": "meteo_manha",
         "descricao": 'Pesquisa na web o tempo meteorológico de hoje em Moreira de Cónegos, Portugal. Apresenta: temperatura máxima e mínima, condições (sol/chuva/nublado), e se é adequado para treino ao ar livre. Sê muito breve (2-3 linhas). Se não encontrares dados, responde apenas: NADA',
     },
@@ -304,7 +300,6 @@ CHECKS_TARDE = [
 PREFIXOS = {
     "moreirense_noticias": "Vasco, em relação ao Moreirense",
     "moreirense_jogos": "Vasco, a situação desportiva do Moreirense",
-    "analise_adversario": "Vasco, análise do próximo adversário",
     "meteo_manha": "Vasco, o tempo para hoje",
     "primeira_liga_noticias": "Vasco, em relação à Primeira Liga",
     "mencoes_vasco": "Vasco, encontrei referências ao teu nome",
