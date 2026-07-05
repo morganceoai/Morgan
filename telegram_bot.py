@@ -575,9 +575,34 @@ def mark_scout_done():
 
 _solver_ultimo_audit_pos = 0  # posição no audit.log da última verificação
 
+# Keywords exaustivos — cobre Python, Railway, APIs, sistema operativo, rede
+_PADROES_ERRO = [
+    # Python
+    "_ERRO", "ERROR", "EXCEPTION", "TRACEBACK", "CRITICAL", "FATAL",
+    "SYNTAXERROR", "TYPEERROR", "VALUEERROR", "KEYERROR", "INDEXERROR",
+    "ATTRIBUTEERROR", "IMPORTERROR", "RUNTIMEERROR", "OSERROR", "IOERROR",
+    "MEMORYERROR", "RECURSIONERROR", "TIMEOUTERROR", "CONNECTIONERROR",
+    # HTTP / APIs
+    "STATUS 4", "STATUS 5", "429", "500", "502", "503", "504",
+    "RATE LIMIT", "QUOTA EXCEEDED", "UNAUTHORIZED", "FORBIDDEN",
+    "CONNECTION REFUSED", "CONNECTION RESET", "SSL ERROR", "TIMEOUT",
+    # Railway / sistema
+    "OOM", "KILLED", "SEGFAULT", "SIGNAL 9", "SIGNAL 11",
+    "DEPLOYMENT FAILED", "BUILD FAILED", "CRASH",
+    # Genérico
+    "FAILED", "FAILURE", "INVALID", "CORRUPT", "MISSING KEY",
+]
+
+# Prefixos do audit.log que NÃO são erros mesmo contendo keywords
+_IGNORAR_PREFIXOS = [
+    "SOLVER_CHECK_ERRO",  # evita loop infinito
+    "SOLVER_TRIGGER",
+    "SOLVER_ALERTA",
+]
+
 
 async def should_trigger_solver() -> bool:
-    """Verifica se há erros novos no audit.log desde a última verificação."""
+    """Verifica se há erros novos no audit.log ou nos logs do Railway."""
     global _solver_ultimo_audit_pos
     if is_quiet_hours():
         return False
@@ -588,12 +613,15 @@ async def should_trigger_solver() -> bool:
         content = audit_path.read_text(encoding="utf-8")
         novas_linhas = content[_solver_ultimo_audit_pos:]
         _solver_ultimo_audit_pos = len(content)
-        # Padrões de erro que devem acordar o Solver
-        padroes_erro = ["_ERRO", "ERROR", "EXCEPTION", "TRACEBACK", "CRITICAL"]
-        erros = [l for l in novas_linhas.splitlines()
-                 if any(p in l.upper() for p in padroes_erro)]
-        # Ignora erros do próprio Solver para não criar loop infinito
-        erros = [l for l in erros if "SOLVER_CHECK_ERRO" not in l]
+
+        erros = []
+        for linha in novas_linhas.splitlines():
+            linha_upper = linha.upper()
+            if any(ignorar in linha for ignorar in _IGNORAR_PREFIXOS):
+                continue
+            if any(p in linha_upper for p in _PADROES_ERRO):
+                erros.append(linha)
+
         return len(erros) > 0
     except Exception:
         return False
@@ -620,7 +648,7 @@ def mark_solver_check_done():
 
 
 async def run_solver_check(app) -> None:
-    """Verifica saúde do sistema e alerta o Vasco se encontrar problemas."""
+    """Verifica saúde do sistema. Se o Solver falhar, o CEO alerta o Vasco."""
     try:
         from tools import solver_verificar_saude
         saude = solver_verificar_saude()
@@ -628,11 +656,41 @@ async def run_solver_check(app) -> None:
         if not tem_erros:
             audit("SOLVER_CHECK", "Sistema saudável")
             return
-        diagnostico = get_solver_reply("vasco", f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica e propõe solução concisa.")
-        await app.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Solver — alerta:\n\n{diagnostico}")
-        audit("SOLVER_ALERTA", "Problemas detetados e reportados")
+
+        try:
+            # Solver tenta diagnosticar com Opus
+            diagnostico = get_solver_reply(
+                "vasco",
+                f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica e propõe solução concisa."
+            )
+            await app.bot.send_message(
+                chat_id=TELEGRAM_CHAT_ID,
+                text=f"Solver — alerta:\n\n{diagnostico}"
+            )
+            audit("SOLVER_ALERTA", "Problemas detetados e reportados")
+
+        except Exception as solver_erro:
+            # Solver falhou — CEO assume e alerta diretamente
+            audit("SOLVER_FALHOU", str(solver_erro))
+            mensagem_ceo = (
+                f"Vasco, o Solver detetou problemas mas falhou ao analisá-los.\n\n"
+                f"Relatório de saúde:\n{saude}\n\n"
+                f"Erro do Solver: {solver_erro}\n\n"
+                f"Precisas de verificar manualmente ou contactar suporte técnico."
+            )
+            await app.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=mensagem_ceo)
+            audit("CEO_FALLBACK", "CEO alertou Vasco sobre falha do Solver")
+
     except Exception as e:
         audit("SOLVER_CHECK_ERRO", str(e))
+        # Último recurso — tenta alertar mesmo assim
+        try:
+            await app.bot.send_message(
+                chat_id=TELEGRAM_CHAT_ID,
+                text=f"Alerta crítico: o sistema de monitorização falhou.\nErro: {e}"
+            )
+        except Exception:
+            pass
 
 
 def should_run_briefing() -> bool:
