@@ -3,259 +3,293 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BC INDUSTRIES</title>
+<title>Morgan — BC Industries</title>
 <style>
   :root {
-    --blue:   #00d4ff;
-    --green:  #00ff88;
-    --amber:  #ffb300;
-    --violet: #9b6dff;
-    --red:    #ff4455;
-    --bg:     #010912;
-    --bg2:    #020e1c;
-    --border: #00d4ff15;
-    --text:   #6aacca;
-    --dim:    #2a5060;
+    --bg:      #04080f;
+    --bg2:     #060d18;
+    --bg3:     #080f1e;
+    --cyan:    #00d4ff;
+    --green:   #00e87a;
+    --amber:   #f5a623;
+    --violet:  #9b6dff;
+    --red:     #ff4455;
+    --border:  rgba(255,255,255,0.06);
+    --text:    rgba(255,255,255,0.55);
+    --dim:     rgba(255,255,255,0.2);
+    --dimmer:  rgba(255,255,255,0.1);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
+
   body {
-    background:var(--bg);
-    color:var(--blue);
-    font-family:'Courier New',monospace;
-    height:100vh;
-    overflow:hidden;
-    user-select:none;
-    cursor:default;
+    background: var(--bg);
+    color: #fff;
+    font-family: system-ui, -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    cursor: default;
   }
 
-  /* TITLEBAR */
+  /* ── TITLEBAR ─────────────────────────────────── */
   .titlebar {
-    position:fixed; top:0; left:0; right:0; height:36px;
-    -webkit-app-region:drag; z-index:10000;
-    display:flex; align-items:center; padding:0 14px; gap:8px;
+    position: fixed; top: 0; left: 0; right: 0; height: 38px;
+    -webkit-app-region: drag; z-index: 10000;
+    display: flex; align-items: center; padding: 0 14px; gap: 8px;
   }
   .tb {
-    width:12px; height:12px; border-radius:50%; border:none;
-    cursor:pointer; -webkit-app-region:no-drag; transition:.15s;
+    width: 12px; height: 12px; border-radius: 50%; border: none;
+    cursor: pointer; -webkit-app-region: no-drag; transition: .15s;
   }
-  .tb:hover { filter:brightness(1.5); transform:scale(1.1); }
-  .tb-x{background:#8b3a38} .tb-y{background:#8b6f28} .tb-g{background:#1e6b2e}
+  .tb:hover { filter: brightness(1.4); transform: scale(1.1); }
+  .tb-x { background: #8b3a38; }
+  .tb-y { background: #8b6f28; }
+  .tb-g { background: #1e6b2e; }
 
-  /* LAYOUT */
+  /* ── LAYOUT ───────────────────────────────────── */
   .layout {
-    display:grid;
-    grid-template-columns:1fr 175px;
-    grid-template-rows:46px 1fr 40px;
-    height:100vh;
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    grid-template-rows: 52px 1fr 52px;
+    height: 100vh;
   }
 
-  /* HEADER */
+  /* ── HEADER ───────────────────────────────────── */
   .header {
-    grid-column:1/-1;
-    background:var(--bg2);
-    border-bottom:1px solid var(--border);
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 18px 0 76px;
+    grid-column: 1/-1;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px 0 80px;
+    background: var(--bg);
   }
-  .hdr-l { display:flex; align-items:center; gap:12px; }
-  .hdr-dot {
-    width:7px; height:7px; border-radius:50%;
-    background:var(--green); box-shadow:0 0 10px var(--green);
-    animation:breathe 3s ease-in-out infinite;
+  .hdr-l { display: flex; align-items: center; gap: 10px; }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse-dot 3s ease-in-out infinite;
   }
-  @keyframes breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
-  .hdr-title { font-size:11px; letter-spacing:5px; color:var(--blue); }
-  .hdr-status { font-size:7px; letter-spacing:3px; color:var(--green); opacity:.7; }
-  .hdr-c { text-align:center; }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.35; transform:scale(.7); }
+  }
+  .hdr-agent {
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85);
+    letter-spacing: 0.3px;
+  }
+  .hdr-badge {
+    font-size: 9px; font-weight: 500; letter-spacing: 1px;
+    color: var(--green); background: rgba(0,232,122,0.08);
+    padding: 2px 8px; border-radius: 20px;
+    border: 1px solid rgba(0,232,122,0.15);
+  }
+  .hdr-c { text-align: center; }
   .hdr-time {
-    font-size:20px; letter-spacing:4px; color:var(--blue);
-    text-shadow:0 0 30px #00d4ff50;
+    font-size: 22px; font-weight: 200; letter-spacing: 2px;
+    color: rgba(255,255,255,0.9);
   }
-  .hdr-date { font-size:7px; letter-spacing:3px; color:var(--dim); margin-top:1px; }
-  .hdr-r { text-align:right; }
-  .hdr-name { font-size:9px; letter-spacing:2px; color:var(--text); }
-  .hdr-org  { font-size:7px; letter-spacing:2px; color:var(--dim); margin-top:2px; }
+  .hdr-date { font-size: 10px; color: var(--dim); margin-top: 1px; font-weight: 400; }
+  .hdr-r { text-align: right; }
+  .hdr-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); }
+  .hdr-org  { font-size: 10px; color: var(--dimmer); margin-top: 2px; font-weight: 400; }
 
-  /* CENTER */
+  /* ── CENTER ───────────────────────────────────── */
   .center {
-    grid-column:1; grid-row:2;
-    position:relative; overflow:hidden;
-    background:var(--bg);
+    grid-column: 1; grid-row: 2;
+    position: relative; overflow: hidden;
+    background: var(--bg);
   }
-  #cv { position:absolute; inset:0; width:100%; height:100%; }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-  /* NODE HIT AREAS */
-  .hit {
-    position:absolute;
-    transform:translate(-50%,-50%);
-    border-radius:50%;
-    cursor:pointer; z-index:10;
+  /* Labels */
+  .node-label {
+    position: absolute; transform: translateX(-50%);
+    text-align: center; pointer-events: none; z-index: 11;
+    opacity: 0; transition: opacity .4s;
   }
+  .node-label.visible { opacity: 1; }
+  .node-label-name {
+    font-size: 10px; font-weight: 500;
+    color: rgba(255,255,255,0.4); letter-spacing: 0.5px;
+    transition: color .4s;
+  }
+  .node-label-role {
+    font-size: 9px; font-weight: 400;
+    color: rgba(255,255,255,0.15); margin-top: 3px;
+  }
+  .node-label.active .node-label-name { color: var(--cyan); }
+  .node-label.active-scout  .node-label-name { color: var(--amber); }
+  .node-label.active-solver .node-label-name { color: var(--violet); }
 
-  /* NODE LABELS */
-  .nlabel {
-    position:absolute;
-    transform:translateX(-50%);
-    text-align:center;
-    pointer-events:none; z-index:11;
-    transition:opacity .4s;
-  }
-  .nlabel-name {
-    font-size:7.5px; letter-spacing:2.5px;
-    color:var(--dim); transition:color .4s;
-  }
-  .nlabel-role { font-size:6px; letter-spacing:1px; color:#0d2535; margin-top:3px; }
-  .nlabel.active .nlabel-name { color:var(--blue); text-shadow:0 0 12px #00d4ff60; }
-  .nlabel.active-scout  .nlabel-name { color:#a07010; }
-  .nlabel.active-solver .nlabel-name { color:#5a3ea0; }
-
-  /* Vasco owner label */
   .vasco-label {
-    position:absolute; text-align:center;
-    pointer-events:none; z-index:11;
-    transform:translateX(-50%);
+    position: absolute; transform: translateX(-50%);
+    pointer-events: none; z-index: 11;
   }
-  .vasco-name { font-size:7px; letter-spacing:4px; color:#2a5570; }
+  .vasco-label span {
+    font-size: 9px; font-weight: 400; letter-spacing: 2px;
+    color: rgba(255,255,255,0.12); text-transform: uppercase;
+  }
 
-  /* OVERLAY */
+  /* Hit areas */
+  .hit {
+    position: absolute; transform: translate(-50%,-50%);
+    border-radius: 50%; cursor: pointer; z-index: 10;
+  }
+
+  /* ── OVERLAY ──────────────────────────────────── */
   .overlay {
-    position:absolute; bottom:0; left:0; right:0;
-    padding:0 0 16px;
-    display:flex; flex-direction:column; align-items:center; gap:8px;
-    pointer-events:none; z-index:20;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 0 32px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    pointer-events: none; z-index: 20;
   }
 
-  .waveform { display:flex; align-items:center; gap:3px; height:24px; }
-  .w-bar { width:2.5px; background:var(--blue); border-radius:3px; height:3px; opacity:.2; }
-  body.listening .w-bar { opacity:.5; animation:widle 1.3s ease-in-out infinite; }
-  body.speaking  .w-bar { opacity:.8; animation:wspeak .45s ease-in-out infinite; }
-  body.thinking  .w-bar { opacity:.3; animation:wthink 1s ease-in-out infinite; }
-  .w-bar:nth-child(1){animation-delay:.00s} .w-bar:nth-child(2){animation-delay:.08s}
-  .w-bar:nth-child(3){animation-delay:.16s} .w-bar:nth-child(4){animation-delay:.24s}
-  .w-bar:nth-child(5){animation-delay:.12s} .w-bar:nth-child(6){animation-delay:.04s}
-  .w-bar:nth-child(7){animation-delay:.20s} .w-bar:nth-child(8){animation-delay:.10s}
-  .w-bar:nth-child(9){animation-delay:.28s} .w-bar:nth-child(10){animation-delay:.06s}
-  .w-bar:nth-child(11){animation-delay:.18s} .w-bar:nth-child(12){animation-delay:.14s}
-  @keyframes widle  { 0%,100%{height:3px} 50%{height:16px} }
-  @keyframes wspeak { 0%,100%{height:5px} 50%{height:24px} }
-  @keyframes wthink { 0%,100%{height:3px} 50%{height:8px}  }
+  /* Waveform */
+  .waveform { display: flex; align-items: center; gap: 3px; height: 20px; }
+  .w-bar { width: 2px; background: var(--cyan); border-radius: 2px; height: 2px; opacity: .15; }
+  body.listening .w-bar { opacity: .5; animation: w-idle .9s ease-in-out infinite; }
+  body.speaking  .w-bar { opacity: .8; animation: w-speak .4s ease-in-out infinite; }
+  body.thinking  .w-bar { opacity: .25; animation: w-think 1.2s ease-in-out infinite; }
+  .w-bar:nth-child(1){animation-delay:.00s} .w-bar:nth-child(2){animation-delay:.07s}
+  .w-bar:nth-child(3){animation-delay:.14s} .w-bar:nth-child(4){animation-delay:.21s}
+  .w-bar:nth-child(5){animation-delay:.10s} .w-bar:nth-child(6){animation-delay:.03s}
+  .w-bar:nth-child(7){animation-delay:.17s} .w-bar:nth-child(8){animation-delay:.08s}
+  .w-bar:nth-child(9){animation-delay:.25s} .w-bar:nth-child(10){animation-delay:.05s}
+  .w-bar:nth-child(11){animation-delay:.16s}.w-bar:nth-child(12){animation-delay:.12s}
+  @keyframes w-idle  { 0%,100%{height:2px} 50%{height:14px} }
+  @keyframes w-speak { 0%,100%{height:3px} 50%{height:20px} }
+  @keyframes w-think { 0%,100%{height:2px} 50%{height:7px}  }
 
-  .state-txt {
-    font-size:7px; letter-spacing:5px; color:var(--dim);
-    transition:color .3s; pointer-events:none; min-height:14px;
+  .state-label {
+    font-size: 10px; font-weight: 400; letter-spacing: 3px;
+    color: var(--dimmer); text-transform: uppercase;
+    transition: color .3s; min-height: 16px;
   }
-  body.listening .state-txt { color:var(--green); }
-  body.thinking  .state-txt { color:var(--amber); }
-  body.speaking  .state-txt { color:var(--blue); }
+  body.listening .state-label { color: var(--green); }
+  body.thinking  .state-label { color: var(--amber); }
+  body.speaking  .state-label { color: var(--cyan); }
 
   .transcript {
-    max-width:460px; width:100%;
-    text-align:center; padding:0 20px;
-    min-height:36px;
+    max-width: 480px; width: 100%;
+    text-align: center; padding: 0 16px; min-height: 40px;
   }
-  .t-user   { font-size:9px; color:var(--dim); letter-spacing:.5px; margin-bottom:4px; }
-  .t-morgan { font-size:11px; color:var(--text); letter-spacing:.3px; line-height:1.75; }
+  .t-user   { font-size: 11px; color: var(--dimmer); margin-bottom: 5px; font-weight: 400; }
+  .t-morgan { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.7; font-weight: 400; }
 
   .input-wrap {
-    max-width:380px; width:100%;
-    padding:0 20px; pointer-events:all; position:relative;
-  }
-  .input-wrap::before {
-    content:'›'; position:absolute; left:28px; top:50%;
-    transform:translateY(-50%); color:var(--dim);
-    font-size:14px; pointer-events:none;
+    max-width: 400px; width: 100%;
+    pointer-events: all; position: relative;
   }
   .text-input {
-    width:100%; background:rgba(1,9,18,.92);
-    border:1px solid var(--border); border-radius:20px;
-    color:var(--text); font-family:'Courier New',monospace;
-    font-size:10px; padding:8px 14px 8px 22px;
-    outline:none; letter-spacing:.5px;
-    backdrop-filter:blur(12px);
-    transition:border-color .2s, box-shadow .2s;
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: rgba(255,255,255,0.8);
+    font-family: inherit; font-size: 13px; font-weight: 400;
+    padding: 10px 20px;
+    outline: none;
+    transition: border-color .2s, background .2s;
+    backdrop-filter: blur(20px);
   }
-  .text-input::placeholder { color:var(--dim); opacity:.4; }
-  .text-input:focus { border-color:#00d4ff20; box-shadow:0 0 18px #00d4ff0e; }
+  .text-input::placeholder { color: rgba(255,255,255,0.18); }
+  .text-input:focus {
+    border-color: rgba(0,212,255,0.2);
+    background: rgba(255,255,255,0.06);
+  }
 
   #startBtn {
-    display:block; background:transparent;
-    border:1px solid #00d4ff18; color:#1a4a5a;
-    padding:7px 26px; cursor:pointer;
-    font-family:inherit; font-size:9px; letter-spacing:3px;
-    border-radius:20px; pointer-events:all;
-    transition:all .25s;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+    padding: 8px 28px;
+    cursor: pointer; font-family: inherit;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    border-radius: 24px; pointer-events: all;
+    transition: all .25s;
   }
-  #startBtn:hover { border-color:#00d4ff35; color:var(--blue); box-shadow:0 0 16px #00d4ff15; }
+  #startBtn:hover {
+    border-color: rgba(0,212,255,0.25);
+    color: var(--cyan);
+    background: rgba(0,212,255,0.04);
+  }
 
-  /* RIGHT COLUMN */
+  /* ── RIGHT COLUMN ─────────────────────────────── */
   .right-col {
-    grid-column:2; grid-row:2;
-    background:var(--bg2); border-left:1px solid var(--border);
-    display:flex; flex-direction:column; overflow:hidden;
+    grid-column: 2; grid-row: 2;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
   }
   .info-panel {
-    flex:1; padding:12px 14px 10px;
-    border-bottom:1px solid var(--border);
-    display:flex; flex-direction:column; justify-content:space-between;
+    flex: 1; padding: 16px 18px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; justify-content: space-between;
   }
-  .info-panel:last-child { border-bottom:none; }
-  .i-label { font-size:6.5px; letter-spacing:3px; color:var(--dim); margin-bottom:7px; }
-  .i-value { font-size:24px; color:var(--blue); text-shadow:0 0 18px #00d4ff28; line-height:1; }
-  .i-sub   { font-size:7.5px; color:var(--dim); margin-top:3px; line-height:1.5; }
-  .i-line  { display:flex; justify-content:space-between; margin-top:4px; font-size:8px; }
-  .i-ll { color:var(--dim); } .i-lv { color:var(--text); }
-  .accent-bar { height:1px; margin-top:8px; background:linear-gradient(90deg,#00d4ff20,transparent); }
-  .win{color:var(--green)} .loss{color:var(--red)} .draw{color:var(--amber)}
+  .info-panel:last-child { border-bottom: none; }
+  .i-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--dimmer); margin-bottom: 8px;
+  }
+  .i-value {
+    font-size: 28px; font-weight: 200; color: var(--cyan);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .i-sub   { font-size: 11px; color: var(--dimmer); margin-top: 4px; font-weight: 400; }
+  .i-line  {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 5px;
+  }
+  .i-ll { font-size: 10px; color: var(--dimmer); font-weight: 400; }
+  .i-lv { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 500; }
+  .i-sep { height: 1px; background: var(--border); margin-top: 10px; }
+  .win  { color: var(--green); }
+  .loss { color: var(--red);   }
+  .draw { color: var(--amber); }
 
-  /* FOOTER */
+  /* ── FOOTER ───────────────────────────────────── */
   .footer {
-    grid-column:1/-1;
-    background:var(--bg2); border-top:1px solid var(--border);
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 14px;
+    grid-column: 1/-1;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: var(--bg);
   }
-  .f-l { font-size:7px; letter-spacing:2px; color:var(--dim); }
-  .f-r { display:flex; gap:12px; align-items:center; }
-  .f-s { font-size:7px; letter-spacing:2px; color:var(--dim); }
-  .mini-btn {
-    font-size:7px; letter-spacing:2px; color:var(--dim);
-    cursor:pointer; padding:3px 10px;
-    border:1px solid var(--border); border-radius:10px;
-    transition:all .2s;
+  .f-l { font-size: 10px; color: var(--dimmer); font-weight: 400; }
+  .f-r { display: flex; gap: 14px; align-items: center; }
+  .f-status { font-size: 10px; color: var(--dimmer); font-weight: 400; }
+  .f-btn {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.5px;
+    color: var(--dimmer); cursor: pointer;
+    padding: 4px 12px; border-radius: 12px;
+    border: 1px solid var(--border); transition: all .2s;
   }
-  .mini-btn:hover { color:var(--blue); border-color:#00d4ff25; }
+  .f-btn:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.12); }
 
-  /* MINI MODE */
-  body.mini-mode .layout { display:none; }
-  .mini-avatar {
-    display:none; position:fixed; inset:0;
-    align-items:center; justify-content:center;
-    background:var(--bg);
+  /* ── MINI ─────────────────────────────────────── */
+  body.mini-mode .layout { display: none; }
+  .mini-wrap {
+    display: none; position: fixed; inset: 0;
+    align-items: center; justify-content: center;
+    background: var(--bg);
   }
-  body.mini-mode .mini-avatar { display:flex; }
-  #cvMini { width:120px; height:120px; }
+  body.mini-mode .mini-wrap { display: flex; }
+  #cvMini { width: 130px; height: 130px; }
 
-  /* WIP TOAST */
+  /* ── WIP TOAST ────────────────────────────────── */
   .wip-toast {
-    display:none; position:fixed; bottom:50px; left:50%;
-    transform:translateX(-50%);
-    background:var(--bg2); border:1px solid #00d4ff18;
-    color:var(--dim); font-size:8px; letter-spacing:3px;
-    padding:7px 20px; z-index:9998; pointer-events:none;
-    border-radius:12px;
+    display: none; position: fixed; bottom: 60px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--dimmer); font-size: 10px; font-weight: 500;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 20px; border-radius: 20px;
+    z-index: 9999; pointer-events: none;
   }
-  .wip-toast.show { display:block; animation:fadeio 2.5s forwards; }
-  @keyframes fadeio { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
-
-  /* Scanline overlay */
-  body::after {
-    content:''; position:fixed; inset:0;
-    background:repeating-linear-gradient(
-      0deg,transparent,transparent 2px,
-      rgba(0,212,255,.003) 2px,rgba(0,212,255,.003) 4px
-    );
-    pointer-events:none; z-index:998;
-  }
+  .wip-toast.show { display: block; animation: fade-io 2.5s forwards; }
+  @keyframes fade-io { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
 </style>
 </head>
 <body>
@@ -266,55 +300,54 @@
   <button class="tb tb-g" onclick="toggleMini()"></button>
 </div>
 
-<div class="mini-avatar" onclick="toggleMini()">
+<div class="mini-wrap" onclick="toggleMini()">
   <canvas id="cvMini"></canvas>
 </div>
 
-<div class="wip-toast" id="wipToast">EM CONSTRUÇÃO</div>
+<div class="wip-toast" id="wipToast">Em construção</div>
 
 <div class="layout">
 
   <!-- HEADER -->
-  <div class="header">
+  <header class="header">
     <div class="hdr-l">
-      <div class="hdr-dot"></div>
-      <span class="hdr-title" id="hdrTitle">MORGAN CEO</span>
-      <span class="hdr-status">ATIVO</span>
+      <div class="status-dot"></div>
+      <span class="hdr-agent" id="hdrAgent">Morgan CEO</span>
+      <span class="hdr-badge">Ativo</span>
     </div>
     <div class="hdr-c">
       <div class="hdr-time" id="clock">--:--:--</div>
       <div class="hdr-date" id="dateLabel">--</div>
     </div>
     <div class="hdr-r">
-      <div class="hdr-name">VASCO BOTELHO DA COSTA</div>
-      <div class="hdr-org">BC INDUSTRIES</div>
+      <div class="hdr-name">Vasco Botelho da Costa</div>
+      <div class="hdr-org">BC Industries</div>
     </div>
-  </div>
+  </header>
 
-  <!-- CENTER CANVAS -->
-  <div class="center" id="centerEl">
+  <!-- CENTER -->
+  <main class="center" id="centerEl">
     <canvas id="cv"></canvas>
 
     <!-- Hit areas -->
-    <div class="hit" id="hit-ceo"    onclick="selectAgent('ceo')"    style="width:160px;height:160px"></div>
-    <div class="hit" id="hit-scout"  onclick="selectAgent('scout')"  style="width:100px;height:100px"></div>
-    <div class="hit" id="hit-solver" onclick="selectAgent('solver')" style="width:90px;height:90px"></div>
+    <div class="hit" id="hit-ceo"    onclick="selectAgent('ceo')"    style="width:200px;height:200px"></div>
+    <div class="hit" id="hit-scout"  onclick="selectAgent('scout')"  style="width:110px;height:110px"></div>
+    <div class="hit" id="hit-solver" onclick="selectAgent('solver')" style="width:100px;height:100px"></div>
 
     <!-- Labels -->
-    <div class="vasco-label" id="label-vasco">
-      <div class="vasco-name">VASCO</div>
+    <div class="vasco-label" id="label-vasco"><span>Vasco</span></div>
+
+    <div class="node-label visible active" id="label-ceo">
+      <div class="node-label-name">Morgan CEO</div>
+      <div class="node-label-role">braço direito</div>
     </div>
-    <div class="nlabel active" id="label-ceo">
-      <div class="nlabel-name">MORGAN CEO</div>
-      <div class="nlabel-role">braço direito</div>
+    <div class="node-label visible" id="label-scout">
+      <div class="node-label-name">Morgan Scout</div>
+      <div class="node-label-role">oportunidades</div>
     </div>
-    <div class="nlabel" id="label-scout">
-      <div class="nlabel-name">MORGAN SCOUT</div>
-      <div class="nlabel-role">oportunidades</div>
-    </div>
-    <div class="nlabel" id="label-solver">
-      <div class="nlabel-name">MORGAN SOLVER</div>
-      <div class="nlabel-role">manutenção</div>
+    <div class="node-label visible" id="label-solver">
+      <div class="node-label-name">Morgan Solver</div>
+      <div class="node-label-role">manutenção</div>
     </div>
 
     <!-- Overlay -->
@@ -325,48 +358,48 @@
         <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
         <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
       </div>
-      <div class="state-txt">
-        <span id="stateLabelText">A LIGAR...</span>
-        <button id="startBtn" onclick="startMorgan()">▶ INICIAR</button>
+      <div class="state-label">
+        <span id="stateText"></span>
+        <button id="startBtn" onclick="startMorgan()">Iniciar</button>
       </div>
       <div class="transcript" id="transcript"></div>
       <div class="input-wrap">
         <input class="text-input" id="textInput" type="text"
-          placeholder="escreve aqui..." onkeydown="handleKey(event)"/>
+          placeholder="Escreve aqui…" onkeydown="handleKey(event)"/>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- RIGHT COLUMN -->
-  <div class="right-col">
+  <aside class="right-col">
     <div class="info-panel">
       <div>
-        <div class="i-label">CLIMA</div>
+        <div class="i-label">Clima</div>
         <div class="i-value" id="weatherTemp">--°</div>
         <div class="i-sub" id="weatherDesc">Moreira de Cónegos</div>
       </div>
-      <div class="accent-bar"></div>
+      <div class="i-sep"></div>
     </div>
     <div class="info-panel">
       <div>
-        <div class="i-label">PRÓXIMO JOGO</div>
-        <div style="font-size:10px;color:var(--text);margin-top:4px;line-height:1.75" id="nextGame">--</div>
+        <div class="i-label">Próximo Jogo</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;font-weight:400;line-height:1.6" id="nextGame">--</div>
         <div class="i-sub" id="nextGameDate"></div>
-        <div style="font-size:6.5px;color:var(--dim);margin-top:2px" id="nextGameComp"></div>
+        <div style="font-size:9px;color:var(--dimmer);margin-top:2px" id="nextGameComp"></div>
       </div>
-      <div class="accent-bar"></div>
+      <div class="i-sep"></div>
     </div>
     <div class="info-panel">
       <div>
-        <div class="i-label">ÚLTIMO RESULTADO</div>
-        <div class="i-sub" id="lastOpponent" style="margin-top:4px">--</div>
-        <div style="font-size:24px;margin-top:5px;letter-spacing:2px" id="lastScore">--</div>
+        <div class="i-label">Último Resultado</div>
+        <div class="i-sub" id="lastOpponent" style="margin-top:6px">--</div>
+        <div style="font-size:30px;font-weight:200;margin-top:6px;letter-spacing:1px" id="lastScore">--</div>
       </div>
-      <div class="accent-bar"></div>
+      <div class="i-sep"></div>
     </div>
     <div class="info-panel">
       <div>
-        <div class="i-label">SCOUT</div>
+        <div class="i-label">Scout</div>
         <div class="i-line">
           <span class="i-ll">Oportunidades</span>
           <span class="i-lv" id="scoutTotal">--</span>
@@ -376,129 +409,156 @@
           <span class="i-lv" id="scoutAprovadas">--</span>
         </div>
       </div>
-      <div class="accent-bar"></div>
+      <div class="i-sep"></div>
     </div>
-  </div>
+  </aside>
 
   <!-- FOOTER -->
-  <div class="footer">
-    <div class="f-l">BC INDUSTRIES ● MORGAN SYSTEM v2.0</div>
+  <footer class="footer">
+    <div class="f-l">BC Industries · Morgan System v2.0</div>
     <div class="f-r">
-      <span class="f-s" id="footerStatus">PRONTO</span>
-      <div class="mini-btn" onclick="toggleMini()">MINI</div>
+      <span class="f-status" id="footerStatus">Pronto</span>
+      <div class="f-btn" onclick="toggleMini()">Mini</div>
     </div>
-  </div>
+  </footer>
 
 </div>
 
 <script>
-// ─── SEEDED RANDOM ────────────────────────────────────
-function mkRng(seed) {
-  let s = seed;
-  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+// ─── PARTICLE SPHERE ─────────────────────────────────────────────────────────
+
+class ParticleSphere {
+  constructor({ n, radius, color, speed = 0.0015 }) {
+    this.radius = radius;
+    this.color  = color;
+    this.rotY   = Math.random() * Math.PI * 2;
+    this.speed  = speed;
+    this.pts    = this._gen(n, radius);
+  }
+
+  _gen(n, r) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.acos(2 * Math.random() - 1);
+      // Bias toward center so the orb feels dense
+      const dist  = r * Math.pow(Math.random(), 0.55);
+      pts.push({
+        ox: dist * Math.sin(phi) * Math.cos(theta),
+        oy: dist * Math.sin(phi) * Math.sin(theta),
+        oz: dist * Math.cos(phi),
+        sz: 0.1 + Math.random() * 0.55,
+        ba: 0.18 + Math.random() * 0.72,
+      });
+    }
+    return pts;
+  }
+
+  tick(breathe) {
+    this.rotY += this.speed * (1 + breathe * 0.08);
+  }
+
+  draw(ctx, cx, cy, breathe, intensityMult = 1) {
+    const cos = Math.cos(this.rotY), sin = Math.sin(this.rotY);
+    const fov = 700;
+    const r   = this.radius;
+
+    const proj = this.pts.map(p => {
+      const x =  p.ox * cos + p.oz * sin;
+      const z = -p.ox * sin + p.oz * cos;
+      const s = fov / (fov + z + r);
+      const dist2d = Math.sqrt(x*x + p.oy*p.oy) / r;
+      return {
+        px: cx + x * s,
+        py: cy + p.oy * s,
+        z,
+        sz: Math.max(0.3, p.sz * s * (1 + breathe * 0.06)),
+        a:  p.ba * Math.max(0.1, (1 - dist2d * 0.5)) * s * intensityMult,
+      };
+    }).sort((a, b) => a.z - b.z);
+
+    proj.forEach(p => {
+      ctx.fillStyle = `rgba(${this.color},${Math.min(p.a, 0.92)})`;
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, p.sz, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Bright core glow
+    const cr = (r * 0.12 + breathe * r * 0.02) * intensityMult;
+    const g  = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr * 4);
+    g.addColorStop(0,   `rgba(${this.color},${0.5 * intensityMult})`);
+    g.addColorStop(0.4, `rgba(${this.color},${0.12 * intensityMult})`);
+    g.addColorStop(1,   `rgba(${this.color},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, cr * 4, 0, Math.PI * 2); ctx.fill();
+
+    // White hot center
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.9 * intensityMult, 1)})`;
+    ctx.beginPath(); ctx.arc(cx, cy, Math.max(1.2, cr * 0.55), 0, Math.PI * 2); ctx.fill();
+  }
 }
 
-// ─── CANVAS ──────────────────────────────────────────
+// ─── CANVAS SETUP ────────────────────────────────────────────────────────────
+
 const cv       = document.getElementById('cv');
 const ctx      = cv.getContext('2d');
 const centerEl = document.getElementById('centerEl');
 
 let W, H, t = 0;
-let stars = [], bgNebulae = [], particles = [];
-let nodes = {};
+let stars = [];
 let activeAgent  = 'ceo';
 let morganState  = 'idle';
 
-// Agent definitions
-const AGENTS = {
-  ceo:    { colors:['0,212,255','0,255,180'],    size:92,  intensity:1.0,  online:true,  cloudCount:22 },
-  scout:  { colors:['255,176,0','255,110,0'],    size:56,  intensity:0.62, online:false, cloudCount:15 },
-  solver: { colors:['155,100,255','80,50,210'],  size:50,  intensity:0.88, online:false, cloudCount:13 },
+// Agents
+const spheres = {
+  ceo:    new ParticleSphere({ n:4500, radius:105, color:'0,212,255',   speed:0.0012 }),
+  scout:  new ParticleSphere({ n:1200, radius:55,  color:'245,166,35',  speed:0.0018 }),
+  solver: new ParticleSphere({ n:1000, radius:48,  color:'155,109,255', speed:0.0022 }),
 };
+
+function nodePositions() {
+  const cx = W * 0.44, cy = H * 0.46;
+  const r  = Math.min(W * 0.22, H * 0.22, 160);
+  return {
+    ceo:    { x: cx,                         y: cy                         },
+    scout:  { x: cx + r * Math.cos(-0.55),   y: cy + r * Math.sin(-0.55)  },
+    solver: { x: cx + r * Math.cos(2.65),    y: cy + r * Math.sin(2.65)   },
+    vasco:  { x: cx,                         y: cy - r * 0.90              },
+  };
+}
 
 function initCanvas() {
   W = cv.width  = centerEl.offsetWidth;
   H = cv.height = centerEl.offsetHeight;
-  buildScene();
+  buildStars();
   placeLabels();
 }
 
-function nodePositions() {
-  // Triangle: CEO center-left, Scout upper-right, Solver lower-left
-  const cx = W * 0.44, cy = H * 0.47;
-  const r  = Math.min(W * 0.22, H * 0.22, 155);
-  return {
-    ceo:    { x: cx,                           y: cy                           },
-    scout:  { x: cx + r * Math.cos(-0.55),     y: cy + r * Math.sin(-0.55)     },
-    solver: { x: cx + r * Math.cos(2.65),      y: cy + r * Math.sin(2.65)      },
-    vasco:  { x: cx,                           y: cy - r * 0.92                },
-  };
-}
-
-function buildScene() {
-  const rng = mkRng(42);
-
-  // Stars
-  stars = Array.from({length:280}, () => {
-    const t = rng();
-    return {
-      x: rng() * W, y: rng() * H,
-      r: rng() * 1.1 + 0.12,
-      a: 0.15 + rng() * 0.75,
-      da: (rng() - 0.5) * 0.006,
-      c: t > 0.75 ? '0,255,150' : t > 0.45 ? '0,212,255' : '160,200,255',
-    };
-  });
-
-  // Background nebulae
-  bgNebulae = [
-    { x:W*0.20, y:H*0.25, r:Math.min(W,H)*0.30, c:'0,212,255',  a:0.018 },
-    { x:W*0.74, y:H*0.65, r:Math.min(W,H)*0.23, c:'0,255,140',  a:0.014 },
-    { x:W*0.58, y:H*0.10, r:Math.min(W,H)*0.18, c:'80,50,255',  a:0.010 },
-    { x:W*0.12, y:H*0.78, r:Math.min(W,H)*0.15, c:'0,180,255',  a:0.008 },
-    { x:W*0.85, y:H*0.20, r:Math.min(W,H)*0.12, c:'255,80,120', a:0.006 },
-  ];
-
-  // Build node cloud data (seeded per-node for consistency)
-  const pos = nodePositions();
-  Object.keys(AGENTS).forEach(id => {
-    const ag  = AGENTS[id];
-    const p   = pos[id];
-    const rn  = mkRng(id === 'ceo' ? 1 : id === 'scout' ? 2 : 3);
-    const clouds = Array.from({length: ag.cloudCount}, (_, i) => ({
-      ox:    (rn() - 0.5) * ag.size * 1.7,
-      oy:    (rn() - 0.5) * ag.size * 1.7,
-      sr:    ag.size * (0.30 + rn() * 0.88),
-      sa:    0.032 + rn() * 0.115,
-      phase: rn() * Math.PI * 2,
-      ci:    i % ag.colors.length,
-    }));
-    nodes[id] = { ...p, ...ag, clouds, nodePhase: id === 'ceo' ? 0 : id === 'scout' ? 1.8 : 3.5 };
-  });
-
-  // Ambient floating particles
-  const rng2 = mkRng(99);
-  particles = Array.from({length:20}, () => ({
-    x: rng2() * W, y: rng2() * H,
-    vx: (rng2() - 0.5) * 0.18,
-    vy: (rng2() - 0.5) * 0.18,
-    r: 0.7 + rng2() * 1.1,
-    a: 0.08 + rng2() * 0.25,
+function buildStars() {
+  let seed = 42;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed-1)/2147483646; };
+  stars = Array.from({length: 200}, () => ({
+    x: rng() * W, y: rng() * H,
+    r: rng() * 0.9 + 0.1,
+    a: 0.1 + rng() * 0.5,
+    da: (rng() - 0.5) * 0.004,
+    c: rng() > 0.7 ? '120,220,255' : '200,230,255',
   }));
 }
 
 function placeLabels() {
   const pos = nodePositions();
-  setLabel('label-ceo',    pos.ceo.x,    pos.ceo.y    + AGENTS.ceo.size    * 0.82 + 14);
-  setLabel('label-scout',  pos.scout.x,  pos.scout.y  + AGENTS.scout.size  * 0.82 + 12);
-  setLabel('label-solver', pos.solver.x, pos.solver.y + AGENTS.solver.size * 0.82 + 12);
-  setLabel('label-vasco',  pos.vasco.x,  pos.vasco.y  - 16);
+  placeEl('label-ceo',    pos.ceo.x,    pos.ceo.y    + 105 * 0.85 + 14);
+  placeEl('label-scout',  pos.scout.x,  pos.scout.y  +  55 * 0.85 + 12);
+  placeEl('label-solver', pos.solver.x, pos.solver.y +  48 * 0.85 + 12);
+  placeEl('label-vasco',  pos.vasco.x,  pos.vasco.y  - 14);
   placeHit('hit-ceo',    pos.ceo.x,    pos.ceo.y);
   placeHit('hit-scout',  pos.scout.x,  pos.scout.y);
   placeHit('hit-solver', pos.solver.x, pos.solver.y);
 }
 
-function setLabel(id, x, y) {
+function placeEl(id, x, y) {
   const el = document.getElementById(id);
   el.style.left = x + 'px'; el.style.top = y + 'px';
 }
@@ -507,197 +567,97 @@ function placeHit(id, x, y) {
   el.style.left = x + 'px'; el.style.top = y + 'px';
 }
 
-// ─── DRAW LOOP ────────────────────────────────────────
+// ─── DRAW LOOP ────────────────────────────────────────────────────────────────
+
 function draw() {
   t += 0.007;
   ctx.clearRect(0, 0, W, H);
-  drawBg();
-  drawStars();
-  drawParticles();
-  drawConnections();
-  Object.keys(nodes).forEach(drawNode);
-  drawVascoGlow();
+
+  // Stars
+  stars.forEach(s => {
+    s.a += s.da;
+    if (s.a > 0.6 || s.a < 0.05) s.da *= -1;
+    ctx.fillStyle = `rgba(${s.c},${s.a})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+  });
+
+  const pos = nodePositions();
+  const breathe = Math.sin(t);
+
+  // Connection lines
+  drawLine(pos.vasco.x, pos.vasco.y, pos.ceo.x, pos.ceo.y, 'rgba(255,255,255,0.06)');
+  drawLine(pos.ceo.x, pos.ceo.y, pos.scout.x,  pos.scout.y,  'rgba(245,166,35,0.06)');
+  drawLine(pos.ceo.x, pos.ceo.y, pos.solver.x, pos.solver.y, 'rgba(155,109,255,0.04)');
+
+  // Vasco point
+  const vg = ctx.createRadialGradient(pos.vasco.x, pos.vasco.y, 0, pos.vasco.x, pos.vasco.y, 16);
+  vg.addColorStop(0, 'rgba(180,230,255,0.14)');
+  vg.addColorStop(1, 'rgba(180,230,255,0)');
+  ctx.fillStyle = vg;
+  ctx.beginPath(); ctx.arc(pos.vasco.x, pos.vasco.y, 16, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(200,240,255,0.35)';
+  ctx.beginPath(); ctx.arc(pos.vasco.x, pos.vasco.y, 1.5, 0, Math.PI*2); ctx.fill();
+
+  // Draw spheres
+  Object.entries(spheres).forEach(([id, sphere]) => {
+    const p = pos[id];
+    const isActive = id === activeAgent;
+    let iMult = isActive ? 1.0 : (id === 'ceo' ? 0.5 : 0.45);
+    if (isActive && morganState === 'listening') iMult = 1.25;
+    if (isActive && morganState === 'thinking')  iMult = 1.1;
+    if (isActive && morganState === 'speaking')  iMult = 1.3 + Math.sin(t*3)*0.15;
+    sphere.tick(breathe);
+    sphere.draw(ctx, p.x, p.y, breathe, iMult);
+  });
+
   requestAnimationFrame(draw);
 }
 
-function drawBg() {
-  bgNebulae.forEach(n => {
-    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-    g.addColorStop(0,   `rgba(${n.c},${n.a})`);
-    g.addColorStop(0.5, `rgba(${n.c},${n.a * 0.35})`);
-    g.addColorStop(1,   `rgba(${n.c},0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
-  });
+function drawLine(x1, y1, x2, y2, color) {
+  const mx = (x1+x2)/2 + (y2-y1)*0.08;
+  const my = (y1+y2)/2 - (x2-x1)*0.08;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.quadraticCurveTo(mx,my,x2,y2); ctx.stroke();
 }
 
-function drawStars() {
-  stars.forEach(s => {
-    s.a += s.da;
-    if (s.a > 0.88 || s.a < 0.06) s.da *= -1;
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${s.c},${s.a * 0.55})`;
-    ctx.fill();
-  });
-}
+// ─── MINI CANVAS ─────────────────────────────────────────────────────────────
 
-function drawParticles() {
-  const pos = nodePositions();
-  particles.forEach(p => {
-    // Gentle drift toward CEO
-    const dx = pos.ceo.x - p.x, dy = pos.ceo.y - p.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > 20) { p.vx += dx / dist * 0.0015; p.vy += dy / dist * 0.0015; }
-    p.vx *= 0.992; p.vy *= 0.992;
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,212,255,${p.a * 0.45})`;
-    ctx.fill();
-  });
-}
-
-function drawConnections() {
-  const pos = nodePositions();
-  // Vasco → CEO (command line)
-  drawStream(pos.vasco.x, pos.vasco.y, pos.ceo.x, pos.ceo.y, '160,220,255', 0.10, false);
-  // CEO → Scout
-  drawStream(pos.ceo.x, pos.ceo.y, pos.scout.x, pos.scout.y, '200,130,0', 0.06, false);
-  // CEO → Solver
-  drawStream(pos.ceo.x, pos.ceo.y, pos.solver.x, pos.solver.y, '100,60,200', 0.04, false);
-}
-
-function drawStream(x1, y1, x2, y2, color, alpha, glow) {
-  const mx = (x1 + x2) / 2 + (y2 - y1) * 0.10;
-  const my = (y1 + y2) / 2 - (x2 - x1) * 0.10;
-  const g  = ctx.createLinearGradient(x1, y1, x2, y2);
-  g.addColorStop(0,   `rgba(${color},${alpha})`);
-  g.addColorStop(0.5, `rgba(${color},${alpha * 0.6})`);
-  g.addColorStop(1,   `rgba(${color},${alpha * 0.15})`);
-  if (glow) { ctx.shadowBlur = 8; ctx.shadowColor = `rgba(${color},.2)`; }
-  ctx.strokeStyle = g;
-  ctx.lineWidth   = 0.7;
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2); ctx.stroke();
-  ctx.shadowBlur  = 0;
-}
-
-function drawNode(id) {
-  const n = nodes[id];
-  if (!n) return;
-  const breathe  = Math.sin(t + n.nodePhase);
-  const pulse    = Math.sin(t * 2.8 + n.nodePhase);
-  const isActive = id === activeAgent;
-
-  let colors = [...n.colors];
-  let iMult  = isActive ? 1.18 : (n.online ? 0.62 : 0.85);
-  if (isActive) {
-    if (morganState === 'listening') { colors = ['0,255,140','0,200,100'];  iMult = 1.45; }
-    if (morganState === 'thinking')  { colors = ['255,180,0','255,100,0'];  iMult = 1.32; }
-    if (morganState === 'speaking')  { iMult = 1.45 + pulse * 0.28; }
-  }
-
-  const baseI  = n.intensity * iMult;
-  const sScale = 1 + breathe * 0.055;
-
-  // Cloud layers
-  n.clouds.forEach((c, i) => {
-    const ox = c.ox + Math.sin(t * 0.36 + c.phase) * 5.5;
-    const oy = c.oy + Math.cos(t * 0.27 + c.phase + 1) * 5.5;
-    const r  = c.sr * sScale;
-    const a  = Math.min(c.sa * baseI * (0.70 + breathe * 0.30), 0.78);
-    const col = colors[c.ci % colors.length];
-    const g = ctx.createRadialGradient(n.x + ox, n.y + oy, 0, n.x + ox, n.y + oy, r);
-    g.addColorStop(0,   `rgba(${col},${a})`);
-    g.addColorStop(0.45,`rgba(${col},${a * 0.28})`);
-    g.addColorStop(1,   `rgba(${col},0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(n.x + ox, n.y + oy, r, 0, Math.PI * 2); ctx.fill();
-  });
-
-  // Outer glow halo
-  const coreA = Math.min((0.55 + pulse * 0.18) * baseI, 1);
-  const coreR = n.online ? 4.5 + breathe * 1.8 : 3;
-  const gHalo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, coreR * 5.5);
-  gHalo.addColorStop(0,   `rgba(${colors[0]},${coreA * 0.65})`);
-  gHalo.addColorStop(0.4, `rgba(${colors[1]},${coreA * 0.20})`);
-  gHalo.addColorStop(1,   `rgba(${colors[0]},0)`);
-  ctx.fillStyle = gHalo;
-  ctx.beginPath(); ctx.arc(n.x, n.y, coreR * 5.5, 0, Math.PI * 2); ctx.fill();
-
-  // White core point
-  if (n.online) {
-    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.88 * baseI, 1)})`;
-    ctx.beginPath(); ctx.arc(n.x, n.y, coreR * 0.52, 0, Math.PI * 2); ctx.fill();
-  } else {
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.beginPath(); ctx.arc(n.x, n.y, 1.8, 0, Math.PI * 2); ctx.fill();
-  }
-}
-
-function drawVascoGlow() {
-  const pos = nodePositions();
-  const vx = pos.vasco.x, vy = pos.vasco.y;
-  const pulse = Math.sin(t * 0.65);
-  const g = ctx.createRadialGradient(vx, vy, 0, vx, vy, 24 + pulse * 4);
-  g.addColorStop(0, `rgba(160,220,255,${0.16 + pulse * 0.04})`);
-  g.addColorStop(1, 'rgba(160,220,255,0)');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(vx, vy, 24 + pulse * 4, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = `rgba(200,235,255,0.35)`;
-  ctx.beginPath(); ctx.arc(vx, vy, 1.5, 0, Math.PI * 2); ctx.fill();
-}
-
-// ─── MINI CANVAS ──────────────────────────────────────
 const cvM  = document.getElementById('cvMini');
 const ctxM = cvM.getContext('2d');
-cvM.width = cvM.height = 120;
+cvM.width = cvM.height = 130;
+
+const miniSphere = new ParticleSphere({ n:800, radius:48, color:'0,212,255', speed:0.0018 });
 let mt = 0;
 
 function drawMini() {
-  mt += 0.009;
-  ctxM.clearRect(0, 0, 120, 120);
-  const cx = 60, cy = 60, b = Math.sin(mt);
-  const cols = ['0,212,255','0,255,180'];
-  for (let i = 0; i < 16; i++) {
-    const ox = Math.sin(mt * 0.44 + i * 1.06) * 22;
-    const oy = Math.cos(mt * 0.37 + i * 0.94) * 22;
-    const r  = 16 + Math.sin(i * 1.9 + mt * 0.28) * 9;
-    const a  = 0.05 + Math.sin(mt * 0.5 + i * 0.72) * 0.024;
-    const g  = ctxM.createRadialGradient(cx+ox, cy+oy, 0, cx+ox, cy+oy, r);
-    g.addColorStop(0, `rgba(${cols[i%2]},${a})`);
-    g.addColorStop(1, `rgba(${cols[i%2]},0)`);
-    ctxM.fillStyle = g;
-    ctxM.beginPath(); ctxM.arc(cx+ox, cy+oy, r, 0, Math.PI*2); ctxM.fill();
-  }
-  const gC = ctxM.createRadialGradient(cx, cy, 0, cx, cy, 13 + b*2);
-  gC.addColorStop(0, `rgba(0,212,255,${0.62 + b*0.15})`);
-  gC.addColorStop(1,  'rgba(0,212,255,0)');
-  ctxM.fillStyle = gC;
-  ctxM.beginPath(); ctxM.arc(cx, cy, 13+b*2, 0, Math.PI*2); ctxM.fill();
-  ctxM.fillStyle = 'rgba(255,255,255,.85)';
-  ctxM.beginPath(); ctxM.arc(cx, cy, 2.5, 0, Math.PI*2); ctxM.fill();
+  mt += 0.007;
+  ctxM.clearRect(0, 0, 130, 130);
+  miniSphere.tick(Math.sin(mt));
+  miniSphere.draw(ctxM, 65, 65, Math.sin(mt), 1.0);
   requestAnimationFrame(drawMini);
 }
 drawMini();
 
-// ─── INIT ─────────────────────────────────────────────
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
 initCanvas();
 draw();
-window.addEventListener('resize', initCanvas);
+window.addEventListener('resize', () => { initCanvas(); });
 
-// ─── AGENT SELECTION ──────────────────────────────────
+// ─── AGENT SELECTION ──────────────────────────────────────────────────────────
+
 function selectAgent(id) {
-  if (!AGENTS[id].online) { showWip(); return; }
+  if (id !== 'ceo') { showWip(); return; }
   activeAgent = id;
-  document.querySelectorAll('.nlabel').forEach(l =>
-    l.classList.remove('active','active-scout','active-solver')
+  document.querySelectorAll('.node-label').forEach(el =>
+    el.classList.remove('active','active-scout','active-solver')
   );
   document.getElementById('label-' + id).classList.add(
     id === 'ceo' ? 'active' : 'active-' + id
   );
-  document.getElementById('hdrTitle').textContent = {
-    ceo:'MORGAN CEO', scout:'MORGAN SCOUT', solver:'MORGAN SOLVER'
+  document.getElementById('hdrAgent').textContent = {
+    ceo:'Morgan CEO', scout:'Morgan Scout', solver:'Morgan Solver'
   }[id];
 }
 
@@ -707,24 +667,26 @@ function showWip() {
   setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ─── STATE ────────────────────────────────────────────
+// ─── STATE ────────────────────────────────────────────────────────────────────
+
 function setState(s) {
   morganState = s;
   const mini = document.body.classList.contains('mini-mode');
   document.body.className = (mini ? 'mini-mode ' : '') + s;
-  const L = { listening:'A OUVIR', thinking:'A PENSAR', speaking:'A FALAR' };
-  document.getElementById('stateLabelText').textContent = L[s] || '';
-  document.getElementById('footerStatus').textContent   = L[s] || 'PRONTO';
+  const L = { listening:'A ouvir', thinking:'A pensar', speaking:'A falar' };
+  document.getElementById('stateText').textContent = L[s] || '';
+  document.getElementById('footerStatus').textContent = L[s] || 'Pronto';
 }
 
-// ─── CLOCK ────────────────────────────────────────────
-function updateClock() {
-  document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
-}
-updateClock();
-setInterval(updateClock, 1000);
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
 
-// ─── WIDGETS ──────────────────────────────────────────
+function tick() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+}
+tick(); setInterval(tick, 1000);
+
+// ─── WIDGETS ─────────────────────────────────────────────────────────────────
+
 async function loadWidgets() {
   try {
     const d = await fetch('/api/widgets').then(r => r.json());
@@ -740,7 +702,7 @@ async function loadWidgets() {
     const pj = d.proximo_jogo;
     if (pj?.adversario && pj.adversario !== '--') {
       document.getElementById('nextGame').innerHTML =
-        `vs <span style="color:var(--blue)">${pj.adversario}</span>`;
+        `vs <strong style="color:rgba(255,255,255,0.8)">${pj.adversario}</strong>`;
       document.getElementById('nextGameDate').textContent = pj.data || '';
       document.getElementById('nextGameComp').textContent = pj.competicao || '';
     }
@@ -755,21 +717,30 @@ async function loadWidgets() {
 loadWidgets();
 setInterval(loadWidgets, 30000);
 
-// ─── TRANSCRIPT ───────────────────────────────────────
+// ─── TRANSCRIPT ───────────────────────────────────────────────────────────────
+
 function showTranscript(u, m) {
   const el = document.getElementById('transcript');
   el.innerHTML = '';
-  if (u) { const d = document.createElement('div'); d.className = 't-user';   d.textContent = '› ' + u; el.appendChild(d); }
-  if (m) { const d = document.createElement('div'); d.className = 't-morgan'; d.textContent = m;        el.appendChild(d); }
+  if (u) {
+    const d = document.createElement('div');
+    d.className = 't-user'; d.textContent = u; el.appendChild(d);
+  }
+  if (m) {
+    const d = document.createElement('div');
+    d.className = 't-morgan'; d.textContent = m; el.appendChild(d);
+  }
 }
 
-// ─── CONVAI ───────────────────────────────────────────
+// ─── CONVAI ───────────────────────────────────────────────────────────────────
+
 let convaiWS = null, scriptProcessor = null, audioContext, micStream, micSource;
 
 async function initConvai() {
   try {
     micStream    = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }, video:false
+      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true },
+      video: false,
     });
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     micSource    = audioContext.createMediaStreamSource(micStream);
@@ -785,7 +756,7 @@ async function initConvai() {
     convaiWS.onclose = () => { stopMicStream(); setTimeout(initConvai, 2500); };
     convaiWS.onerror = () => {};
   } catch(e) {
-    document.getElementById('stateLabelText').textContent = 'SEM MICROFONE';
+    document.getElementById('stateText').textContent = 'Sem microfone';
   }
 }
 
@@ -800,7 +771,7 @@ function startMicStream() {
     const inp = e.inputBuffer.getChannelData(0);
     const out = new Int16Array(Math.round(inp.length / ratio));
     for (let i = 0; i < out.length; i++)
-      out[i] = Math.max(-32768, Math.min(32767, Math.round(inp[Math.round(i * ratio)] * 32767)));
+      out[i] = Math.max(-32768, Math.min(32767, Math.round(inp[Math.round(i*ratio)] * 32767)));
     convaiWS.send(out.buffer);
   };
 }
@@ -812,25 +783,23 @@ function stopMicStream() {
 async function startMorgan() {
   const btn = document.getElementById('startBtn');
   if (btn) btn.remove();
-  document.getElementById('stateLabelText').textContent = 'A LIGAR...';
+  document.getElementById('stateText').textContent = 'A ligar…';
   await initConvai();
 }
 
 function handleKey(e) {
   if (e.key !== 'Enter') return;
   const inp = document.getElementById('textInput');
-  const txt = inp.value.trim();
-  inp.value = '';
+  const txt = inp.value.trim(); inp.value = '';
   if (!txt) return;
   showTranscript(txt, '');
   setState('thinking');
   fetch('/api/chat-speak', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: txt })
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ message: txt }),
   }).then(r => {
-    const reader = r.body.getReader();
-    const dec    = new TextDecoder();
+    const reader = r.body.getReader(), dec = new TextDecoder();
     function read() {
       reader.read().then(({ done, value }) => {
         if (done) return;
@@ -849,7 +818,8 @@ function handleKey(e) {
   });
 }
 
-// ─── MINI ─────────────────────────────────────────────
+// ─── MINI ─────────────────────────────────────────────────────────────────────
+
 let isMini = false;
 function toggleMini() {
   isMini = !isMini;
@@ -859,7 +829,8 @@ function toggleMini() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMini) toggleMini(); });
 
-// ─── AUTO-START ───────────────────────────────────────
+// ─── AUTO-START ───────────────────────────────────────────────────────────────
+
 setTimeout(() => { if (morganState === 'idle') startMorgan(); }, 900);
 </script>
 </body>
