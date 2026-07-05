@@ -6,54 +6,53 @@
 <title>BC INDUSTRIES</title>
 <style>
   :root {
-    --blue:    #00d4ff;
-    --blue-g:  #00d4ff28;
-    --teal:    #00ffcc;
-    --green:   #00ff88;
-    --amber:   #ffb300;
-    --violet:  #9b6dff;
-    --red:     #ff4455;
-    --bg:      #010912;
-    --bg2:     #020e1c;
-    --border:  #00d4ff15;
-    --text:    #6aacca;
-    --dim:     #2a5060;
+    --blue:   #00d4ff;
+    --green:  #00ff88;
+    --amber:  #ffb300;
+    --violet: #9b6dff;
+    --red:    #ff4455;
+    --bg:     #010912;
+    --bg2:    #020e1c;
+    --border: #00d4ff15;
+    --text:   #6aacca;
+    --dim:    #2a5060;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-
   body {
-    background: var(--bg);
-    color: var(--blue);
-    font-family: 'Courier New', monospace;
-    height: 100vh; overflow: hidden;
-    user-select: none; cursor: default;
+    background:var(--bg);
+    color:var(--blue);
+    font-family:'Courier New',monospace;
+    height:100vh;
+    overflow:hidden;
+    user-select:none;
+    cursor:default;
   }
 
   /* TITLEBAR */
   .titlebar {
-    position: fixed; top:0; left:0; right:0; height:36px;
-    -webkit-app-region: drag; z-index:10000;
+    position:fixed; top:0; left:0; right:0; height:36px;
+    -webkit-app-region:drag; z-index:10000;
     display:flex; align-items:center; padding:0 14px; gap:8px;
   }
-  .tb { width:12px; height:12px; border-radius:50%; border:none; cursor:pointer; -webkit-app-region:no-drag; transition:.15s; }
+  .tb {
+    width:12px; height:12px; border-radius:50%; border:none;
+    cursor:pointer; -webkit-app-region:no-drag; transition:.15s;
+  }
   .tb:hover { filter:brightness(1.5); transform:scale(1.1); }
-  .tb-x { background:#8b3a38; }
-  .tb-y { background:#8b6f28; }
-  .tb-g { background:#1e6b2e; }
-  body.mini-mode .titlebar { display:none; }
+  .tb-x{background:#8b3a38} .tb-y{background:#8b6f28} .tb-g{background:#1e6b2e}
 
   /* LAYOUT */
   .layout {
     display:grid;
-    grid-template-columns: 1fr 180px;
-    grid-template-rows: 50px 1fr 44px;
+    grid-template-columns:1fr 175px;
+    grid-template-rows:46px 1fr 40px;
     height:100vh;
   }
 
   /* HEADER */
   .header {
     grid-column:1/-1;
-    background:linear-gradient(180deg, #020f1e 0%, #010912 100%);
+    background:var(--bg2);
     border-bottom:1px solid var(--border);
     display:flex; align-items:center; justify-content:space-between;
     padding:0 18px 0 76px;
@@ -64,246 +63,218 @@
     background:var(--green); box-shadow:0 0 10px var(--green);
     animation:breathe 3s ease-in-out infinite;
   }
-  @keyframes breathe { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(.7);opacity:.5} }
-  .hdr-title { font-size:12px; letter-spacing:5px; color:var(--blue); }
-  .hdr-status { font-size:8px; letter-spacing:3px; color:var(--green); }
+  @keyframes breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+  .hdr-title { font-size:11px; letter-spacing:5px; color:var(--blue); }
+  .hdr-status { font-size:7px; letter-spacing:3px; color:var(--green); opacity:.7; }
   .hdr-c { text-align:center; }
-  .hdr-time { font-size:22px; letter-spacing:4px; color:var(--blue); text-shadow:0 0 30px #00d4ff50; }
-  .hdr-date { font-size:8px; letter-spacing:3px; color:var(--dim); margin-top:1px; }
+  .hdr-time {
+    font-size:20px; letter-spacing:4px; color:var(--blue);
+    text-shadow:0 0 30px #00d4ff50;
+  }
+  .hdr-date { font-size:7px; letter-spacing:3px; color:var(--dim); margin-top:1px; }
   .hdr-r { text-align:right; }
-  .hdr-name { font-size:10px; letter-spacing:2px; color:var(--text); }
-  .hdr-org  { font-size:8px; letter-spacing:2px; color:var(--dim); margin-top:2px; }
+  .hdr-name { font-size:9px; letter-spacing:2px; color:var(--text); }
+  .hdr-org  { font-size:7px; letter-spacing:2px; color:var(--dim); margin-top:2px; }
 
   /* CENTER */
-  .center { grid-column:1; grid-row:2; position:relative; overflow:hidden; background:var(--bg); }
-  #starCanvas { position:absolute; inset:0; width:100%; height:100%; }
-  #constSvg   { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-
-  /* NODES */
-  .node {
-    position:absolute; transform:translate(-50%,-50%);
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    cursor:pointer; transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  .center {
+    grid-column:1; grid-row:2;
+    position:relative; overflow:hidden;
+    background:var(--bg);
   }
-  .node:hover { transform:translate(-50%,-50%) scale(1.08); }
+  #cv { position:absolute; inset:0; width:100%; height:100%; }
 
-  /* Organic blob shape */
-  .node-blob {
-    position:relative;
-    display:flex; align-items:center; justify-content:center;
+  /* NODE HIT AREAS */
+  .hit {
+    position:absolute;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    cursor:pointer; z-index:10;
   }
 
-  /* Orbiting ring — organic, not a full circle */
-  .orbit {
-    position:absolute; border-radius:50%;
-    border:1px solid currentColor; opacity:.12;
+  /* NODE LABELS */
+  .nlabel {
+    position:absolute;
+    transform:translateX(-50%);
+    text-align:center;
+    pointer-events:none; z-index:11;
+    transition:opacity .4s;
   }
-  .orbit-1 { animation:spin 18s linear infinite; }
-  .orbit-2 { animation:spin-r 12s linear infinite; opacity:.07; }
-
-  @keyframes spin   { from{transform:rotate(0)}   to{transform:rotate(360deg)} }
-  @keyframes spin-r { from{transform:rotate(0)}   to{transform:rotate(-360deg)} }
-
-  /* Sweeping arc */
-  .arc {
-    position:absolute; border-radius:50%;
-    border:1.5px solid transparent; opacity:.55;
-    animation:spin 5s linear infinite;
-    transition:border-color .4s, animation-duration .4s;
+  .nlabel-name {
+    font-size:7.5px; letter-spacing:2.5px;
+    color:var(--dim); transition:color .4s;
   }
+  .nlabel-role { font-size:6px; letter-spacing:1px; color:#0d2535; margin-top:3px; }
+  .nlabel.active .nlabel-name { color:var(--blue); text-shadow:0 0 12px #00d4ff60; }
+  .nlabel.active-scout  .nlabel-name { color:#a07010; }
+  .nlabel.active-solver .nlabel-name { color:#5a3ea0; }
 
-  /* Core — organic morphing shape */
-  .core {
-    border-radius:60% 40% 55% 45% / 45% 55% 45% 55%;
-    animation:morph 9s ease-in-out infinite;
-    display:flex; align-items:center; justify-content:center;
-    transition:box-shadow .4s, border-color .4s;
-    position:relative; z-index:1;
+  /* Vasco owner label */
+  .vasco-label {
+    position:absolute; text-align:center;
+    pointer-events:none; z-index:11;
+    transform:translateX(-50%);
   }
-  @keyframes morph {
-    0%,100% { border-radius:60% 40% 55% 45% / 45% 55% 45% 55%; }
-    33%      { border-radius:40% 60% 45% 55% / 55% 40% 60% 45%; }
-    66%      { border-radius:55% 45% 60% 40% / 40% 60% 50% 50%; }
-  }
-
-  /* Inner glow pulse */
-  .core-glow {
-    position:absolute; inset:-8px; border-radius:50%;
-    animation:glow-pulse 3s ease-in-out infinite;
-    pointer-events:none;
-  }
-  @keyframes glow-pulse {
-    0%,100%{opacity:.3;transform:scale(1)}
-    50%{opacity:.6;transform:scale(1.08)}
-  }
-
-  /* CEO */
-  .node-ceo .orbit-1 { width:170px; height:170px; color:var(--blue); }
-  .node-ceo .orbit-2 { width:145px; height:145px; color:var(--teal); }
-  .node-ceo .arc     { width:170px; height:170px; border-top-color:var(--blue); border-right-color:var(--teal); }
-  .node-ceo .core    { width:92px; height:92px; border:1.5px solid var(--blue); background:radial-gradient(circle at 35% 30%, #0d5570, #010912 70%); box-shadow:0 0 30px #00d4ff30, 0 0 60px #00d4ff15, inset 0 0 25px #00d4ff15; }
-  .node-ceo .core-glow { background:radial-gradient(circle, #00d4ff20, transparent 70%); }
-  .node-ceo .core svg { width:46px; height:46px; filter:drop-shadow(0 0 12px var(--blue)); }
-
-  /* SCOUT */
-  .node-scout .orbit-1 { width:100px; height:100px; color:var(--amber); }
-  .node-scout .arc     { width:100px; height:100px; border-top-color:var(--amber); border-right-color:transparent; animation-duration:7s; }
-  .node-scout .core    { width:58px; height:58px; border:1.5px solid var(--amber); background:radial-gradient(circle at 35% 30%, #3d2800, #010912 70%); box-shadow:0 0 20px #ffb30025, 0 0 40px #ffb30010, inset 0 0 18px #ffb30015; animation-delay:3s; }
-  .node-scout .core-glow { background:radial-gradient(circle, #ffb30018, transparent 70%); }
-  .node-scout .core svg { width:28px; height:28px; filter:drop-shadow(0 0 8px var(--amber)); }
-
-  /* SOLVER */
-  .node-solver .orbit-1 { width:100px; height:100px; color:var(--violet); opacity:.06; }
-  .node-solver .arc     { width:100px; height:100px; border-top-color:var(--violet); border-right-color:transparent; opacity:.15; animation-duration:12s; }
-  .node-solver .core    { width:58px; height:58px; border:1.5px solid #2a1a4a; background:radial-gradient(circle at 35% 30%, #0d0820, #010912 70%); box-shadow:0 0 10px #9b6dff10, inset 0 0 10px #9b6dff08; animation-delay:6s; }
-  .node-solver .core-glow { background:radial-gradient(circle, #9b6dff10, transparent 70%); opacity:.3; }
-  .node-solver .core svg { width:28px; height:28px; filter:drop-shadow(0 0 4px #9b6dff); opacity:.4; }
-
-  /* Active states */
-  .node.active .core { animation:morph 9s ease-in-out infinite, node-active 2.5s ease-in-out infinite alternate !important; }
-  @keyframes node-active {
-    from { box-shadow:0 0 25px var(--blue-g), 0 0 50px #00d4ff10; }
-    to   { box-shadow:0 0 45px #00d4ff90, 0 0 90px #00d4ff30; }
-  }
-
-  body.listening .node.active .core { border-color:var(--green) !important; box-shadow:0 0 30px #00ff8840,0 0 60px #00ff8815 !important; animation:morph 9s ease-in-out infinite !important; }
-  body.listening .node.active .core svg { filter:drop-shadow(0 0 12px var(--green)) !important; }
-  body.listening .node.active .arc { border-top-color:var(--green) !important; border-right-color:var(--teal) !important; animation-duration:2s !important; }
-
-  body.thinking .node.active .core { border-color:var(--amber) !important; box-shadow:0 0 30px #ffb30040,0 0 60px #ffb30015 !important; animation:morph 9s ease-in-out infinite !important; }
-  body.thinking .node.active .arc { border-top-color:var(--amber) !important; border-right-color:transparent !important; animation-duration:.6s !important; }
-
-  body.speaking .node.active .core { animation:morph 9s ease-in-out infinite, speak-pulse .6s ease-in-out infinite alternate !important; }
-  @keyframes speak-pulse {
-    from { box-shadow:0 0 25px #00d4ff50, 0 0 50px #00d4ff20; }
-    to   { box-shadow:0 0 55px #00d4ffdd, 0 0 110px #00d4ff50; }
-  }
-
-  /* Labels */
-  .node-label { font-size:8px; letter-spacing:2.5px; color:var(--dim); transition:color .3s; text-align:center; white-space:nowrap; }
-  .node-role  { font-size:6.5px; letter-spacing:1px; color:#1a3040; text-align:center; margin-top:1px; }
-  .node.active .node-label { color:var(--blue); }
+  .vasco-name { font-size:7px; letter-spacing:4px; color:#2a5570; }
 
   /* OVERLAY */
   .overlay {
     position:absolute; bottom:0; left:0; right:0;
-    padding:0 0 18px;
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    pointer-events:none;
+    padding:0 0 16px;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    pointer-events:none; z-index:20;
   }
-  .waveform { display:flex; align-items:center; gap:3px; height:26px; }
-  .w-bar { width:3px; background:var(--blue); border-radius:3px; height:3px; opacity:.25; transition:height .15s, opacity .3s; }
-  body.listening .w-bar { opacity:.55; animation:widle 1.3s ease-in-out infinite; }
-  body.speaking  .w-bar { opacity:.85; animation:wspeak .45s ease-in-out infinite; }
-  body.thinking  .w-bar { opacity:.35; animation:wthink 1s ease-in-out infinite; }
-  .w-bar:nth-child(1){animation-delay:.00s}.w-bar:nth-child(2){animation-delay:.08s}
-  .w-bar:nth-child(3){animation-delay:.16s}.w-bar:nth-child(4){animation-delay:.24s}
-  .w-bar:nth-child(5){animation-delay:.12s}.w-bar:nth-child(6){animation-delay:.04s}
-  .w-bar:nth-child(7){animation-delay:.20s}.w-bar:nth-child(8){animation-delay:.10s}
-  .w-bar:nth-child(9){animation-delay:.28s}.w-bar:nth-child(10){animation-delay:.06s}
-  .w-bar:nth-child(11){animation-delay:.18s}.w-bar:nth-child(12){animation-delay:.14s}
+
+  .waveform { display:flex; align-items:center; gap:3px; height:24px; }
+  .w-bar { width:2.5px; background:var(--blue); border-radius:3px; height:3px; opacity:.2; }
+  body.listening .w-bar { opacity:.5; animation:widle 1.3s ease-in-out infinite; }
+  body.speaking  .w-bar { opacity:.8; animation:wspeak .45s ease-in-out infinite; }
+  body.thinking  .w-bar { opacity:.3; animation:wthink 1s ease-in-out infinite; }
+  .w-bar:nth-child(1){animation-delay:.00s} .w-bar:nth-child(2){animation-delay:.08s}
+  .w-bar:nth-child(3){animation-delay:.16s} .w-bar:nth-child(4){animation-delay:.24s}
+  .w-bar:nth-child(5){animation-delay:.12s} .w-bar:nth-child(6){animation-delay:.04s}
+  .w-bar:nth-child(7){animation-delay:.20s} .w-bar:nth-child(8){animation-delay:.10s}
+  .w-bar:nth-child(9){animation-delay:.28s} .w-bar:nth-child(10){animation-delay:.06s}
+  .w-bar:nth-child(11){animation-delay:.18s} .w-bar:nth-child(12){animation-delay:.14s}
   @keyframes widle  { 0%,100%{height:3px} 50%{height:16px} }
   @keyframes wspeak { 0%,100%{height:5px} 50%{height:24px} }
   @keyframes wthink { 0%,100%{height:3px} 50%{height:8px}  }
 
-  .state-txt { font-size:8px; letter-spacing:5px; color:var(--dim); transition:color .3s; pointer-events:none; }
+  .state-txt {
+    font-size:7px; letter-spacing:5px; color:var(--dim);
+    transition:color .3s; pointer-events:none; min-height:14px;
+  }
   body.listening .state-txt { color:var(--green); }
   body.thinking  .state-txt { color:var(--amber); }
   body.speaking  .state-txt { color:var(--blue); }
 
-  .transcript { max-width:480px; width:100%; text-align:center; padding:0 24px; pointer-events:none; }
-  .t-user   { font-size:10px; color:var(--dim); letter-spacing:.5px; margin-bottom:5px; }
-  .t-morgan { font-size:12px; color:var(--text); letter-spacing:.3px; line-height:1.7; }
-
-  .input-wrap { max-width:400px; width:100%; padding:0 24px; pointer-events:all; position:relative; }
-  .input-wrap::before { content:'›'; position:absolute; left:24px; top:50%; transform:translateY(-50%); color:var(--dim); font-size:14px; pointer-events:none; }
-  .text-input {
-    width:100%; background:rgba(1,9,18,.9); border:1px solid var(--border);
-    border-radius:20px; color:var(--text); font-family:'Courier New',monospace;
-    font-size:11px; padding:9px 14px 9px 22px; outline:none; letter-spacing:.5px;
-    backdrop-filter:blur(12px); transition:border-color .2s, box-shadow .2s;
+  .transcript {
+    max-width:460px; width:100%;
+    text-align:center; padding:0 20px;
+    min-height:36px;
   }
-  .text-input::placeholder { color:var(--dim); opacity:.5; }
-  .text-input:focus { border-color:#00d4ff30; box-shadow:0 0 20px #00d4ff15; }
+  .t-user   { font-size:9px; color:var(--dim); letter-spacing:.5px; margin-bottom:4px; }
+  .t-morgan { font-size:11px; color:var(--text); letter-spacing:.3px; line-height:1.75; }
+
+  .input-wrap {
+    max-width:380px; width:100%;
+    padding:0 20px; pointer-events:all; position:relative;
+  }
+  .input-wrap::before {
+    content:'›'; position:absolute; left:28px; top:50%;
+    transform:translateY(-50%); color:var(--dim);
+    font-size:14px; pointer-events:none;
+  }
+  .text-input {
+    width:100%; background:rgba(1,9,18,.92);
+    border:1px solid var(--border); border-radius:20px;
+    color:var(--text); font-family:'Courier New',monospace;
+    font-size:10px; padding:8px 14px 8px 22px;
+    outline:none; letter-spacing:.5px;
+    backdrop-filter:blur(12px);
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .text-input::placeholder { color:var(--dim); opacity:.4; }
+  .text-input:focus { border-color:#00d4ff20; box-shadow:0 0 18px #00d4ff0e; }
 
   #startBtn {
-    display:block; background:transparent; border:1px solid #00d4ff25; color:var(--blue);
-    padding:8px 28px; cursor:pointer; font-family:inherit; font-size:10px; letter-spacing:3px;
-    border-radius:20px; pointer-events:all; transition:all .25s;
+    display:block; background:transparent;
+    border:1px solid #00d4ff18; color:#1a4a5a;
+    padding:7px 26px; cursor:pointer;
+    font-family:inherit; font-size:9px; letter-spacing:3px;
+    border-radius:20px; pointer-events:all;
+    transition:all .25s;
   }
-  #startBtn:hover { border-color:var(--blue); box-shadow:0 0 20px var(--blue-g); }
+  #startBtn:hover { border-color:#00d4ff35; color:var(--blue); box-shadow:0 0 16px #00d4ff15; }
 
-  /* RIGHT */
+  /* RIGHT COLUMN */
   .right-col {
     grid-column:2; grid-row:2;
-    background:linear-gradient(180deg, #020e1c 0%, #010912 100%);
-    border-left:1px solid var(--border);
+    background:var(--bg2); border-left:1px solid var(--border);
     display:flex; flex-direction:column; overflow:hidden;
   }
-  .info-panel { flex:1; padding:14px 14px 12px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; justify-content:space-between; }
+  .info-panel {
+    flex:1; padding:12px 14px 10px;
+    border-bottom:1px solid var(--border);
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
   .info-panel:last-child { border-bottom:none; }
-  .i-label { font-size:7px; letter-spacing:3px; color:var(--dim); margin-bottom:8px; }
-  .i-value { font-size:26px; color:var(--blue); text-shadow:0 0 20px var(--blue-g); line-height:1; }
-  .i-sub   { font-size:8px; color:var(--dim); margin-top:4px; letter-spacing:1px; }
-  .i-line  { display:flex; justify-content:space-between; margin-top:5px; font-size:9px; }
+  .i-label { font-size:6.5px; letter-spacing:3px; color:var(--dim); margin-bottom:7px; }
+  .i-value { font-size:24px; color:var(--blue); text-shadow:0 0 18px #00d4ff28; line-height:1; }
+  .i-sub   { font-size:7.5px; color:var(--dim); margin-top:3px; line-height:1.5; }
+  .i-line  { display:flex; justify-content:space-between; margin-top:4px; font-size:8px; }
   .i-ll { color:var(--dim); } .i-lv { color:var(--text); }
-  .accent-bar { height:1px; margin-top:10px; background:linear-gradient(90deg, var(--blue-g), transparent); }
+  .accent-bar { height:1px; margin-top:8px; background:linear-gradient(90deg,#00d4ff20,transparent); }
   .win{color:var(--green)} .loss{color:var(--red)} .draw{color:var(--amber)}
 
   /* FOOTER */
-  .footer { grid-column:1/-1; background:var(--bg2); border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; }
-  .f-l { font-size:8px; letter-spacing:2px; color:var(--dim); }
-  .f-r { display:flex; gap:14px; align-items:center; }
-  .f-s { font-size:8px; letter-spacing:2px; color:var(--dim); }
-  .mini-btn { font-size:8px; letter-spacing:2px; color:var(--dim); cursor:pointer; padding:4px 12px; border:1px solid var(--border); border-radius:10px; transition:all .2s; }
+  .footer {
+    grid-column:1/-1;
+    background:var(--bg2); border-top:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 14px;
+  }
+  .f-l { font-size:7px; letter-spacing:2px; color:var(--dim); }
+  .f-r { display:flex; gap:12px; align-items:center; }
+  .f-s { font-size:7px; letter-spacing:2px; color:var(--dim); }
+  .mini-btn {
+    font-size:7px; letter-spacing:2px; color:var(--dim);
+    cursor:pointer; padding:3px 10px;
+    border:1px solid var(--border); border-radius:10px;
+    transition:all .2s;
+  }
   .mini-btn:hover { color:var(--blue); border-color:#00d4ff25; }
 
-  /* MINI */
+  /* MINI MODE */
   body.mini-mode .layout { display:none; }
-  .mini-avatar { display:none; position:fixed; inset:0; align-items:center; justify-content:center; }
-  body.mini-mode .mini-avatar { display:flex; }
-  .mini-core {
-    width:80px; height:80px;
-    border-radius:60% 40% 55% 45%/45% 55% 45% 55%;
-    background:radial-gradient(circle at 35% 30%, #0d5570, #010912 70%);
-    border:1.5px solid var(--blue);
-    box-shadow:0 0 25px var(--blue-g), 0 0 50px #00d4ff15;
-    display:flex; align-items:center; justify-content:center;
-    animation:morph 9s ease-in-out infinite, midle 3s ease-in-out infinite;
-    cursor:pointer;
+  .mini-avatar {
+    display:none; position:fixed; inset:0;
+    align-items:center; justify-content:center;
+    background:var(--bg);
   }
-  @keyframes midle { 0%,100%{box-shadow:0 0 25px var(--blue-g)} 50%{box-shadow:0 0 45px #00d4ff60} }
-  .mini-core svg { width:36px; height:36px; filter:drop-shadow(0 0 8px var(--blue)); }
+  body.mini-mode .mini-avatar { display:flex; }
+  #cvMini { width:120px; height:120px; }
 
-  .wip-toast { display:none; position:fixed; bottom:54px; left:50%; transform:translateX(-50%); background:var(--bg2); border:1px solid #00d4ff20; color:var(--dim); font-size:9px; letter-spacing:3px; padding:8px 22px; z-index:9998; pointer-events:none; border-radius:12px; }
+  /* WIP TOAST */
+  .wip-toast {
+    display:none; position:fixed; bottom:50px; left:50%;
+    transform:translateX(-50%);
+    background:var(--bg2); border:1px solid #00d4ff18;
+    color:var(--dim); font-size:8px; letter-spacing:3px;
+    padding:7px 20px; z-index:9998; pointer-events:none;
+    border-radius:12px;
+  }
   .wip-toast.show { display:block; animation:fadeio 2.5s forwards; }
   @keyframes fadeio { 0%{opacity:0} 15%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
 
-  body::after { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.005) 2px,rgba(0,212,255,.005) 4px); pointer-events:none; z-index:998; }
+  /* Scanline overlay */
+  body::after {
+    content:''; position:fixed; inset:0;
+    background:repeating-linear-gradient(
+      0deg,transparent,transparent 2px,
+      rgba(0,212,255,.003) 2px,rgba(0,212,255,.003) 4px
+    );
+    pointer-events:none; z-index:998;
+  }
 </style>
 </head>
 <body>
 
 <div class="titlebar">
-  <button class="tb tb-x" onclick="window.pywebview.api.close_app()"></button>
-  <button class="tb tb-y" onclick="window.pywebview.api.sleep_app()"></button>
+  <button class="tb tb-x" onclick="window.pywebview?.api?.close_app()"></button>
+  <button class="tb tb-y" onclick="window.pywebview?.api?.sleep_app()"></button>
   <button class="tb tb-g" onclick="toggleMini()"></button>
 </div>
 
 <div class="mini-avatar" onclick="toggleMini()">
-  <div class="mini-core">
-    <svg viewBox="0 0 60 60" fill="none">
-      <path d="M30 10 C40 10 52 20 52 32 C52 44 42 52 30 50 C18 48 8 40 10 28 C12 16 20 10 30 10Z" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff10"/>
-      <circle cx="30" cy="32" r="8" stroke="#00d4ff" stroke-width="1.5" fill="#00d4ff18"/>
-      <circle cx="30" cy="32" r="3.5" fill="#00d4ff" opacity=".95"/>
-    </svg>
-  </div>
+  <canvas id="cvMini"></canvas>
 </div>
 
 <div class="wip-toast" id="wipToast">EM CONSTRUÇÃO</div>
 
 <div class="layout">
 
+  <!-- HEADER -->
   <div class="header">
     <div class="hdr-l">
       <div class="hdr-dot"></div>
@@ -320,85 +291,33 @@
     </div>
   </div>
 
+  <!-- CENTER CANVAS -->
   <div class="center" id="centerEl">
-    <canvas id="starCanvas"></canvas>
-    <svg id="constSvg">
-      <defs>
-        <filter id="lineGlow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        <linearGradient id="lineGrad1" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#00d4ff" stop-opacity=".4"/>
-          <stop offset="100%" stop-color="#ffb300" stop-opacity=".15"/>
-        </linearGradient>
-        <linearGradient id="lineGrad2" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#00d4ff" stop-opacity=".4"/>
-          <stop offset="100%" stop-color="#9b6dff" stop-opacity=".1"/>
-        </linearGradient>
-      </defs>
-      <path id="path-scout"  stroke="url(#lineGrad1)" stroke-width="1" fill="none" filter="url(#lineGlow)" opacity=".8"/>
-      <path id="path-solver" stroke="url(#lineGrad2)" stroke-width="1" fill="none" filter="url(#lineGlow)" opacity=".8"/>
-    </svg>
+    <canvas id="cv"></canvas>
 
-    <!-- CEO -->
-    <div class="node node-ceo active" id="node-ceo" onclick="selectAgent('ceo')">
-      <div class="node-blob">
-        <div class="orbit orbit-1"></div>
-        <div class="orbit orbit-2"></div>
-        <div class="arc"></div>
-        <div class="core-glow"></div>
-        <div class="core">
-          <svg viewBox="0 0 60 60" fill="none">
-            <path d="M30 8 C36 14 50 18 54 30 C58 42 48 54 36 56 C24 58 10 50 8 38 C6 26 14 10 30 8Z" stroke="#00d4ff" stroke-width="1" fill="#00d4ff08"/>
-            <path d="M30 16 C34 20 42 22 44 30 C46 38 40 46 32 47 C24 48 16 42 16 34 C16 26 22 16 30 16Z" stroke="#00d4ff" stroke-width="1" fill="#00d4ff10" opacity=".5"/>
-            <circle cx="30" cy="32" r="7" fill="#00d4ff" opacity=".9"/>
-            <circle cx="30" cy="32" r="11" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".4"/>
-            <path d="M22 20 Q30 14 38 20" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".5"/>
-          </svg>
-        </div>
-      </div>
-      <div class="node-label">MORGAN CEO</div>
-      <div class="node-role">Braço direito</div>
+    <!-- Hit areas -->
+    <div class="hit" id="hit-ceo"    onclick="selectAgent('ceo')"    style="width:160px;height:160px"></div>
+    <div class="hit" id="hit-scout"  onclick="selectAgent('scout')"  style="width:100px;height:100px"></div>
+    <div class="hit" id="hit-solver" onclick="selectAgent('solver')" style="width:90px;height:90px"></div>
+
+    <!-- Labels -->
+    <div class="vasco-label" id="label-vasco">
+      <div class="vasco-name">VASCO</div>
+    </div>
+    <div class="nlabel active" id="label-ceo">
+      <div class="nlabel-name">MORGAN CEO</div>
+      <div class="nlabel-role">braço direito</div>
+    </div>
+    <div class="nlabel" id="label-scout">
+      <div class="nlabel-name">MORGAN SCOUT</div>
+      <div class="nlabel-role">oportunidades</div>
+    </div>
+    <div class="nlabel" id="label-solver">
+      <div class="nlabel-name">MORGAN SOLVER</div>
+      <div class="nlabel-role">manutenção</div>
     </div>
 
-    <!-- SCOUT -->
-    <div class="node node-scout" id="node-scout" onclick="selectAgent('scout')">
-      <div class="node-blob">
-        <div class="orbit orbit-1" style="color:var(--amber)"></div>
-        <div class="arc" style="border-top-color:var(--amber);border-right-color:transparent;animation-duration:7s"></div>
-        <div class="core-glow" style="background:radial-gradient(circle,#ffb30018,transparent 70%)"></div>
-        <div class="core" style="border-color:var(--amber);background:radial-gradient(circle at 35% 30%,#3d2800,#010912 70%);box-shadow:0 0 20px #ffb30025,inset 0 0 18px #ffb30015;animation-delay:3s">
-          <svg viewBox="0 0 60 60" fill="none">
-            <path d="M30 10 C42 12 52 20 52 32 C52 44 44 52 30 52 C16 52 8 42 10 30 C12 18 18 8 30 10Z" stroke="#ffb300" stroke-width="1" fill="#ffb30008"/>
-            <path d="M30 20 C36 21 40 26 39 32 C38 38 33 42 27 40 C21 38 18 32 21 26 C23 21 27 19 30 20Z" stroke="#ffb300" stroke-width=".8" fill="none" opacity=".5"/>
-            <circle cx="30" cy="30" r="5" fill="#ffb300" opacity=".85"/>
-            <line x1="30" y1="10" x2="30" y2="18" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
-            <line x1="30" y1="42" x2="30" y2="50" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
-            <line x1="10" y1="30" x2="18" y2="30" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
-            <line x1="42" y1="30" x2="50" y2="30" stroke="#ffb300" stroke-width=".8" opacity=".4"/>
-          </svg>
-        </div>
-      </div>
-      <div class="node-label" style="color:#5a4010">MORGAN SCOUT</div>
-      <div class="node-role">Oportunidades</div>
-    </div>
-
-    <!-- SOLVER -->
-    <div class="node node-solver" id="node-solver" onclick="selectAgent('solver')">
-      <div class="node-blob">
-        <div class="orbit orbit-1" style="color:var(--violet)"></div>
-        <div class="arc" style="border-top-color:var(--violet);border-right-color:transparent;opacity:.12;animation-duration:14s"></div>
-        <div class="core-glow" style="background:radial-gradient(circle,#9b6dff12,transparent 70%);opacity:.4"></div>
-        <div class="core" style="border-color:#2a1a4a;background:radial-gradient(circle at 35% 30%,#0d0820,#010912 70%);box-shadow:0 0 12px #9b6dff12,inset 0 0 10px #9b6dff08;animation-delay:6s">
-          <svg viewBox="0 0 60 60" fill="none">
-            <path d="M20 18 C22 14 28 12 32 14 C36 16 38 20 36 24 L44 36 C46 40 44 46 40 48 C36 50 30 48 28 44 L20 32 C16 28 16 22 20 18Z" stroke="#9b6dff" stroke-width="1" fill="#9b6dff08" opacity=".5"/>
-            <circle cx="24" cy="22" r="4" stroke="#9b6dff" stroke-width=".8" fill="#9b6dff15" opacity=".5"/>
-            <path d="M28 26 L38 44" stroke="#9b6dff" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
-          </svg>
-        </div>
-      </div>
-      <div class="node-label" style="color:#1a1030">MORGAN SOLVER</div>
-      <div class="node-role">Manutenção</div>
-    </div>
-
+    <!-- Overlay -->
     <div class="overlay">
       <div class="waveform">
         <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
@@ -406,38 +325,62 @@
         <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
         <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
       </div>
-      <div class="state-txt"><span id="stateLabelText">A LIGAR...</span>
+      <div class="state-txt">
+        <span id="stateLabelText">A LIGAR...</span>
         <button id="startBtn" onclick="startMorgan()">▶ INICIAR</button>
       </div>
       <div class="transcript" id="transcript"></div>
       <div class="input-wrap">
-        <input class="text-input" id="textInput" type="text" placeholder="escreve aqui..." onkeydown="handleKey(event)"/>
+        <input class="text-input" id="textInput" type="text"
+          placeholder="escreve aqui..." onkeydown="handleKey(event)"/>
       </div>
     </div>
   </div>
 
+  <!-- RIGHT COLUMN -->
   <div class="right-col">
     <div class="info-panel">
-      <div><div class="i-label">CLIMA</div><div class="i-value" id="weatherTemp">--°</div><div class="i-sub" id="weatherDesc">Moreira de Cónegos</div></div>
+      <div>
+        <div class="i-label">CLIMA</div>
+        <div class="i-value" id="weatherTemp">--°</div>
+        <div class="i-sub" id="weatherDesc">Moreira de Cónegos</div>
+      </div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div><div class="i-label">PRÓXIMO JOGO</div><div style="font-size:11px;color:var(--text);margin-top:4px;line-height:1.7" id="nextGame">--</div><div class="i-sub" id="nextGameDate"></div><div style="font-size:7px;color:var(--dim);margin-top:2px" id="nextGameComp"></div></div>
+      <div>
+        <div class="i-label">PRÓXIMO JOGO</div>
+        <div style="font-size:10px;color:var(--text);margin-top:4px;line-height:1.75" id="nextGame">--</div>
+        <div class="i-sub" id="nextGameDate"></div>
+        <div style="font-size:6.5px;color:var(--dim);margin-top:2px" id="nextGameComp"></div>
+      </div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div><div class="i-label">ÚLTIMO RESULTADO</div><div class="i-sub" id="lastOpponent" style="margin-top:4px">--</div><div style="font-size:26px;margin-top:6px;letter-spacing:2px" id="lastScore">--</div></div>
+      <div>
+        <div class="i-label">ÚLTIMO RESULTADO</div>
+        <div class="i-sub" id="lastOpponent" style="margin-top:4px">--</div>
+        <div style="font-size:24px;margin-top:5px;letter-spacing:2px" id="lastScore">--</div>
+      </div>
       <div class="accent-bar"></div>
     </div>
     <div class="info-panel">
-      <div><div class="i-label">SCOUT</div>
-        <div class="i-line"><span class="i-ll">Oportunidades</span><span class="i-lv" id="scoutTotal">--</span></div>
-        <div class="i-line"><span class="i-ll">Aprovadas</span><span class="i-lv" id="scoutAprovadas">--</span></div>
+      <div>
+        <div class="i-label">SCOUT</div>
+        <div class="i-line">
+          <span class="i-ll">Oportunidades</span>
+          <span class="i-lv" id="scoutTotal">--</span>
+        </div>
+        <div class="i-line">
+          <span class="i-ll">Aprovadas</span>
+          <span class="i-lv" id="scoutAprovadas">--</span>
+        </div>
       </div>
       <div class="accent-bar"></div>
     </div>
   </div>
 
+  <!-- FOOTER -->
   <div class="footer">
     <div class="f-l">BC INDUSTRIES ● MORGAN SYSTEM v2.0</div>
     <div class="f-r">
@@ -449,183 +392,475 @@
 </div>
 
 <script>
-// STARS + NEBULA
-const canvas = document.getElementById('starCanvas');
-const ctx = canvas.getContext('2d');
-let stars = [], nebulae = [];
+// ─── SEEDED RANDOM ────────────────────────────────────
+function mkRng(seed) {
+  let s = seed;
+  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+// ─── CANVAS ──────────────────────────────────────────
+const cv       = document.getElementById('cv');
+const ctx      = cv.getContext('2d');
+const centerEl = document.getElementById('centerEl');
+
+let W, H, t = 0;
+let stars = [], bgNebulae = [], particles = [];
+let nodes = {};
+let activeAgent  = 'ceo';
+let morganState  = 'idle';
+
+// Agent definitions
+const AGENTS = {
+  ceo:    { colors:['0,212,255','0,255,180'],    size:92,  intensity:1.0,  online:true,  cloudCount:22 },
+  scout:  { colors:['255,176,0','255,110,0'],    size:56,  intensity:0.62, online:false, cloudCount:15 },
+  solver: { colors:['155,100,255','80,50,210'],  size:50,  intensity:0.88, online:false, cloudCount:13 },
+};
 
 function initCanvas() {
-  canvas.width  = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
-  stars = [];
-  nebulae = [];
-  for (let i = 0; i < 200; i++) {
-    stars.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*.9+.15, a:Math.random(), da:(Math.random()-.5)*.006, c:Math.random()>.7?'0,255,204':'0,212,255' });
+  W = cv.width  = centerEl.offsetWidth;
+  H = cv.height = centerEl.offsetHeight;
+  buildScene();
+  placeLabels();
+}
+
+function nodePositions() {
+  // Triangle: CEO center-left, Scout upper-right, Solver lower-left
+  const cx = W * 0.44, cy = H * 0.47;
+  const r  = Math.min(W * 0.22, H * 0.22, 155);
+  return {
+    ceo:    { x: cx,                           y: cy                           },
+    scout:  { x: cx + r * Math.cos(-0.55),     y: cy + r * Math.sin(-0.55)     },
+    solver: { x: cx + r * Math.cos(2.65),      y: cy + r * Math.sin(2.65)      },
+    vasco:  { x: cx,                           y: cy - r * 0.92                },
+  };
+}
+
+function buildScene() {
+  const rng = mkRng(42);
+
+  // Stars
+  stars = Array.from({length:280}, () => {
+    const t = rng();
+    return {
+      x: rng() * W, y: rng() * H,
+      r: rng() * 1.1 + 0.12,
+      a: 0.15 + rng() * 0.75,
+      da: (rng() - 0.5) * 0.006,
+      c: t > 0.75 ? '0,255,150' : t > 0.45 ? '0,212,255' : '160,200,255',
+    };
+  });
+
+  // Background nebulae
+  bgNebulae = [
+    { x:W*0.20, y:H*0.25, r:Math.min(W,H)*0.30, c:'0,212,255',  a:0.018 },
+    { x:W*0.74, y:H*0.65, r:Math.min(W,H)*0.23, c:'0,255,140',  a:0.014 },
+    { x:W*0.58, y:H*0.10, r:Math.min(W,H)*0.18, c:'80,50,255',  a:0.010 },
+    { x:W*0.12, y:H*0.78, r:Math.min(W,H)*0.15, c:'0,180,255',  a:0.008 },
+    { x:W*0.85, y:H*0.20, r:Math.min(W,H)*0.12, c:'255,80,120', a:0.006 },
+  ];
+
+  // Build node cloud data (seeded per-node for consistency)
+  const pos = nodePositions();
+  Object.keys(AGENTS).forEach(id => {
+    const ag  = AGENTS[id];
+    const p   = pos[id];
+    const rn  = mkRng(id === 'ceo' ? 1 : id === 'scout' ? 2 : 3);
+    const clouds = Array.from({length: ag.cloudCount}, (_, i) => ({
+      ox:    (rn() - 0.5) * ag.size * 1.7,
+      oy:    (rn() - 0.5) * ag.size * 1.7,
+      sr:    ag.size * (0.30 + rn() * 0.88),
+      sa:    0.032 + rn() * 0.115,
+      phase: rn() * Math.PI * 2,
+      ci:    i % ag.colors.length,
+    }));
+    nodes[id] = { ...p, ...ag, clouds, nodePhase: id === 'ceo' ? 0 : id === 'scout' ? 1.8 : 3.5 };
+  });
+
+  // Ambient floating particles
+  const rng2 = mkRng(99);
+  particles = Array.from({length:20}, () => ({
+    x: rng2() * W, y: rng2() * H,
+    vx: (rng2() - 0.5) * 0.18,
+    vy: (rng2() - 0.5) * 0.18,
+    r: 0.7 + rng2() * 1.1,
+    a: 0.08 + rng2() * 0.25,
+  }));
+}
+
+function placeLabels() {
+  const pos = nodePositions();
+  setLabel('label-ceo',    pos.ceo.x,    pos.ceo.y    + AGENTS.ceo.size    * 0.82 + 14);
+  setLabel('label-scout',  pos.scout.x,  pos.scout.y  + AGENTS.scout.size  * 0.82 + 12);
+  setLabel('label-solver', pos.solver.x, pos.solver.y + AGENTS.solver.size * 0.82 + 12);
+  setLabel('label-vasco',  pos.vasco.x,  pos.vasco.y  - 16);
+  placeHit('hit-ceo',    pos.ceo.x,    pos.ceo.y);
+  placeHit('hit-scout',  pos.scout.x,  pos.scout.y);
+  placeHit('hit-solver', pos.solver.x, pos.solver.y);
+}
+
+function setLabel(id, x, y) {
+  const el = document.getElementById(id);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+}
+function placeHit(id, x, y) {
+  const el = document.getElementById(id);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+}
+
+// ─── DRAW LOOP ────────────────────────────────────────
+function draw() {
+  t += 0.007;
+  ctx.clearRect(0, 0, W, H);
+  drawBg();
+  drawStars();
+  drawParticles();
+  drawConnections();
+  Object.keys(nodes).forEach(drawNode);
+  drawVascoGlow();
+  requestAnimationFrame(draw);
+}
+
+function drawBg() {
+  bgNebulae.forEach(n => {
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+    g.addColorStop(0,   `rgba(${n.c},${n.a})`);
+    g.addColorStop(0.5, `rgba(${n.c},${n.a * 0.35})`);
+    g.addColorStop(1,   `rgba(${n.c},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+function drawStars() {
+  stars.forEach(s => {
+    s.a += s.da;
+    if (s.a > 0.88 || s.a < 0.06) s.da *= -1;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${s.c},${s.a * 0.55})`;
+    ctx.fill();
+  });
+}
+
+function drawParticles() {
+  const pos = nodePositions();
+  particles.forEach(p => {
+    // Gentle drift toward CEO
+    const dx = pos.ceo.x - p.x, dy = pos.ceo.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 20) { p.vx += dx / dist * 0.0015; p.vy += dy / dist * 0.0015; }
+    p.vx *= 0.992; p.vy *= 0.992;
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,212,255,${p.a * 0.45})`;
+    ctx.fill();
+  });
+}
+
+function drawConnections() {
+  const pos = nodePositions();
+  // Vasco → CEO (command line)
+  drawStream(pos.vasco.x, pos.vasco.y, pos.ceo.x, pos.ceo.y, '160,220,255', 0.10, false);
+  // CEO → Scout
+  drawStream(pos.ceo.x, pos.ceo.y, pos.scout.x, pos.scout.y, '200,130,0', 0.06, false);
+  // CEO → Solver
+  drawStream(pos.ceo.x, pos.ceo.y, pos.solver.x, pos.solver.y, '100,60,200', 0.04, false);
+}
+
+function drawStream(x1, y1, x2, y2, color, alpha, glow) {
+  const mx = (x1 + x2) / 2 + (y2 - y1) * 0.10;
+  const my = (y1 + y2) / 2 - (x2 - x1) * 0.10;
+  const g  = ctx.createLinearGradient(x1, y1, x2, y2);
+  g.addColorStop(0,   `rgba(${color},${alpha})`);
+  g.addColorStop(0.5, `rgba(${color},${alpha * 0.6})`);
+  g.addColorStop(1,   `rgba(${color},${alpha * 0.15})`);
+  if (glow) { ctx.shadowBlur = 8; ctx.shadowColor = `rgba(${color},.2)`; }
+  ctx.strokeStyle = g;
+  ctx.lineWidth   = 0.7;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2); ctx.stroke();
+  ctx.shadowBlur  = 0;
+}
+
+function drawNode(id) {
+  const n = nodes[id];
+  if (!n) return;
+  const breathe  = Math.sin(t + n.nodePhase);
+  const pulse    = Math.sin(t * 2.8 + n.nodePhase);
+  const isActive = id === activeAgent;
+
+  let colors = [...n.colors];
+  let iMult  = isActive ? 1.18 : (n.online ? 0.62 : 0.85);
+  if (isActive) {
+    if (morganState === 'listening') { colors = ['0,255,140','0,200,100'];  iMult = 1.45; }
+    if (morganState === 'thinking')  { colors = ['255,180,0','255,100,0'];  iMult = 1.32; }
+    if (morganState === 'speaking')  { iMult = 1.45 + pulse * 0.28; }
   }
-  // soft nebula clouds
-  for (let i = 0; i < 5; i++) {
-    nebulae.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:80+Math.random()*120, c:Math.random()>.5?'0,212,255':'0,255,204', a:.025+Math.random()*.03 });
+
+  const baseI  = n.intensity * iMult;
+  const sScale = 1 + breathe * 0.055;
+
+  // Cloud layers
+  n.clouds.forEach((c, i) => {
+    const ox = c.ox + Math.sin(t * 0.36 + c.phase) * 5.5;
+    const oy = c.oy + Math.cos(t * 0.27 + c.phase + 1) * 5.5;
+    const r  = c.sr * sScale;
+    const a  = Math.min(c.sa * baseI * (0.70 + breathe * 0.30), 0.78);
+    const col = colors[c.ci % colors.length];
+    const g = ctx.createRadialGradient(n.x + ox, n.y + oy, 0, n.x + ox, n.y + oy, r);
+    g.addColorStop(0,   `rgba(${col},${a})`);
+    g.addColorStop(0.45,`rgba(${col},${a * 0.28})`);
+    g.addColorStop(1,   `rgba(${col},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(n.x + ox, n.y + oy, r, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // Outer glow halo
+  const coreA = Math.min((0.55 + pulse * 0.18) * baseI, 1);
+  const coreR = n.online ? 4.5 + breathe * 1.8 : 3;
+  const gHalo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, coreR * 5.5);
+  gHalo.addColorStop(0,   `rgba(${colors[0]},${coreA * 0.65})`);
+  gHalo.addColorStop(0.4, `rgba(${colors[1]},${coreA * 0.20})`);
+  gHalo.addColorStop(1,   `rgba(${colors[0]},0)`);
+  ctx.fillStyle = gHalo;
+  ctx.beginPath(); ctx.arc(n.x, n.y, coreR * 5.5, 0, Math.PI * 2); ctx.fill();
+
+  // White core point
+  if (n.online) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(0.88 * baseI, 1)})`;
+    ctx.beginPath(); ctx.arc(n.x, n.y, coreR * 0.52, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath(); ctx.arc(n.x, n.y, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 }
 
-function drawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // nebulae
-  nebulae.forEach(n => {
-    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-    g.addColorStop(0, `rgba(${n.c},${n.a})`);
-    g.addColorStop(1, `rgba(${n.c},0)`);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
-  });
-  // stars
-  stars.forEach(s => {
-    s.a += s.da; if(s.a>1||s.a<0.05) s.da*=-1;
-    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fillStyle = `rgba(${s.c},${s.a*.7})`; ctx.fill();
-  });
-  requestAnimationFrame(drawCanvas);
+function drawVascoGlow() {
+  const pos = nodePositions();
+  const vx = pos.vasco.x, vy = pos.vasco.y;
+  const pulse = Math.sin(t * 0.65);
+  const g = ctx.createRadialGradient(vx, vy, 0, vx, vy, 24 + pulse * 4);
+  g.addColorStop(0, `rgba(160,220,255,${0.16 + pulse * 0.04})`);
+  g.addColorStop(1, 'rgba(160,220,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(vx, vy, 24 + pulse * 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = `rgba(200,235,255,0.35)`;
+  ctx.beginPath(); ctx.arc(vx, vy, 1.5, 0, Math.PI * 2); ctx.fill();
 }
-initCanvas(); drawCanvas();
+
+// ─── MINI CANVAS ──────────────────────────────────────
+const cvM  = document.getElementById('cvMini');
+const ctxM = cvM.getContext('2d');
+cvM.width = cvM.height = 120;
+let mt = 0;
+
+function drawMini() {
+  mt += 0.009;
+  ctxM.clearRect(0, 0, 120, 120);
+  const cx = 60, cy = 60, b = Math.sin(mt);
+  const cols = ['0,212,255','0,255,180'];
+  for (let i = 0; i < 16; i++) {
+    const ox = Math.sin(mt * 0.44 + i * 1.06) * 22;
+    const oy = Math.cos(mt * 0.37 + i * 0.94) * 22;
+    const r  = 16 + Math.sin(i * 1.9 + mt * 0.28) * 9;
+    const a  = 0.05 + Math.sin(mt * 0.5 + i * 0.72) * 0.024;
+    const g  = ctxM.createRadialGradient(cx+ox, cy+oy, 0, cx+ox, cy+oy, r);
+    g.addColorStop(0, `rgba(${cols[i%2]},${a})`);
+    g.addColorStop(1, `rgba(${cols[i%2]},0)`);
+    ctxM.fillStyle = g;
+    ctxM.beginPath(); ctxM.arc(cx+ox, cy+oy, r, 0, Math.PI*2); ctxM.fill();
+  }
+  const gC = ctxM.createRadialGradient(cx, cy, 0, cx, cy, 13 + b*2);
+  gC.addColorStop(0, `rgba(0,212,255,${0.62 + b*0.15})`);
+  gC.addColorStop(1,  'rgba(0,212,255,0)');
+  ctxM.fillStyle = gC;
+  ctxM.beginPath(); ctxM.arc(cx, cy, 13+b*2, 0, Math.PI*2); ctxM.fill();
+  ctxM.fillStyle = 'rgba(255,255,255,.85)';
+  ctxM.beginPath(); ctxM.arc(cx, cy, 2.5, 0, Math.PI*2); ctxM.fill();
+  requestAnimationFrame(drawMini);
+}
+drawMini();
+
+// ─── INIT ─────────────────────────────────────────────
+initCanvas();
+draw();
 window.addEventListener('resize', initCanvas);
 
-// LAYOUT
-function layoutNodes() {
-  const el = document.getElementById('centerEl');
-  const W = el.offsetWidth, H = el.offsetHeight;
-  const cx = W/2, cy = H/2 - 50;
-
-  pos('node-ceo', cx, cy);
-
-  const scoutX = cx + W*.22, scoutY = cy - H*.22;
-  pos('node-scout', scoutX, scoutY);
-
-  const solverX = cx - W*.24, solverY = cy + H*.20;
-  pos('node-solver', solverX, solverY);
-
-  setCurve('path-scout',  cx, cy, scoutX,  scoutY);
-  setCurve('path-solver', cx, cy, solverX, solverY);
-
-  // update gradient coords
-  ['lineGrad1','lineGrad2'].forEach((id,i) => {
-    const g = document.getElementById(id);
-    if(!g) return;
-    const tx = i===0 ? scoutX : solverX;
-    const ty = i===0 ? scoutY : solverY;
-    g.setAttribute('x1',cx); g.setAttribute('y1',cy);
-    g.setAttribute('x2',tx); g.setAttribute('y2',ty);
-  });
-}
-
-function pos(id, x, y) {
-  const el = document.getElementById(id);
-  el.style.left = x+'px'; el.style.top = y+'px';
-}
-
-function setCurve(id, x1, y1, x2, y2) {
-  const mx = (x1+x2)/2 + (y2-y1)*.15;
-  const my = (y1+y2)/2 - (x2-x1)*.15;
-  document.getElementById(id).setAttribute('d', `M${x1},${y1} Q${mx},${my} ${x2},${y2}`);
-}
-
-layoutNodes();
-window.addEventListener('resize', layoutNodes);
-
-// AGENTS
-const AGENTS = {
-  ceo:    { label:'MORGAN CEO',    online:true  },
-  scout:  { label:'MORGAN SCOUT',  online:false },
-  solver: { label:'MORGAN SOLVER', online:false },
-};
-let activeAgent = 'ceo';
-
+// ─── AGENT SELECTION ──────────────────────────────────
 function selectAgent(id) {
-  if(!AGENTS[id].online){ showWip(); return; }
+  if (!AGENTS[id].online) { showWip(); return; }
   activeAgent = id;
-  document.querySelectorAll('.node').forEach(n=>n.classList.remove('active'));
-  document.getElementById('node-'+id).classList.add('active');
-  document.getElementById('hdrTitle').textContent = AGENTS[id].label;
+  document.querySelectorAll('.nlabel').forEach(l =>
+    l.classList.remove('active','active-scout','active-solver')
+  );
+  document.getElementById('label-' + id).classList.add(
+    id === 'ceo' ? 'active' : 'active-' + id
+  );
+  document.getElementById('hdrTitle').textContent = {
+    ceo:'MORGAN CEO', scout:'MORGAN SCOUT', solver:'MORGAN SOLVER'
+  }[id];
 }
 
 function showWip() {
-  const t=document.getElementById('wipToast');
-  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  const el = document.getElementById('wipToast');
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// STATE
-let morganState='idle';
+// ─── STATE ────────────────────────────────────────────
 function setState(s) {
-  morganState=s;
-  const isMini=document.body.classList.contains('mini-mode');
-  document.body.className=(isMini?'mini-mode ':'')+s;
-  const L={listening:'A OUVIR',thinking:'A PENSAR',speaking:'A FALAR'};
-  document.getElementById('stateLabelText').textContent=L[s]||'';
-  document.getElementById('footerStatus').textContent=L[s]||'PRONTO';
+  morganState = s;
+  const mini = document.body.classList.contains('mini-mode');
+  document.body.className = (mini ? 'mini-mode ' : '') + s;
+  const L = { listening:'A OUVIR', thinking:'A PENSAR', speaking:'A FALAR' };
+  document.getElementById('stateLabelText').textContent = L[s] || '';
+  document.getElementById('footerStatus').textContent   = L[s] || 'PRONTO';
 }
 
-// CLOCK
-setInterval(()=>{ document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8); },1000);
-document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8);
+// ─── CLOCK ────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
+}
+updateClock();
+setInterval(updateClock, 1000);
 
-// WIDGETS
+// ─── WIDGETS ──────────────────────────────────────────
 async function loadWidgets() {
   try {
-    const d=await fetch('/api/widgets').then(r=>r.json());
-    if(d.date) document.getElementById('dateLabel').textContent=d.date;
-    if(d.weather){ document.getElementById('weatherTemp').textContent=d.weather.temp||'--°'; document.getElementById('weatherDesc').textContent=d.weather.desc||'Moreira de Cónegos'; }
-    if(d.scout){ document.getElementById('scoutTotal').textContent=d.scout.total??'--'; document.getElementById('scoutAprovadas').textContent=d.scout.aprovadas??'--'; }
-    const pj=d.proximo_jogo;
-    if(pj?.adversario&&pj.adversario!=='--'){ document.getElementById('nextGame').innerHTML=`vs <span style="color:var(--blue)">${pj.adversario}</span>`; document.getElementById('nextGameDate').textContent=pj.data||''; document.getElementById('nextGameComp').textContent=pj.competicao||''; }
-    const ur=d.ultimo_resultado;
-    if(ur?.adversario&&ur.adversario!=='--'){ document.getElementById('lastOpponent').textContent='vs '+ur.adversario; const cls=ur.ganhou===true?'win':ur.ganhou===false?'loss':'draw'; document.getElementById('lastScore').innerHTML=`<span class="${cls}">${ur.resultado}</span>`; }
-  } catch(e){}
+    const d = await fetch('/api/widgets').then(r => r.json());
+    if (d.date) document.getElementById('dateLabel').textContent = d.date;
+    if (d.weather) {
+      document.getElementById('weatherTemp').textContent = d.weather.temp || '--°';
+      document.getElementById('weatherDesc').textContent = d.weather.desc || '';
+    }
+    if (d.scout) {
+      document.getElementById('scoutTotal').textContent     = d.scout.total ?? '--';
+      document.getElementById('scoutAprovadas').textContent = d.scout.aprovadas ?? '--';
+    }
+    const pj = d.proximo_jogo;
+    if (pj?.adversario && pj.adversario !== '--') {
+      document.getElementById('nextGame').innerHTML =
+        `vs <span style="color:var(--blue)">${pj.adversario}</span>`;
+      document.getElementById('nextGameDate').textContent = pj.data || '';
+      document.getElementById('nextGameComp').textContent = pj.competicao || '';
+    }
+    const ur = d.ultimo_resultado;
+    if (ur?.adversario && ur.adversario !== '--') {
+      document.getElementById('lastOpponent').textContent = 'vs ' + ur.adversario;
+      const cls = ur.ganhou === true ? 'win' : ur.ganhou === false ? 'loss' : 'draw';
+      document.getElementById('lastScore').innerHTML = `<span class="${cls}">${ur.resultado}</span>`;
+    }
+  } catch(e) {}
 }
-loadWidgets(); setInterval(loadWidgets,30000);
+loadWidgets();
+setInterval(loadWidgets, 30000);
 
-// TRANSCRIPT
-function showTranscript(u,m) {
-  const el=document.getElementById('transcript'); el.innerHTML='';
-  if(u){const d=document.createElement('div');d.className='t-user';d.textContent='› '+u;el.appendChild(d);}
-  if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
+// ─── TRANSCRIPT ───────────────────────────────────────
+function showTranscript(u, m) {
+  const el = document.getElementById('transcript');
+  el.innerHTML = '';
+  if (u) { const d = document.createElement('div'); d.className = 't-user';   d.textContent = '› ' + u; el.appendChild(d); }
+  if (m) { const d = document.createElement('div'); d.className = 't-morgan'; d.textContent = m;        el.appendChild(d); }
 }
 
-// CONVAI
-let convaiWS=null,scriptProcessor=null,audioContext,micStream,micSource;
-async function initConvai(){
-  try{
-    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
-    audioContext=new(window.AudioContext||window.webkitAudioContext)();
-    micSource=audioContext.createMediaStreamSource(micStream);
-    convaiWS=new WebSocket('ws://127.0.0.1:8765/ws/convai');
-    convaiWS.onopen=()=>{setState('listening');startMicStream();};
-    convaiWS.onmessage=(ev)=>{const d=JSON.parse(ev.data);if(d.type==='user'){showTranscript(d.text,'');setState('thinking');}else if(d.type==='agent'){showTranscript('',d.text);setState('speaking');}else if(d.type==='interrupted'){setState('listening');}};
-    convaiWS.onclose=()=>{stopMicStream();setTimeout(initConvai,2000);};
-    convaiWS.onerror=()=>{};
-  }catch(e){document.getElementById('stateLabelText').textContent='SEM MICROFONE';}
+// ─── CONVAI ───────────────────────────────────────────
+let convaiWS = null, scriptProcessor = null, audioContext, micStream, micSource;
+
+async function initConvai() {
+  try {
+    micStream    = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }, video:false
+    });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    micSource    = audioContext.createMediaStreamSource(micStream);
+    convaiWS     = new WebSocket('ws://127.0.0.1:8765/ws/convai');
+    convaiWS.onopen = () => { setState('listening'); startMicStream(); };
+    convaiWS.onmessage = ev => {
+      const d = JSON.parse(ev.data);
+      if      (d.type === 'user')        { showTranscript(d.text, ''); setState('thinking'); }
+      else if (d.type === 'agent')       { showTranscript('', d.text); setState('speaking'); }
+      else if (d.type === 'interrupted') { setState('listening'); }
+      else if (d.type === 'done')        { setTimeout(() => setState('listening'), 800); }
+    };
+    convaiWS.onclose = () => { stopMicStream(); setTimeout(initConvai, 2500); };
+    convaiWS.onerror = () => {};
+  } catch(e) {
+    document.getElementById('stateLabelText').textContent = 'SEM MICROFONE';
+  }
 }
-function startMicStream(){
-  if(scriptProcessor)return;
-  scriptProcessor=audioContext.createScriptProcessor(4096,1,1);
-  micSource.connect(scriptProcessor);scriptProcessor.connect(audioContext.destination);
-  const ratio=audioContext.sampleRate/16000;
-  scriptProcessor.onaudioprocess=(e)=>{
-    if(!convaiWS||convaiWS.readyState!==WebSocket.OPEN)return;
-    const inp=e.inputBuffer.getChannelData(0);const out=new Int16Array(Math.round(inp.length/ratio));
-    for(let i=0;i<out.length;i++) out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[Math.round(i*ratio)]*32767)));
+
+function startMicStream() {
+  if (scriptProcessor) return;
+  scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+  micSource.connect(scriptProcessor);
+  scriptProcessor.connect(audioContext.destination);
+  const ratio = audioContext.sampleRate / 16000;
+  scriptProcessor.onaudioprocess = e => {
+    if (!convaiWS || convaiWS.readyState !== WebSocket.OPEN) return;
+    const inp = e.inputBuffer.getChannelData(0);
+    const out = new Int16Array(Math.round(inp.length / ratio));
+    for (let i = 0; i < out.length; i++)
+      out[i] = Math.max(-32768, Math.min(32767, Math.round(inp[Math.round(i * ratio)] * 32767)));
     convaiWS.send(out.buffer);
   };
 }
-function stopMicStream(){if(scriptProcessor){scriptProcessor.disconnect();scriptProcessor=null;}}
-async function startMorgan(){const btn=document.getElementById('startBtn');if(btn)btn.remove();document.getElementById('stateLabelText').textContent='A LIGAR...';await initConvai();}
-function handleKey(e){if(e.key==='Enter'){const inp=document.getElementById('textInput');const txt=inp.value.trim();inp.value='';if(txt)fetch('/api/chat-speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:txt})});}}
 
-// MINI
-let isMini=false;
-function toggleMini(){isMini=!isMini;if(isMini)window.pywebview.api.enter_mini();else window.pywebview.api.exit_mini();}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&isMini)toggleMini();});
-function pauseConvai(){stopMicStream();if(convaiWS){convaiWS.onclose=null;convaiWS.close();convaiWS=null;}document.getElementById('stateLabelText').textContent='EM PAUSA';}
-function resumeConvai(){if(!convaiWS||convaiWS.readyState!==WebSocket.OPEN)startMorgan();}
-setTimeout(()=>{if(morganState==='idle')startMorgan();},800);
+function stopMicStream() {
+  if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+}
+
+async function startMorgan() {
+  const btn = document.getElementById('startBtn');
+  if (btn) btn.remove();
+  document.getElementById('stateLabelText').textContent = 'A LIGAR...';
+  await initConvai();
+}
+
+function handleKey(e) {
+  if (e.key !== 'Enter') return;
+  const inp = document.getElementById('textInput');
+  const txt = inp.value.trim();
+  inp.value = '';
+  if (!txt) return;
+  showTranscript(txt, '');
+  setState('thinking');
+  fetch('/api/chat-speak', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: txt })
+  }).then(r => {
+    const reader = r.body.getReader();
+    const dec    = new TextDecoder();
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) return;
+        dec.decode(value).split('\n').forEach(line => {
+          if (!line.startsWith('data:')) return;
+          try {
+            const d = JSON.parse(line.slice(5));
+            if (d.type === 'speaking') { showTranscript(txt, d.text); setState('speaking'); }
+            if (d.type === 'done')     { setTimeout(() => setState('idle'), 1000); }
+          } catch(e) {}
+        });
+        read();
+      });
+    }
+    read();
+  });
+}
+
+// ─── MINI ─────────────────────────────────────────────
+let isMini = false;
+function toggleMini() {
+  isMini = !isMini;
+  if (window.pywebview?.api) {
+    isMini ? window.pywebview.api.enter_mini() : window.pywebview.api.exit_mini();
+  }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMini) toggleMini(); });
+
+// ─── AUTO-START ───────────────────────────────────────
+setTimeout(() => { if (morganState === 'idle') startMorgan(); }, 900);
 </script>
 </body>
 </html>
