@@ -29,6 +29,7 @@ from tools import TOOLS, TOOL_FUNCTIONS
 from scout_memory import get_contexto_scout, get_resumo_para_vasco, registar_oportunidades
 from memory_store import load_memory
 from conversation_store import get_context_messages, save_message
+from mem0 import MemoryClient
 
 load_dotenv()
 
@@ -37,6 +38,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+mem0_client = MemoryClient(api_key=os.getenv("MEM0_API_KEY", ""))
 deepgram_client = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
@@ -157,6 +159,28 @@ def run_tool(tool_name: str, tool_input: dict) -> str:
         return f"Erro: {e}"
 
 
+# ── Mem0 — Memória de longo prazo ────────────────────────────────────────────
+
+def mem0_get(user_id: str, query: str) -> str:
+    """Recupera memórias relevantes do Mem0 para o contexto actual."""
+    try:
+        results = mem0_client.search(query=query, user_id=user_id, limit=5)
+        if not results:
+            return ""
+        memorias = [r.get("memory", "") for r in results if r.get("memory")]
+        return "\n".join(f"- {m}" for m in memorias)
+    except Exception as e:
+        audit("MEM0_ERRO", str(e))
+        return ""
+
+def mem0_add(user_id: str, messages: list):
+    """Guarda a conversa no Mem0 para memória de longo prazo."""
+    try:
+        mem0_client.add(messages, user_id=user_id)
+    except Exception as e:
+        audit("MEM0_ERRO", str(e))
+
+
 # ── Estado do Império ────────────────────────────────────────────────────────
 
 def load_estado_imperio() -> str:
@@ -232,10 +256,11 @@ async def ceo_convocar_solver(bot, motivo: str) -> str:
 
 # ── Prompts ──────────────────────────────────────────────────────────────────
 
-def build_system_prompt() -> str:
+def build_system_prompt(user_message: str = "") -> str:
     TODAY = agora_lisboa().strftime("%d de %B de %Y")
     estado = load_estado_imperio()
     pendentes = load_decisoes_pendentes()
+    mem0_contexto = mem0_get("vasco", user_message) if user_message else ""
     pendentes_txt = ""
     if pendentes:
         itens = "\n".join(f"- {p['assunto']} (desde {p['data']})" for p in pendentes)
@@ -252,6 +277,9 @@ Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica)
 
 ## O que sabes sobre o Vasco:
 {load_memory()}
+
+## Memórias relevantes para esta conversa (Mem0):
+{mem0_contexto if mem0_contexto else "Sem memórias anteriores relevantes."}
 
 ## Estado atual do Império — BC Industries:
 {estado}
@@ -321,7 +349,7 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=1024,
-            system=build_system_prompt(),
+            system=build_system_prompt(user_message),
             tools=TOOLS,
             messages=history,
         )
@@ -355,6 +383,12 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         history.append({"role": "assistant", "content": reply})
         save_message(user_id, "assistant", reply)
         audit("RESPOSTA", reply[:100])
+
+        # Guarda no Mem0 para memória de longo prazo
+        mem0_add("vasco", [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": reply}
+        ])
 
         # Deteta decisões pendentes na mensagem do Vasco
         if _tem_decisao_pendente(user_message):
@@ -413,6 +447,11 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         history.append({"role": "assistant", "content": reply})
         save_message(sid, "assistant", reply)
         audit("SCOUT_RESPOSTA", reply[:100])
+
+        mem0_add("scout", [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": reply}
+        ])
 
         if len(history) > 60:
             scout_histories[sid] = history[-60:]
@@ -561,6 +600,11 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
         history.append({"role": "assistant", "content": reply})
         save_message(sid, "assistant", reply)
         audit("SOLVER_RESPOSTA", reply[:100])
+
+        mem0_add("solver", [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": reply}
+        ])
 
         if len(history) > 60:
             solver_histories[sid] = history[-60:]
