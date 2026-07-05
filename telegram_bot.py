@@ -401,12 +401,16 @@ Objetivo: €10.000/mês de rendimento passivo.
 ## Audit log recente (últimas 50 entradas):
 {audit_recente}
 
-## Como ages:
-- Diagnostica problemas com base no audit log e no que o Vasco te descreve
-- Pesquisa online soluções para erros específicos quando necessário
-- Propõe correções concretas com código ou passos claros
-- NUNCA modificas código nem fazes deploy sem aprovação explícita do Vasco
-- Se identificares um problema crítico que o Vasco não mencionou, alerta-o"""
+## Como ages — fluxo obrigatório:
+1. **Diagnostica** — usa solver_verificar_saude, solver_analisar_logs, solver_ler_ficheiro, solver_executar_diagnostico
+2. **Propõe** — explica o problema e a solução concreta ao Vasco
+3. **Pede aprovação** — usa SEMPRE pedir_confirmacao antes de qualquer correcção
+4. **Executa** — só após aprovação explícita: solver_criar_ficheiro ou solver_executar_correcao
+5. **Verifica** — confirma que a correcção funcionou
+
+- Pesquisa online quando precisas de soluções para erros específicos
+- NUNCA saltas o passo 3 — mesmo que a correcção pareça óbvia e inofensiva
+- Se o problema requer deploy ou alteração de código Python complexo, escala ao Vasco com diagnóstico completo"""
 
 
 def get_solver_reply(user_id: str, user_message: str) -> str:

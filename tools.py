@@ -608,6 +608,40 @@ def solver_analisar_logs(linhas: int = 100) -> str:
         return f"Erro a ler audit.log: {e}"
 
 
+def solver_criar_ficheiro(caminho: str, conteudo: str) -> str:
+    """Cria ou sobrescreve um ficheiro no sistema Morgan. REQUER confirmação prévia do Vasco."""
+    try:
+        p = Path(caminho)
+        if not p.is_absolute():
+            p = MORGAN_DIR / caminho
+        p = p.resolve()
+        if not any(str(p).startswith(str(d.resolve())) for d in ALLOWED_DIRS):
+            return f"Acesso negado: {caminho} está fora do directório Morgan."
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(conteudo, encoding="utf-8")
+        return f"Ficheiro criado/actualizado: {caminho} ({len(conteudo)} chars)"
+    except Exception as e:
+        return f"Erro a criar ficheiro: {e}"
+
+
+def solver_executar_correcao(comando: str) -> str:
+    """Executa um comando de correcção após aprovação do Vasco. Regista no audit."""
+    try:
+        result = subprocess.run(
+            comando, shell=True, capture_output=True, text=True,
+            cwd=str(MORGAN_DIR), timeout=60
+        )
+        output = (result.stdout + result.stderr).strip()
+        if len(output) > 3000:
+            output = output[-3000:]
+        status = "OK" if result.returncode == 0 else f"ERRO (código {result.returncode})"
+        return f"{status}\n{output}" if output else status
+    except subprocess.TimeoutExpired:
+        return "Comando excedeu 60 segundos — abortado."
+    except Exception as e:
+        return f"Erro: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -819,6 +853,29 @@ TOOLS = [
         }
     },
     {
+        "name": "solver_criar_ficheiro",
+        "description": "Cria ou actualiza um ficheiro no sistema Morgan. APENAS usa após o Vasco aprovar explicitamente via pedir_confirmacao. Nunca uses sem aprovação.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "caminho": {"type": "string", "description": "Caminho do ficheiro relativo ao dir Morgan. Ex: 'memory/scout_memoria.json'"},
+                "conteudo": {"type": "string", "description": "Conteúdo completo a escrever no ficheiro."}
+            },
+            "required": ["caminho", "conteudo"]
+        }
+    },
+    {
+        "name": "solver_executar_correcao",
+        "description": "Executa um comando de correcção após aprovação explícita do Vasco. APENAS usa após pedir_confirmacao ser aprovado. Para diagnóstico usa solver_executar_diagnostico.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "comando": {"type": "string", "description": "Comando bash a executar para aplicar a correcção."}
+            },
+            "required": ["comando"]
+        }
+    },
+    {
         "name": "pedir_confirmacao",
         "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
         "input_schema": {
@@ -858,4 +915,6 @@ TOOL_FUNCTIONS = {
     "solver_executar_diagnostico": solver_executar_diagnostico,
     "solver_verificar_saude": solver_verificar_saude,
     "solver_analisar_logs": solver_analisar_logs,
+    "solver_criar_ficheiro": solver_criar_ficheiro,
+    "solver_executar_correcao": solver_executar_correcao,
 }
