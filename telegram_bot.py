@@ -5,6 +5,7 @@ import logging
 import asyncio
 import tempfile
 import threading
+from pathlib import Path
 from datetime import date, datetime
 from dotenv import load_dotenv
 import yaml
@@ -572,6 +573,32 @@ def mark_scout_done():
     save_state(state)
 
 
+_solver_ultimo_audit_pos = 0  # posição no audit.log da última verificação
+
+
+async def should_trigger_solver() -> bool:
+    """Verifica se há erros novos no audit.log desde a última verificação."""
+    global _solver_ultimo_audit_pos
+    if is_quiet_hours():
+        return False
+    try:
+        audit_path = Path(AUDIT_FILE)
+        if not audit_path.exists():
+            return False
+        content = audit_path.read_text(encoding="utf-8")
+        novas_linhas = content[_solver_ultimo_audit_pos:]
+        _solver_ultimo_audit_pos = len(content)
+        # Padrões de erro que devem acordar o Solver
+        padroes_erro = ["_ERRO", "ERROR", "EXCEPTION", "TRACEBACK", "CRITICAL"]
+        erros = [l for l in novas_linhas.splitlines()
+                 if any(p in l.upper() for p in padroes_erro)]
+        # Ignora erros do próprio Solver para não criar loop infinito
+        erros = [l for l in erros if "SOLVER_CHECK_ERRO" not in l]
+        return len(erros) > 0
+    except Exception:
+        return False
+
+
 def should_run_solver_check() -> bool:
     """Corre de 2 em 2 horas para verificar saúde do sistema."""
     agora = datetime.now()
@@ -775,10 +802,9 @@ async def heartbeat_loop(app):
                 await asyncio.sleep(60)
                 continue
 
-            # Solver check — de 2 em 2 horas
-            if should_run_solver_check():
-                mark_solver_check_done()
-                audit("SOLVER_CHECK", "Verificação de saúde iniciada")
+            # Solver — trigger por evento (erros no audit.log)
+            if await should_trigger_solver():
+                audit("SOLVER_TRIGGER", "Erros detetados no audit.log — Solver ativado")
                 try:
                     await run_solver_check(app)
                 except Exception as e:
