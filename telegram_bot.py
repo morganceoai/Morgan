@@ -33,6 +33,7 @@ deepgram_client = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
 ELEVENLABS_SCOUT_VOICE_ID = "A6CfBSp8JazAJyTxRmON"
+ELEVENLABS_SOLVER_VOICE_ID = "IZipF5JhqPlWzpduTV0E"
 
 BASE_DIR = os.path.dirname(__file__)
 STATE_FILE = os.path.join(BASE_DIR, "memory", "heartbeat_state.json")
@@ -891,7 +892,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Envia texto imediatamente enquanto gera o áudio
         await update.message.reply_text(reply)
         try:
-            voz = ELEVENLABS_SCOUT_VOICE_ID if agente_ativo.get("vasco") == "scout" else ELEVENLABS_VOICE_ID
+            agente_atual = agente_ativo.get("vasco", "ceo")
+            if agente_atual == "scout":
+                voz = ELEVENLABS_SCOUT_VOICE_ID
+            elif agente_atual == "solver":
+                voz = ELEVENLABS_SOLVER_VOICE_ID
+            else:
+                voz = ELEVENLABS_VOICE_ID
             audio = elevenlabs_client.text_to_speech.convert(
                 voice_id=voz,
                 text=reply,
