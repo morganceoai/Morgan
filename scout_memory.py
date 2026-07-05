@@ -14,8 +14,10 @@ def _load() -> dict:
 
 def _save(data: dict):
     os.makedirs(os.path.dirname(SCOUT_FILE), exist_ok=True)
-    with open(SCOUT_FILE, "w", encoding="utf-8") as f:
+    tmp = SCOUT_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, SCOUT_FILE)  # atómico — evita corrupção por write concorrente
 
 
 def registar_oportunidades(oportunidades: list[dict]):

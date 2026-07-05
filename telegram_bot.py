@@ -7,6 +7,12 @@ import tempfile
 import threading
 from pathlib import Path
 from datetime import date, datetime
+import zoneinfo
+
+TZ_LISBOA = zoneinfo.ZoneInfo("Europe/Lisbon")
+
+def agora_lisboa() -> datetime:
+    return datetime.now(TZ_LISBOA)
 from dotenv import load_dotenv
 import yaml
 from telegram import Update
@@ -51,6 +57,7 @@ audit_logger.addHandler(audit_handler)
 audit_logger.setLevel(logging.INFO)
 
 FONTES_CREDÍVEIS = ["record.pt", "abola.pt", "ojogo.pt", "maisfutebol.iol.pt", "zerozero.pt", "sporttv.pt", "rtp.pt", "cmjornal.pt", "sapo.pt"]
+_json_lock = asyncio.Lock()  # protege escritas concorrentes em ficheiros JSON
 
 conversation_histories = {}  # Cache em memória durante a sessão
 pending_confirmations = {}   # {user_id: acao_pendente}
@@ -97,8 +104,10 @@ def load_state() -> dict:
 
 def save_state(state: dict):
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
+    tmp = STATE_FILE + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(state, f, indent=2)
+    os.replace(tmp, STATE_FILE)  # atómico — evita corrupção por write concorrente
 
 
 def load_sent() -> list:
@@ -128,7 +137,7 @@ def is_quiet_hours() -> bool:
     config = load_config()
     inicio = config.get("silencio_inicio", 23)
     fim = config.get("silencio_fim", 7)
-    hora = datetime.now().hour
+    hora = agora_lisboa().hour
     return hora >= inicio or hora < fim
 
 
@@ -148,7 +157,7 @@ def run_tool(tool_name: str, tool_input: dict) -> str:
 # ── Prompts ──────────────────────────────────────────────────────────────────
 
 def build_system_prompt() -> str:
-    TODAY = date.today().strftime("%d de %B de %Y")
+    TODAY = agora_lisboa().strftime("%d de %B de %Y")
     return f"""O teu nome é Morgan. És o assistente pessoal de confiança do Vasco Botelho da Costa — treinador do Moreirense FC.
 
 A data de hoje é {TODAY}. Usa sempre esta data. Quando pesquisares, inclui sempre 2026 nas queries.
@@ -185,7 +194,7 @@ Estás no Telegram — respostas concisas e bem formatadas para telemóvel."""
 
 
 def build_heartbeat_system() -> str:
-    TODAY = date.today().strftime("%d de %B de %Y")
+    TODAY = agora_lisboa().strftime("%d de %B de %Y")
     return f"""És o Morgan, assistente do Vasco Botelho da Costa, treinador do Moreirense FC.
 A data de hoje é {TODAY}.
 
@@ -259,8 +268,12 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         save_message(user_id, "assistant", reply)
         audit("RESPOSTA", reply[:100])
 
-        if len(history) > 100:
-            conversation_histories[user_id] = history[-100:]
+        # Sliding window — estima tokens (4 chars ≈ 1 token), mantém abaixo de 150k tokens
+        total_chars = sum(len(str(m.get("content", ""))) for m in history)
+        if total_chars > 600_000:  # ~150k tokens
+            history = history[-60:]
+            conversation_histories[user_id] = history
+            audit("CONTEXT_TRUNCADO", f"Histórico truncado: {total_chars} chars")
 
         return reply
 
@@ -363,7 +376,7 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
 
 
 def build_solver_system() -> str:
-    TODAY = date.today().strftime("%d de %B de %Y")
+    TODAY = agora_lisboa().strftime("%d de %B de %Y")
     memoria_vasco = load_memory()
 
     # Lê as últimas linhas do audit.log para contexto
@@ -557,7 +570,7 @@ def run_heartbeat_check(check: dict) -> str | None:
 
 def should_run_scout() -> bool:
     """Corre todos os domingos às 20h."""
-    agora = datetime.now()
+    agora = agora_lisboa()
     if agora.weekday() != 6 or agora.hour != 20:
         return False
     state = load_state()
@@ -566,7 +579,7 @@ def should_run_scout() -> bool:
 
 
 def mark_scout_done():
-    agora = datetime.now()
+    agora = agora_lisboa()
     chave = f"scout_{agora.strftime('%Y-%W')}"
     state = load_state()
     state[chave] = True
@@ -629,7 +642,7 @@ async def should_trigger_solver() -> bool:
 
 def should_run_solver_check() -> bool:
     """Corre de 2 em 2 horas para verificar saúde do sistema."""
-    agora = datetime.now()
+    agora = agora_lisboa()
     if is_quiet_hours():
         return False
     if agora.hour % 2 != 0:
@@ -640,7 +653,7 @@ def should_run_solver_check() -> bool:
 
 
 def mark_solver_check_done():
-    agora = datetime.now()
+    agora = agora_lisboa()
     chave = f"solver_check_{agora.strftime('%Y-%m-%d_%H')}"
     state = load_state()
     state[chave] = True
@@ -695,7 +708,7 @@ async def run_solver_check(app) -> None:
 
 def should_run_briefing() -> bool:
     """Verifica se está na hora do briefing (7h ou 20h) e se ainda não foi enviado hoje."""
-    agora = datetime.now()
+    agora = agora_lisboa()
     hora = agora.hour
     if hora not in (7, 20):
         return False
@@ -705,7 +718,7 @@ def should_run_briefing() -> bool:
 
 
 def mark_briefing_done():
-    agora = datetime.now()
+    agora = agora_lisboa()
     chave = f"briefing_{agora.strftime('%Y-%m-%d_%H')}"
     state = load_state()
     state[chave] = True
@@ -713,7 +726,7 @@ def mark_briefing_done():
 
 
 def build_scout_conversational_system() -> str:
-    TODAY = date.today().strftime("%d de %B de %Y")
+    TODAY = agora_lisboa().strftime("%d de %B de %Y")
     contexto_historico = get_contexto_scout()
     memoria_vasco = load_memory()
     return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
@@ -740,7 +753,7 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
 
 def build_scout_system() -> str:
-    TODAY = date.today().strftime("%d de %B de %Y")
+    TODAY = agora_lisboa().strftime("%d de %B de %Y")
     contexto_historico = get_contexto_scout()
     return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
 A data de hoje é {TODAY}.
@@ -882,7 +895,7 @@ async def heartbeat_loop(app):
                 continue
 
             mark_briefing_done()
-            hora_atual = datetime.now().hour
+            hora_atual = agora_lisboa().hour
             audit("HEARTBEAT", f"Briefing das {hora_atual}h iniciado")
 
             for check in get_checks_for_hour(hora_atual):
@@ -1008,7 +1021,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     modelo = config.get("modelo", "claude-sonnet-4-6")
     silencio_i = config.get("silencio_inicio", 23)
     silencio_f = config.get("silencio_fim", 7)
-    hora_atual = datetime.now().hour
+    hora_atual = agora_lisboa().hour
     em_silencio = is_quiet_hours()
     user_id = str(update.effective_user.id)
     pendente = pending_confirmations.get(user_id)
@@ -1119,8 +1132,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(reply)
 
 
+def _task_error_handler(task: asyncio.Task):
+    """Captura excepções em tasks asyncio que de outra forma desapareceriam silenciosamente."""
+    if not task.cancelled() and task.exception():
+        audit("ASYNCIO_TASK_ERRO", f"{task.get_name()}: {task.exception()}")
+
+
 async def post_init(app):
-    asyncio.create_task(heartbeat_loop(app))
+    task = asyncio.create_task(heartbeat_loop(app), name="heartbeat_loop")
+    task.add_done_callback(_task_error_handler)
 
 
 # ── Custom LLM API — para ElevenLabs ConvAI (desktop) ───────────────────────
