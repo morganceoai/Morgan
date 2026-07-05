@@ -40,7 +40,18 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 anthropic_client = wrap_anthropic(anthropic.Anthropic(api_key=ANTHROPIC_API_KEY))
-mem0_client = MemoryClient(api_key=os.getenv("MEM0_API_KEY", ""))
+
+_mem0_client = None
+def get_mem0_client():
+    global _mem0_client
+    if _mem0_client is None:
+        key = os.getenv("MEM0_API_KEY", "")
+        if key:
+            try:
+                _mem0_client = MemoryClient(api_key=key)
+            except Exception as e:
+                audit("MEM0_INIT_ERRO", str(e))
+    return _mem0_client
 deepgram_client = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
@@ -166,7 +177,10 @@ def run_tool(tool_name: str, tool_input: dict) -> str:
 def mem0_get(user_id: str, query: str) -> str:
     """Recupera memórias relevantes do Mem0 para o contexto actual."""
     try:
-        results = mem0_client.search(query=query, user_id=user_id, limit=5)
+        client = get_mem0_client()
+        if not client:
+            return ""
+        results = client.search(query=query, user_id=user_id, limit=5)
         if not results:
             return ""
         memorias = [r.get("memory", "") for r in results if r.get("memory")]
@@ -178,7 +192,9 @@ def mem0_get(user_id: str, query: str) -> str:
 def mem0_add(user_id: str, messages: list):
     """Guarda a conversa no Mem0 para memória de longo prazo."""
     try:
-        mem0_client.add(messages, user_id=user_id)
+        client = get_mem0_client()
+        if client:
+            client.add(messages, user_id=user_id)
     except Exception as e:
         audit("MEM0_ERRO", str(e))
 
