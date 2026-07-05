@@ -261,31 +261,61 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
 
 # ── Heartbeat ────────────────────────────────────────────────────────────────
 
-CHECKS = [
+# Checks comuns (manhã e tarde)
+CHECKS_COMUNS = [
     {
         "nome": "moreirense_noticias",
         "descricao": "Pesquisa notícias recentes de hoje sobre o Moreirense FC em 2026. Resultados, lesões, transferências, declarações, rumores. Se não houver nada genuinamente novo hoje, responde apenas: NADA",
     },
     {
-        "nome": "primeira_liga_noticias",
-        "descricao": "Pesquisa notícias recentes de hoje da Primeira Liga portuguesa em 2026 — todos os clubes. Resultados, transferências, rumores, destaques. Se não houver nada genuinamente novo hoje, responde apenas: NADA",
-    },
-    {
         "nome": "mencoes_vasco",
         "descricao": 'Usa a ferramenta monitorizar_nome para pesquisar menções a "Vasco Botelho da Costa" em todas as plataformas: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero e web em geral. Apresenta o que encontrares de forma clara, indicando a plataforma e o contexto de cada menção. Se não houver nenhuma menção, responde apenas: NADA',
     },
+]
+
+# Checks só da manhã (7h) — operacional
+CHECKS_MANHA = [
+    {
+        "nome": "moreirense_jogos",
+        "descricao": "Usa as ferramentas proximos_jogos e resultados_recentes para o Moreirense FC. Apresenta: (1) último resultado com marcador, (2) próximo jogo com data e adversário. Sê conciso. Se não houver dados, responde apenas: NADA",
+    },
+    {
+        "nome": "analise_adversario",
+        "descricao": "Usa proximos_jogos para o Moreirense FC. Se houver jogo nos próximos 3 dias: pesquisa na web o adversário — forma recente (últimos 5 jogos), sistema tático habitual, jogadores-chave, pontos fracos. Apresenta análise tática concisa útil para preparação. Se não houver jogo nos próximos 3 dias, responde apenas: NADA",
+    },
+    {
+        "nome": "meteo_manha",
+        "descricao": 'Pesquisa na web o tempo meteorológico de hoje em Moreira de Cónegos, Portugal. Apresenta: temperatura máxima e mínima, condições (sol/chuva/nublado), e se é adequado para treino ao ar livre. Sê muito breve (2-3 linhas). Se não encontrares dados, responde apenas: NADA',
+    },
+]
+
+# Checks só da tarde (20h) — analítico
+CHECKS_TARDE = [
+    {
+        "nome": "primeira_liga_noticias",
+        "descricao": "Pesquisa notícias relevantes de hoje da Primeira Liga portuguesa em 2026 — todos os clubes. Resultados, transferências, rumores importantes, destaques. Se não houver nada genuinamente novo hoje, responde apenas: NADA",
+    },
     {
         "nome": "novidades_ia",
-        "descricao": "Pesquisa novidades importantes de inteligência artificial em 2026 — novos modelos, ferramentas úteis para treinadores. Se não houver nada genuinamente novo, responde apenas: NADA",
+        "descricao": "Pesquisa novidades importantes de inteligência artificial em 2026 — novos modelos, ferramentas úteis para treinadores ou para negócio. Se não houver nada genuinamente novo, responde apenas: NADA",
     },
 ]
 
 PREFIXOS = {
     "moreirense_noticias": "Vasco, em relação ao Moreirense",
+    "moreirense_jogos": "Vasco, a situação desportiva do Moreirense",
+    "analise_adversario": "Vasco, análise do próximo adversário",
+    "meteo_manha": "Vasco, o tempo para hoje",
     "primeira_liga_noticias": "Vasco, em relação à Primeira Liga",
     "mencoes_vasco": "Vasco, encontrei referências ao teu nome",
     "novidades_ia": "Vasco, em relação à inteligência artificial",
 }
+
+
+def get_checks_for_hour(hora: int) -> list:
+    if hora == 7:
+        return CHECKS_MANHA + CHECKS_COMUNS
+    return CHECKS_COMUNS + CHECKS_TARDE
 
 
 def run_heartbeat_check(check: dict) -> str | None:
@@ -487,9 +517,10 @@ async def heartbeat_loop(app):
                 continue
 
             mark_briefing_done()
-            audit("HEARTBEAT", f"Briefing das {datetime.now().hour}h iniciado")
+            hora_atual = datetime.now().hour
+            audit("HEARTBEAT", f"Briefing das {hora_atual}h iniciado")
 
-            for check in CHECKS:
+            for check in get_checks_for_hour(hora_atual):
                 nome = check["nome"]
                 prefixo = PREFIXOS.get(nome, "Vasco")
 
