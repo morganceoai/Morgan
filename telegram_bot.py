@@ -421,13 +421,10 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
     save_message(sid, "user", user_message)
     audit("SOLVER_MENSAGEM", user_message[:100])
 
-    config = load_config()
-    modelo = config.get("modelo", "claude-sonnet-4-6")
-
     while True:
         response = anthropic_client.messages.create(
-            model=modelo,
-            max_tokens=1024,
+            model="claude-opus-4-8",
+            max_tokens=2048,
             system=build_solver_system(),
             tools=TOOLS,
             messages=history,
@@ -569,6 +566,42 @@ def mark_scout_done():
     state = load_state()
     state[chave] = True
     save_state(state)
+
+
+def should_run_solver_check() -> bool:
+    """Corre de 2 em 2 horas para verificar saúde do sistema."""
+    agora = datetime.now()
+    if is_quiet_hours():
+        return False
+    if agora.hour % 2 != 0:
+        return False
+    state = load_state()
+    chave = f"solver_check_{agora.strftime('%Y-%m-%d_%H')}"
+    return not state.get(chave, False)
+
+
+def mark_solver_check_done():
+    agora = datetime.now()
+    chave = f"solver_check_{agora.strftime('%Y-%m-%d_%H')}"
+    state = load_state()
+    state[chave] = True
+    save_state(state)
+
+
+async def run_solver_check(app) -> None:
+    """Verifica saúde do sistema e alerta o Vasco se encontrar problemas."""
+    try:
+        from tools import solver_verificar_saude
+        saude = solver_verificar_saude()
+        tem_erros = "ERRO" in saude.upper()
+        if not tem_erros:
+            audit("SOLVER_CHECK", "Sistema saudável")
+            return
+        diagnostico = get_solver_reply("vasco", f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica e propõe solução concisa.")
+        await app.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Solver — alerta:\n\n{diagnostico}")
+        audit("SOLVER_ALERTA", "Problemas detetados e reportados")
+    except Exception as e:
+        audit("SOLVER_CHECK_ERRO", str(e))
 
 
 def should_run_briefing() -> bool:
@@ -737,6 +770,15 @@ async def heartbeat_loop(app):
             if is_pausado():
                 await asyncio.sleep(60)
                 continue
+
+            # Solver check — de 2 em 2 horas
+            if should_run_solver_check():
+                mark_solver_check_done()
+                audit("SOLVER_CHECK", "Verificação de saúde iniciada")
+                try:
+                    await run_solver_check(app)
+                except Exception as e:
+                    audit("SOLVER_CHECK_ERRO", str(e))
 
             # Scout semanal — domingos às 20h
             if should_run_scout():

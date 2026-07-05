@@ -499,6 +499,115 @@ def monitorizar_oportunidades_aprovadas() -> str:
         return f"Erro na monitorização de aprovadas: {e}"
 
 
+# ── Ferramentas do Solver ────────────────────────────────────────────────────
+
+import subprocess
+from pathlib import Path
+
+MORGAN_DIR = Path(__file__).parent
+ALLOWED_DIRS = [MORGAN_DIR, MORGAN_DIR / "memory", MORGAN_DIR / "desktop"]
+
+# Comandos de diagnóstico permitidos (read-only, seguros)
+_CMD_WHITELIST = ["ps", "grep", "tail", "head", "cat", "ls", "wc", "df", "free",
+                  "python3", "pip", "railway", "git log", "git status", "git diff"]
+
+
+def solver_ler_ficheiro(caminho: str) -> str:
+    """Lê um ficheiro do sistema Morgan."""
+    try:
+        p = Path(caminho)
+        if not p.is_absolute():
+            p = MORGAN_DIR / caminho
+        p = p.resolve()
+        # Segurança: só dentro do dir Morgan
+        if not any(str(p).startswith(str(d.resolve())) for d in ALLOWED_DIRS):
+            return f"Acesso negado: {caminho} está fora do directório Morgan."
+        if not p.exists():
+            return f"Ficheiro não encontrado: {caminho}"
+        content = p.read_text(encoding="utf-8", errors="replace")
+        # Limita a 8000 chars para não explodir o contexto
+        if len(content) > 8000:
+            content = content[-8000:]
+            return f"[Truncado — últimas 8000 chars]\n{content}"
+        return content
+    except Exception as e:
+        return f"Erro a ler ficheiro: {e}"
+
+
+def solver_executar_diagnostico(comando: str) -> str:
+    """Executa um comando de diagnóstico (read-only). Requer aprovação para comandos que modificam."""
+    try:
+        # Verifica se o comando é permitido
+        cmd_base = comando.strip().split()[0] if comando.strip() else ""
+        permitido = any(comando.strip().startswith(w) for w in _CMD_WHITELIST)
+        if not permitido:
+            return f"Comando '{cmd_base}' não está na lista de comandos permitidos para diagnóstico automático. Pede confirmação ao Vasco antes de executar."
+        result = subprocess.run(
+            comando, shell=True, capture_output=True, text=True,
+            cwd=str(MORGAN_DIR), timeout=30
+        )
+        output = result.stdout + result.stderr
+        if len(output) > 4000:
+            output = output[-4000:]
+        return output or "(sem output)"
+    except subprocess.TimeoutExpired:
+        return "Comando excedeu 30 segundos — abortado."
+    except Exception as e:
+        return f"Erro a executar comando: {e}"
+
+
+def solver_verificar_saude() -> str:
+    """Verifica a saúde dos serviços principais do Morgan."""
+    import os
+    resultados = []
+
+    # Verifica variáveis de ambiente críticas
+    vars_criticas = ["ANTHROPIC_API_KEY", "TELEGRAM_BOT_TOKEN", "ELEVENLABS_API_KEY",
+                     "DEEPGRAM_API_KEY", "TAVILY_API_KEY"]
+    em_falta = [v for v in vars_criticas if not os.getenv(v)]
+    if em_falta:
+        resultados.append(f"ERRO: Variáveis em falta: {', '.join(em_falta)}")
+    else:
+        resultados.append("OK: Todas as variáveis de ambiente críticas presentes.")
+
+    # Verifica ficheiros de memória
+    ficheiros = ["memory/audit.log", "memory/heartbeat_state.json",
+                 "memory/scout_memoria.json", "memory/factos.md"]
+    for f in ficheiros:
+        p = MORGAN_DIR / f
+        if p.exists():
+            size = p.stat().st_size
+            resultados.append(f"OK: {f} ({size} bytes)")
+        else:
+            resultados.append(f"AVISO: {f} não existe")
+
+    # Últimas entradas do audit log
+    audit_path = MORGAN_DIR / "memory" / "audit.log"
+    if audit_path.exists():
+        lines = audit_path.read_text().splitlines()
+        erros = [l for l in lines[-200:] if "ERRO" in l.upper() or "ERROR" in l.upper()]
+        if erros:
+            resultados.append(f"\nERROS recentes no audit ({len(erros)} encontrados):")
+            resultados.extend(erros[-5:])
+        else:
+            resultados.append("OK: Sem erros recentes no audit.log.")
+
+    return "\n".join(resultados)
+
+
+def solver_analisar_logs(linhas: int = 100) -> str:
+    """Lê as últimas N linhas do audit.log."""
+    try:
+        audit_path = MORGAN_DIR / "memory" / "audit.log"
+        if not audit_path.exists():
+            return "audit.log não encontrado."
+        content = audit_path.read_text(encoding="utf-8").splitlines()
+        ultimas = content[-linhas:]
+        return "\n".join(ultimas)
+    except Exception as e:
+        return f"Erro a ler audit.log: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -672,6 +781,44 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "solver_ler_ficheiro",
+        "description": "Lê um ficheiro do sistema Morgan. Usa para inspecionar código, configurações, ou ficheiros de memória durante diagnóstico.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "caminho": {"type": "string", "description": "Caminho do ficheiro (relativo ao dir Morgan ou absoluto). Ex: 'telegram_bot.py', 'memory/audit.log'"}
+            },
+            "required": ["caminho"]
+        }
+    },
+    {
+        "name": "solver_executar_diagnostico",
+        "description": "Executa um comando de diagnóstico seguro (ps, grep, tail, git log, etc.). Apenas comandos read-only permitidos. Para comandos que modificam, pede sempre confirmação ao Vasco.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "comando": {"type": "string", "description": "Comando bash de diagnóstico. Ex: 'ps aux | grep python', 'tail -50 memory/audit.log'"}
+            },
+            "required": ["comando"]
+        }
+    },
+    {
+        "name": "solver_verificar_saude",
+        "description": "Verifica a saúde geral do sistema Morgan: variáveis de ambiente, ficheiros de memória, erros recentes no audit.log. Usa sempre que o Solver é invocado ou quando há suspeita de problema.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "solver_analisar_logs",
+        "description": "Lê as últimas N linhas do audit.log para diagnóstico de erros.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "linhas": {"type": "integer", "description": "Número de linhas a ler. Default: 100."}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "pedir_confirmacao",
         "description": "Pede confirmação ao Vasco antes de executar uma ação sensível. Usa SEMPRE esta ferramenta antes de enviar mensagens, apagar ou criar ficheiros, gastar dinheiro, ou alterar configurações. Nunca executes essas ações sem confirmação explícita.",
         "input_schema": {
@@ -707,4 +854,8 @@ TOOL_FUNCTIONS = {
     "indiehackers_trending": indiehackers_trending,
     "aprovar_oportunidade_scout": lambda nome: aprovar_oportunidade_scout(nome),
     "monitorizar_oportunidades_aprovadas": monitorizar_oportunidades_aprovadas,
+    "solver_ler_ficheiro": solver_ler_ficheiro,
+    "solver_executar_diagnostico": solver_executar_diagnostico,
+    "solver_verificar_saude": solver_verificar_saude,
+    "solver_analisar_logs": solver_analisar_logs,
 }
