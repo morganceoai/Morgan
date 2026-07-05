@@ -359,19 +359,19 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
     # Mudança para Scout — explícita ou por tópico
     if _quer_scout(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
         agente_ativo[uid] = "scout"
-        return get_scout_reply(uid, user_message)
+        return "[SCOUT] " + get_scout_reply(uid, user_message)
 
     # Mudança para Solver — explícita ou por tópico técnico
     if _quer_solver(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
         agente_ativo[uid] = "solver"
-        return get_solver_reply(uid, user_message)
+        return "[SOLVER] " + get_solver_reply(uid, user_message)
 
     agente = agente_ativo.get(uid, "ceo")
 
     if agente == "scout":
-        return get_scout_reply(uid, user_message)
+        return "[SCOUT] " + get_scout_reply(uid, user_message)
     if agente == "solver":
-        return get_solver_reply(uid, user_message)
+        return "[SOLVER] " + get_solver_reply(uid, user_message)
     return get_morgan_reply(uid, user_message)
 
 
@@ -673,16 +673,19 @@ async def run_solver_check(app) -> None:
             return
 
         try:
-            # Solver tenta diagnosticar com Opus
-            diagnostico = get_solver_reply(
+            # Solver diagnostica tecnicamente
+            diagnostico_tecnico = get_solver_reply(
                 "vasco",
-                f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica e propõe solução concisa."
+                f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica de forma técnica e concisa."
             )
-            await app.bot.send_message(
-                chat_id=TELEGRAM_CHAT_ID,
-                text=f"Solver — alerta:\n\n{diagnostico}"
+            # CEO traduz para linguagem humana e informa o Vasco
+            traducao = get_morgan_reply(
+                "vasco",
+                f"O Solver detetou um problema técnico e fez este diagnóstico:\n\n{diagnostico_tecnico}\n\n"
+                f"Explica ao Vasco em linguagem simples o que se passa, o impacto real no Morgan, e o que precisas de autorização para fazer. Máximo 5 linhas."
             )
-            audit("SOLVER_ALERTA", "Problemas detetados e reportados")
+            await enviar_seguro(app.bot, f"[CEO sobre alerta do Solver]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
+            audit("SOLVER_ALERTA", "Problemas detetados — CEO informou o Vasco")
 
         except Exception as solver_erro:
             # Solver falhou — CEO assume e alerta diretamente
