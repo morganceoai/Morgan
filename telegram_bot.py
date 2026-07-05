@@ -30,6 +30,8 @@ from scout_memory import get_contexto_scout, get_resumo_para_vasco, registar_opo
 from memory_store import load_memory
 from conversation_store import get_context_messages, save_message
 from mem0 import MemoryClient
+from langsmith import traceable
+from langsmith.wrappers import wrap_anthropic
 
 load_dotenv()
 
@@ -37,7 +39,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+anthropic_client = wrap_anthropic(anthropic.Anthropic(api_key=ANTHROPIC_API_KEY))
 mem0_client = MemoryClient(api_key=os.getenv("MEM0_API_KEY", ""))
 deepgram_client = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
@@ -330,6 +332,7 @@ A data de hoje é {TODAY}.
 
 # ── Conversa ─────────────────────────────────────────────────────────────────
 
+@traceable(name="morgan-ceo", tags=["ceo"])
 def get_morgan_reply(user_id: str, user_message: str) -> str:
     # Todos os canais partilham o mesmo histórico centralizado
     user_id = "vasco"
@@ -405,6 +408,7 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         return reply
 
 
+@traceable(name="morgan-scout", tags=["scout"])
 def get_scout_reply(user_id: str, user_message: str) -> str:
     """Conversa direta com o Morgan AI Scout."""
     sid = "scout"
@@ -561,6 +565,7 @@ Objetivo: €10.000/mês de rendimento passivo.
 - Se não tiveres a certeza da correcção, escala ao Vasco com o diagnóstico completo"""
 
 
+@traceable(name="morgan-solver", tags=["solver"])
 def get_solver_reply(user_id: str, user_message: str) -> str:
     """Conversa direta com o Morgan Solver."""
     sid = "solver"
