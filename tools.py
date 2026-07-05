@@ -590,16 +590,22 @@ def solver_verificar_saude() -> str:
         else:
             resultados.append(f"INFO: {f} ainda não existe — criado automaticamente no primeiro ciclo (normal)")
 
-    # Últimas entradas do audit log
+    # Últimas entradas do audit log — só conta linhas cuja TAG termina em _ERRO/_ERROR
     audit_path = MORGAN_DIR / "memory" / "audit.log"
     if audit_path.exists():
         lines = audit_path.read_text().splitlines()
-        erros = [l for l in lines[-200:] if "ERRO" in l.upper() or "ERROR" in l.upper()]
+        def _e_erro(linha: str) -> bool:
+            partes = linha.split(" | ", 1)
+            if not partes:
+                return False
+            tag = partes[0].split()[-1] if partes[0].split() else ""
+            return tag.upper().endswith(("_ERRO", "_ERROR", "ERRO", "ERROR"))
+        erros = [l for l in lines[-200:] if _e_erro(l)]
         if erros:
-            resultados.append(f"\nERROS recentes no audit ({len(erros)} encontrados):")
+            resultados.append(f"\nERROS reais no audit ({len(erros)} encontrados):")
             resultados.extend(erros[-5:])
         else:
-            resultados.append("OK: Sem erros recentes no audit.log.")
+            resultados.append("OK: Sem erros reais recentes no audit.log.")
 
     return "\n".join(resultados)
 

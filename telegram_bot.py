@@ -855,11 +855,7 @@ async def run_scout_report(app):
     relatorio_limpo = re.sub(r"```json\s*\[.*?\]\s*```", "", relatorio, flags=re.DOTALL).strip()
 
     header = "🔍 *Morgan AI Scout — Relatório Semanal*\n\n"
-    await app.bot.send_message(
-        chat_id=TELEGRAM_CHAT_ID,
-        text=header + relatorio_limpo,
-        parse_mode="Markdown"
-    )
+    await enviar_seguro(app.bot, header + relatorio_limpo, chat_id=TELEGRAM_CHAT_ID)
     audit("SCOUT_RELATORIO", "Relatório semanal enviado")
 
 
@@ -907,11 +903,7 @@ async def heartbeat_loop(app):
 
                 if resultado:
                     mensagem = f"{prefixo}, tenho isto para te dizer:\n\n{resultado}"
-                    await app.bot.send_message(
-                        chat_id=TELEGRAM_CHAT_ID,
-                        text=mensagem,
-                        parse_mode="Markdown"
-                    )
+                    await enviar_seguro(app.bot, mensagem, chat_id=TELEGRAM_CHAT_ID)
                     if TELEGRAM_CHAT_ID not in conversation_histories:
                         conversation_histories[TELEGRAM_CHAT_ID] = []
                     conversation_histories[TELEGRAM_CHAT_ID].append({
@@ -1037,7 +1029,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if pendente:
         linhas.append(f"\n⏳ Confirmação pendente: _{pendente}_")
 
-    await update.message.reply_text("\n".join(linhas), parse_mode="Markdown")
+    await enviar_seguro(update.message, "\n".join(linhas))
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1069,7 +1061,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 del pending_confirmations[user_id]
                 audit("CONFIRMACAO_ACEITE", acao)
                 reply = get_morgan_reply(user_id, f"O Vasco confirmou. Prossegue com: {acao}")
-                await update.message.reply_text(reply, parse_mode="Markdown")
+                await enviar_seguro(update.message, reply)
                 return
             elif any(p in texto for p in ("não", "nao", "n", "no", "cancela", "para", "esquece")):
                 del pending_confirmations[user_id]
@@ -1091,7 +1083,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not user_message.strip():
                 await update.message.reply_text("Não percebi o áudio. Podes repetir?")
                 return
-            await update.message.reply_text(f"_{user_message}_", parse_mode="Markdown")
+            await enviar_seguro(update.message, f"_{user_message}_")
         except Exception as e:
             await update.message.reply_text(f"Erro ao transcrever áudio: {e}")
             return
@@ -1130,6 +1122,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             audit("ELEVENLABS_ERRO", str(e))
     else:
         await update.message.reply_text(reply)
+
+
+async def enviar_seguro(bot_or_msg, text: str, chat_id=None, parse_mode="Markdown"):
+    """Envia mensagem com Markdown; se falhar por formatação, reenvia em texto simples."""
+    try:
+        if chat_id:
+            await bot_or_msg.send_message(chat_id=chat_id, text=text, parse_mode=parse_mode)
+        else:
+            await bot_or_msg.reply_text(text, parse_mode=parse_mode)
+    except Exception:
+        try:
+            if chat_id:
+                await bot_or_msg.send_message(chat_id=chat_id, text=text)
+            else:
+                await bot_or_msg.reply_text(text)
+        except Exception as e2:
+            audit("ENVIO_ERRO", str(e2))
 
 
 def _task_error_handler(task: asyncio.Task):
