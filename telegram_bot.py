@@ -357,13 +357,13 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         agente_ativo[uid] = "ceo"
         return "Morgan CEO de volta. Em que posso ajudar?"
 
-    # Mudança para Scout — explícita ou por tópico
-    if _quer_scout(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
+    # Mudança para Scout — explícita ou por tópico (de qualquer agente)
+    if _quer_scout(user_message):
         agente_ativo[uid] = "scout"
         return "[SCOUT] " + get_scout_reply(uid, user_message)
 
-    # Mudança para Solver — explícita ou por tópico técnico
-    if _quer_solver(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
+    # Mudança para Solver — explícita ou por tópico técnico (de qualquer agente)
+    if _quer_solver(user_message):
         agente_ativo[uid] = "solver"
         return "[SOLVER] " + get_solver_reply(uid, user_message)
 
