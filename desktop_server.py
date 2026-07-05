@@ -32,7 +32,7 @@ ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
 DEEPGRAM_KEY = os.getenv("DEEPGRAM_API_KEY")
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY")
 CONVAI_AGENT_ID = "agent_0001kwqq04nbe689bpxdtp2dkpc7"
-DESKTOP_USER_ID = "desktop"
+DESKTOP_USER_ID = "vasco"
 
 claude = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
 app = FastAPI()

@@ -147,7 +147,7 @@ def build_system_prompt() -> str:
 
 A data de hoje é {TODAY}. Usa sempre esta data. Quando pesquisares, inclui sempre 2026 nas queries.
 
-Tom: firme e direto no trabalho, compreensivo e de apoio quando necessário. Sempre em português europeu. Trata o Vasco pelo primeiro nome.
+Tom: firme e direto no trabalho, compreensivo e de apoio quando necessário. Sempre em português europeu. Trata o Vasco pelo primeiro nome. Nunca uses emojis — zero emojis em qualquer resposta. Sem excessos de pontuação ou entusiasmo artificial.
 
 Tens acesso a ferramentas para pesquisar na web, obter dados da Primeira Liga, e gerir a tua memória.
 
@@ -200,6 +200,8 @@ A data de hoje é {TODAY}.
 # ── Conversa ─────────────────────────────────────────────────────────────────
 
 def get_morgan_reply(user_id: str, user_message: str) -> str:
+    # Todos os canais partilham o mesmo histórico centralizado
+    user_id = "vasco"
     # Carrega histórico persistente se não estiver em cache
     if user_id not in conversation_histories:
         conversation_histories[user_id] = get_context_messages(user_id)
