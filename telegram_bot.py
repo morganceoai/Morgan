@@ -264,13 +264,14 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
 
 def get_scout_reply(user_id: str, user_message: str) -> str:
     """Conversa direta com o Morgan AI Scout."""
-    user_id = "vasco"
+    sid = "scout"
 
-    if user_id not in scout_histories:
-        scout_histories[user_id] = []
+    if sid not in scout_histories:
+        scout_histories[sid] = get_context_messages(sid)
 
-    history = scout_histories[user_id]
+    history = scout_histories[sid]
     history.append({"role": "user", "content": user_message})
+    save_message(sid, "user", user_message)
     audit("SCOUT_MENSAGEM", user_message[:100])
 
     config = load_config()
@@ -301,10 +302,11 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
 
         reply = response.content[0].text
         history.append({"role": "assistant", "content": reply})
+        save_message(sid, "assistant", reply)
         audit("SCOUT_RESPOSTA", reply[:100])
 
         if len(history) > 60:
-            scout_histories[user_id] = history[-60:]
+            scout_histories[sid] = history[-60:]
 
         return reply
 
