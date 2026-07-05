@@ -16,6 +16,7 @@ def agora_lisboa() -> datetime:
 from dotenv import load_dotenv
 import yaml
 from telegram import Update
+from telegram.error import Conflict as TelegramConflict
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 import anthropic
 import requests as req
@@ -1254,7 +1255,7 @@ def main():
     app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
 
     async def error_handler(update, context):
-        if isinstance(context.error, telegram.error.Conflict):
+        if isinstance(context.error, TelegramConflict):
             audit("CONFLICT", "Outra instância detetada — a aguardar 10s antes de retomar")
             await asyncio.sleep(10)
         else:
