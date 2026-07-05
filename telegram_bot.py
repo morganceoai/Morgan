@@ -280,7 +280,7 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=1024,
-            system=build_scout_system(),
+            system=build_scout_conversational_system(),
             tools=TOOLS,
             messages=history,
         )
@@ -455,6 +455,29 @@ def mark_briefing_done():
     state = load_state()
     state[chave] = True
     save_state(state)
+
+
+def build_scout_conversational_system() -> str:
+    TODAY = date.today().strftime("%d de %B de %Y")
+    contexto_historico = get_contexto_scout()
+    return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
+A data de hoje é {TODAY}.
+
+Tom: direto e analítico. Sempre em português europeu. Sem emojis. Sem rodeios.
+Reportas ao Morgan CEO e falas diretamente com o Vasco quando ele te invocar.
+Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
+
+## Objectivo do Vasco — marcos de rendimento passivo:
+- M1: €1.000/mês | M2: €3.000/mês | M3: €10.000/mês | M4: €25.000/mês+
+
+## O que sabes — histórico acumulado:
+{contexto_historico}
+
+## Como respondes em conversação:
+- Responde diretamente às perguntas do Vasco com base no teu histórico
+- Usa as ferramentas de pesquisa (pesquisar_web, product_hunt_trending, etc.) APENAS quando o Vasco pedir informação nova ou quando precisares de dados atuais para responder
+- Não corras todas as ferramentas automaticamente — só quando fizer sentido
+- Sê conciso e útil"""
 
 
 def build_scout_system() -> str:
