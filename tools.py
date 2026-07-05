@@ -319,21 +319,22 @@ def scout_oportunidades() -> str:
     try:
         client = TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
-            # Mercado PT/BR/ES — língua portuguesa é vantagem competitiva
-            "micro SaaS inteligência artificial mercado português brasileiro 2026 receita",
-            "ferramentas IA para empresas Portugal Brasil 2026 oportunidade negócio",
-            "AI tools Spanish Portuguese market gap underserved 2026",
-            # Outreach e geração de leads — candidato Trillion
-            "AI outreach lead generation automated sales 2026 revenue recurring",
-            "AI identifies warm leads contacts automatically SaaS 2026",
-            # Futebol e desporto — vantagem do Vasco como insider
-            "AI tools football coaches scouts performance analysis 2026 market",
-            "sports analytics AI platform coaches clubs 2026 revenue model",
-            # Solopreneur com rendimento passivo real
-            "micro SaaS AI solopreneur 10k month passive income 2026 real",
-            "AI automation agency recurring revenue Portugal Brazil 2026",
-            # Tendências com baixa concorrência
-            "AI niche tools low competition high margin 2026 underserved market",
+            # Máximo retorno, mínimo risco — qualquer área
+            "highest ROI AI business 2026 low risk passive income proven",
+            "AI SaaS highest revenue lowest competition 2026 solopreneur",
+            "best passive income AI business 2026 real founders revenue data",
+            # Mercados com pouca concorrência e alta margem
+            "AI niche tools underserved market high margin 2026 recurring revenue",
+            "micro SaaS AI monopoly niche 2026 10k month",
+            # Modelos de negócio validados com dados reais
+            "AI automation agency 5k 10k month 2026 case study",
+            "AI tools subscription revenue 2026 low churn high retention",
+            # Mercado lusófono — vantagem por falta de concorrência local
+            "AI SaaS Portugal Brasil mercado sem concorrência 2026 receita",
+            "ferramentas IA em português sem alternativas 2026",
+            # Oportunidades emergentes antes de ficarem saturadas
+            "AI business opportunity early 2026 untapped market growing fast",
+            "new AI tools category 2026 no competition first mover advantage",
         ]
         resultados = []
         for query in queries:

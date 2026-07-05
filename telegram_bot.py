@@ -771,11 +771,11 @@ Reportas ao Morgan CEO. O dono é o Vasco Botelho da Costa.
 ## Perfil do Vasco (usa para filtrar oportunidades relevantes):
 {memoria_vasco}
 
-## Vantagens competitivas do Vasco — prioriza oportunidades que as usem:
-- Insider do futebol profissional (Moreirense FC) — acesso único ao mercado de treinadores/clubes
+## Vantagens competitivas do Vasco — usa como desempate, não como filtro:
 - Falante nativo de português europeu — mercado PT/BR/ES pouco servido por ferramentas IA
-- Disponibilidade para construir com IA sem escrever código (Morgan faz isso)
-- Rede de contactos no futebol profissional português
+- Insider do futebol profissional — vantagem se surgir oportunidade nessa área
+- Constrói com IA sem escrever código (Morgan executa)
+- Disponibilidade para começar imediatamente
 
 ## Objectivo — marcos de rendimento passivo:
 - M1: €1.000/mês | M2: €3.000/mês | M3: €10.000/mês | M4: €25.000/mês+
@@ -802,13 +802,13 @@ Antes de produzir o relatório, cruza os dados das 7 fontes:
 
 ## Estrutura do relatório:
 
-1. **Top 3 oportunidades validadas** — ordenadas por força do sinal (fontes cruzadas):
+1. **Top 3 oportunidades validadas** — ordenadas por índice retorno/risco (máximo retorno, mínimo risco):
    - Nome e descrição em 2 linhas
    - Receita estimada (€/mês) — baseada em dados reais do IndieHackers quando possível
+   - Índice retorno/risco: receita potencial vs esforço inicial vs concorrência
    - Validação cruzada: quantas fontes confirmam + se tem "dupla validação"
    - Esforço inicial (baixo/médio/alto) | Concorrência (baixa/média/alta)
-   - Adequação PT/BR/ES (%)
-   - Vantagem competitiva do Vasco nesta oportunidade
+   - Vantagem do Vasco nesta oportunidade (se existir — pode ser nenhuma)
    - Próximo passo concreto (ação específica, não genérica)
 
 2. **Sinal mais forte do histórico** — oportunidade recorrente com dados novos (omite na primeira semana)
