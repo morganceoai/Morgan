@@ -571,15 +571,24 @@ def solver_verificar_saude() -> str:
         resultados.append("OK: Todas as variáveis de ambiente críticas presentes.")
 
     # Verifica ficheiros de memória
-    ficheiros = ["memory/audit.log", "memory/heartbeat_state.json",
-                 "memory/scout_memoria.json", "memory/factos.md"]
-    for f in ficheiros:
+    # Críticos — devem sempre existir
+    criticos = ["memory/audit.log", "memory/factos.md"]
+    # Auto-criados — só existem após primeiro ciclo, não são erro
+    auto_criados = ["memory/heartbeat_state.json", "memory/scout_memoria.json"]
+
+    for f in criticos:
         p = MORGAN_DIR / f
         if p.exists():
-            size = p.stat().st_size
-            resultados.append(f"OK: {f} ({size} bytes)")
+            resultados.append(f"OK: {f} ({p.stat().st_size} bytes)")
         else:
-            resultados.append(f"AVISO: {f} não existe")
+            resultados.append(f"ERRO: {f} não existe — ficheiro crítico em falta")
+
+    for f in auto_criados:
+        p = MORGAN_DIR / f
+        if p.exists():
+            resultados.append(f"OK: {f} ({p.stat().st_size} bytes)")
+        else:
+            resultados.append(f"INFO: {f} ainda não existe — criado automaticamente no primeiro ciclo (normal)")
 
     # Últimas entradas do audit log
     audit_path = MORGAN_DIR / "memory" / "audit.log"
