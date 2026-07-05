@@ -319,16 +319,21 @@ def scout_oportunidades() -> str:
     try:
         client = TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
-            "AI SaaS tools fastest growing revenue 2026 passive income",
-            "best AI business opportunities 2026 low competition high margin",
-            "AI tools trending Product Hunt 2026 monetization",
-            "AI automation business ideas 2026 recurring revenue",
-            "AI tools for sports coaches market opportunity 2026",
-            "Portuguese Brazilian Spanish AI market opportunities 2026",
-            "AI affiliate programs high commission 2026",
-            "AI newsletter creator tools audience monetization 2026",
-            "micro SaaS AI 2026 solopreneur revenue",
-            "AI content creation business profitable niche 2026",
+            # Mercado PT/BR/ES — língua portuguesa é vantagem competitiva
+            "micro SaaS inteligência artificial mercado português brasileiro 2026 receita",
+            "ferramentas IA para empresas Portugal Brasil 2026 oportunidade negócio",
+            "AI tools Spanish Portuguese market gap underserved 2026",
+            # Outreach e geração de leads — candidato Trillion
+            "AI outreach lead generation automated sales 2026 revenue recurring",
+            "AI identifies warm leads contacts automatically SaaS 2026",
+            # Futebol e desporto — vantagem do Vasco como insider
+            "AI tools football coaches scouts performance analysis 2026 market",
+            "sports analytics AI platform coaches clubs 2026 revenue model",
+            # Solopreneur com rendimento passivo real
+            "micro SaaS AI solopreneur 10k month passive income 2026 real",
+            "AI automation agency recurring revenue Portugal Brazil 2026",
+            # Tendências com baixa concorrência
+            "AI niche tools low competition high margin 2026 underserved market",
         ]
         resultados = []
         for query in queries:
