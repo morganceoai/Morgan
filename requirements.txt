@@ -32,7 +32,9 @@ PyAudio==0.2.14
 pycparser==3.0
 pydantic==2.13.4
 pydantic_core==2.46.4
+fastapi==0.115.6
 python-dotenv==1.2.2
+uvicorn==0.32.1
 python-telegram-bot==22.8
 PyYAML==6.0.3
 regex==2026.6.28
