@@ -4,6 +4,7 @@ import time
 import logging
 import asyncio
 import tempfile
+import threading
 from datetime import date, datetime
 from dotenv import load_dotenv
 import yaml
@@ -13,6 +14,9 @@ import anthropic
 import requests as req
 from deepgram import DeepgramClient
 from elevenlabs import ElevenLabs
+from fastapi import FastAPI, Request as FastAPIRequest
+from fastapi.responses import JSONResponse, StreamingResponse
+import uvicorn
 from tools import TOOLS, TOOL_FUNCTIONS
 from scout_memory import get_contexto_scout, get_resumo_para_vasco, registar_oportunidades
 from memory_store import load_memory
@@ -642,10 +646,84 @@ async def post_init(app):
     asyncio.create_task(heartbeat_loop(app))
 
 
+# ── Custom LLM API — para ElevenLabs ConvAI (desktop) ───────────────────────
+
+llm_api = FastAPI()
+
+
+@llm_api.get("/health")
+async def health():
+    return {"status": "ok", "service": "morgan-ceo"}
+
+
+@llm_api.post("/v1/chat/completions")
+async def custom_llm(request: FastAPIRequest):
+    body = await request.json()
+    messages = body.get("messages", [])
+
+    # Extrair última mensagem do utilizador
+    user_msg = ""
+    for m in reversed(messages):
+        if m.get("role") == "user":
+            content = m.get("content", "")
+            if isinstance(content, str):
+                user_msg = content
+            elif isinstance(content, list):
+                for part in content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        user_msg = part.get("text", "")
+                        break
+            break
+
+    if not user_msg:
+        return JSONResponse({
+            "id": "chatcmpl-morgan",
+            "object": "chat.completion",
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": ""}, "finish_reason": "stop"}]
+        })
+
+    # Correr Morgan brain em executor (chamada síncrona)
+    loop = asyncio.get_event_loop()
+    reply = await loop.run_in_executor(None, get_morgan_reply, "desktop", user_msg)
+
+    if body.get("stream", False):
+        async def stream():
+            chunk = {
+                "id": "chatcmpl-morgan",
+                "object": "chat.completion.chunk",
+                "choices": [{"index": 0, "delta": {"role": "assistant", "content": reply}, "finish_reason": None}]
+            }
+            yield f"data: {json.dumps(chunk)}\n\n"
+            done = {
+                "id": "chatcmpl-morgan",
+                "object": "chat.completion.chunk",
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+            }
+            yield f"data: {json.dumps(done)}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(stream(), media_type="text/event-stream")
+
+    return {
+        "id": "chatcmpl-morgan",
+        "object": "chat.completion",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": reply}, "finish_reason": "stop"}]
+    }
+
+
+def start_llm_api():
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(llm_api, host="0.0.0.0", port=port, log_level="warning")
+
+
 def main():
-    print("Morgan — online (conversa + heartbeat + Tier 6)")
+    print("Morgan — online (conversa + heartbeat + Tier 6 + LLM API)")
     print("Kill switch: envia 'morgan pausa' / 'morgan continua' no Telegram")
     print("Ctrl+C para terminar.")
+
+    # Arrancar API do LLM custom em thread separada
+    api_thread = threading.Thread(target=start_llm_api, daemon=True)
+    api_thread.start()
+    print(f"LLM API ativa na porta {os.getenv('PORT', 8000)}")
 
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).post_init(post_init).build()
     app.add_handler(CommandHandler("status", cmd_status))
