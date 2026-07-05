@@ -52,3 +52,4 @@ websockets==16.0
 yarl==1.24.2
 mem0ai
 langsmith
+qdrant-client

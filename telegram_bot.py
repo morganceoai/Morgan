@@ -30,6 +30,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import uvicorn
 from tools import TOOLS, TOOL_FUNCTIONS
 from scout_memory import get_contexto_scout, get_resumo_para_vasco, registar_oportunidades
+from scout_qdrant import guardar_oportunidade, get_contexto_semantico
 from memory_store import load_memory
 from conversation_store import get_context_messages, save_message
 from mem0 import MemoryClient
@@ -447,7 +448,7 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=1024,
-            system=build_scout_conversational_system(),
+            system=build_scout_conversational_system(user_message),
             tools=TOOLS,
             messages=history,
         )
@@ -891,10 +892,11 @@ def mark_briefing_done():
     save_state(state)
 
 
-def build_scout_conversational_system() -> str:
+def build_scout_conversational_system(query: str = "") -> str:
     TODAY = agora_lisboa().strftime("%d de %B de %Y")
     contexto_historico = get_contexto_scout()
     memoria_vasco = load_memory()
+    contexto_semantico = get_contexto_semantico(query) if query else ""
     return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
 A data de hoje é {TODAY}.
 
@@ -910,6 +912,8 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
 ## Histórico de oportunidades acumulado:
 {contexto_historico}
+
+{contexto_semantico}
 
 ## Como respondes em conversação:
 - Responde diretamente às perguntas do Vasco com base no teu histórico
@@ -1020,7 +1024,9 @@ async def run_scout_report(app):
         try:
             oportunidades = json.loads(json_match.group(1))
             registar_oportunidades(oportunidades)
-            audit("SCOUT_MEMORIA", f"{len(oportunidades)} oportunidades registadas")
+            for op in oportunidades:
+                guardar_oportunidade(op)
+            audit("SCOUT_MEMORIA", f"{len(oportunidades)} oportunidades registadas (JSON + Qdrant)")
         except Exception as e:
             audit("SCOUT_MEMORIA_ERRO", str(e))
 
