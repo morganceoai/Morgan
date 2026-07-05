@@ -48,6 +48,8 @@ STATE_FILE = os.path.join(BASE_DIR, "memory", "heartbeat_state.json")
 SENT_FILE = os.path.join(BASE_DIR, "memory", "noticias_enviadas.json")
 AUDIT_FILE = os.path.join(BASE_DIR, "memory", "audit.log")
 CONFIG_FILE = os.path.join(BASE_DIR, "config.yaml")
+IMPERIO_FILE = os.path.join(BASE_DIR, "memory", "estado_imperio.md")
+DECISOES_FILE = os.path.join(BASE_DIR, "memory", "decisoes_pendentes.json")
 
 # Logging
 logging.basicConfig(level=logging.WARNING)
@@ -155,20 +157,105 @@ def run_tool(tool_name: str, tool_input: dict) -> str:
         return f"Erro: {e}"
 
 
+# ── Estado do Império ────────────────────────────────────────────────────────
+
+def load_estado_imperio() -> str:
+    if os.path.exists(IMPERIO_FILE):
+        with open(IMPERIO_FILE, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
+
+def save_estado_imperio(conteudo: str):
+    tmp = IMPERIO_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(conteudo)
+    os.replace(tmp, IMPERIO_FILE)
+
+def load_decisoes_pendentes() -> list:
+    if os.path.exists(DECISOES_FILE):
+        with open(DECISOES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f).get("pendentes", [])
+    return []
+
+def save_decisao_pendente(assunto: str):
+    pendentes = load_decisoes_pendentes()
+    data = agora_lisboa().strftime("%d/%m/%Y")
+    if not any(p["assunto"] == assunto for p in pendentes):
+        pendentes.append({"assunto": assunto, "data": data, "follow_up": False})
+    tmp = DECISOES_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"pendentes": pendentes}, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, DECISOES_FILE)
+
+def marcar_decisao_resolvida(assunto: str):
+    pendentes = [p for p in load_decisoes_pendentes() if p["assunto"] != assunto]
+    tmp = DECISOES_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"pendentes": pendentes}, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, DECISOES_FILE)
+
+# Padrões que indicam decisão pendente
+_PADROES_PENDENTE = [
+    "vou pensar", "deixa-me pensar", "depois vejo", "talvez", "não sei ainda",
+    "vou ver", "amanhã decido", "preciso de pensar", "fico a pensar", "vou considerar"
+]
+
+def _tem_decisao_pendente(msg: str) -> bool:
+    m = msg.lower()
+    return any(p in m for p in _PADROES_PENDENTE)
+
+
+# ── Coordenação CEO → Agentes ─────────────────────────────────────────────────
+
+async def ceo_convocar_scout(bot, motivo: str) -> str:
+    """CEO convoca o Scout proativamente sem precisar do Vasco pedir."""
+    try:
+        loop = asyncio.get_event_loop()
+        resposta = await loop.run_in_executor(
+            None, get_scout_reply, "ceo_interno", f"[CEO solicitou] {motivo}"
+        )
+        return resposta
+    except Exception as e:
+        return f"Scout indisponível: {e}"
+
+async def ceo_convocar_solver(bot, motivo: str) -> str:
+    """CEO convoca o Solver proativamente."""
+    try:
+        loop = asyncio.get_event_loop()
+        resposta = await loop.run_in_executor(
+            None, get_solver_reply, "ceo_interno", f"[CEO solicitou] {motivo}"
+        )
+        return resposta
+    except Exception as e:
+        return f"Solver indisponível: {e}"
+
+
 # ── Prompts ──────────────────────────────────────────────────────────────────
 
 def build_system_prompt() -> str:
     TODAY = agora_lisboa().strftime("%d de %B de %Y")
-    return f"""O teu nome é Morgan. És o assistente pessoal de confiança do Vasco Botelho da Costa — treinador do Moreirense FC.
+    estado = load_estado_imperio()
+    pendentes = load_decisoes_pendentes()
+    pendentes_txt = ""
+    if pendentes:
+        itens = "\n".join(f"- {p['assunto']} (desde {p['data']})" for p in pendentes)
+        pendentes_txt = f"\n\n## Decisões pendentes do Vasco — faz follow-up naturalmente:\n{itens}"
+
+    return f"""O teu nome é Morgan. És o CEO e assistente pessoal de confiança do Vasco Botelho da Costa — treinador do Moreirense FC e fundador da BC Industries.
 
 A data de hoje é {TODAY}. Usa sempre esta data. Quando pesquisares, inclui sempre 2026 nas queries.
 
 Tom: firme e direto no trabalho, compreensivo e de apoio quando necessário. Sempre em português europeu. Trata o Vasco pelo primeiro nome. Nunca uses emojis — zero emojis em qualquer resposta. Sem excessos de pontuação ou entusiasmo artificial.
 
 Tens acesso a ferramentas para pesquisar na web, obter dados da Primeira Liga, e gerir a tua memória.
+Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica).
 
 ## O que sabes sobre o Vasco:
 {load_memory()}
+
+## Estado atual do Império — BC Industries:
+{estado}
+{pendentes_txt}
 
 ## Quando o Vasco pedir notícias ou um resumo do que se passa, faz SEMPRE estas três pesquisas:
 1. Notícias recentes do Moreirense FC em 2026 (resultados, lesões, transferências, rumores)
@@ -268,6 +355,11 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         history.append({"role": "assistant", "content": reply})
         save_message(user_id, "assistant", reply)
         audit("RESPOSTA", reply[:100])
+
+        # Deteta decisões pendentes na mensagem do Vasco
+        if _tem_decisao_pendente(user_message):
+            save_decisao_pendente(user_message[:120])
+            audit("DECISAO_PENDENTE", user_message[:80])
 
         # Sliding window — estima tokens (4 chars ≈ 1 token), mantém abaixo de 150k tokens
         total_chars = sum(len(str(m.get("content", ""))) for m in history)
@@ -906,6 +998,12 @@ async def heartbeat_loop(app):
             mark_briefing_done()
             hora_atual = agora_lisboa().hour
             audit("HEARTBEAT", f"Briefing das {hora_atual}h iniciado")
+
+            # Follow-up de decisões pendentes
+            pendentes = load_decisoes_pendentes()
+            if pendentes:
+                itens = "\n".join(f"• {p['assunto'][:80]} (desde {p['data']})" for p in pendentes[:3])
+                await enviar_seguro(app.bot, f"Vasco, ficaram pendentes algumas decisões:\n\n{itens}\n\nJá tens resposta para alguma?", chat_id=TELEGRAM_CHAT_ID)
 
             for check in get_checks_for_hour(hora_atual):
                 nome = check["nome"]
