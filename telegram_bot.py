@@ -929,6 +929,78 @@ async def transcribe_audio(file_path: str) -> str:
     return response.results.channels[0].alternatives[0].transcript
 
 
+async def cmd_testar_solver(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /testar_solver — injeta erros controlados para testar o Solver."""
+    args = context.args
+    teste = args[0] if args else "1"
+
+    if teste == "1":
+        # Teste 1: erro simulado no audit.log
+        audit("HEARTBEAT_ERRO", "TEST_ERRO: Simulação de falha no heartbeat para testar o Solver")
+        await update.message.reply_text(
+            "Teste 1 iniciado: erro injetado no audit.log.\n"
+            "O Solver deve detetar e reportar no próximo ciclo (até 60 segundos)."
+        )
+
+    elif teste == "2":
+        # Teste 2: corromper heartbeat_state.json
+        state_path = Path(STATE_FILE)
+        backup = None
+        if state_path.exists():
+            backup = state_path.read_text()
+        state_path.write_text("{invalid json:::}")
+        audit("STATE_ERRO", "TEST_ERRO: heartbeat_state.json corrompido para teste do Solver")
+        await update.message.reply_text(
+            "Teste 2 iniciado: heartbeat_state.json corrompido.\n"
+            "O Solver deve detetar o ficheiro inválido e propor correcção.\n"
+            f"Backup guardado: {'sim' if backup else 'não existia'}"
+        )
+        # Guarda backup em memória para restauro se o Solver não corrigir
+        context.bot_data["state_backup"] = backup
+
+    elif teste == "3":
+        # Teste 3: renomear factos.md para simular ficheiro crítico em falta
+        factos_path = Path(BASE_DIR) / "memory" / "factos.md"
+        backup_path = Path(BASE_DIR) / "memory" / "factos.md.bak"
+        if factos_path.exists():
+            factos_path.rename(backup_path)
+            audit("MEMORY_ERRO", "TEST_ERRO: factos.md removido para teste do Solver")
+            await update.message.reply_text(
+                "Teste 3 iniciado: factos.md temporariamente removido.\n"
+                "O Solver deve detetar ficheiro crítico em falta e propor restauro.\n"
+                "Backup em: memory/factos.md.bak"
+            )
+        else:
+            await update.message.reply_text("factos.md não existe — teste não aplicável.")
+
+    elif teste == "restaurar":
+        # Restauro manual de emergência
+        restored = []
+        state_path = Path(STATE_FILE)
+        if state_path.exists() and state_path.read_text().startswith("{invalid"):
+            backup = context.bot_data.get("state_backup", "{}")
+            state_path.write_text(backup or "{}")
+            restored.append("heartbeat_state.json")
+        factos_bak = Path(BASE_DIR) / "memory" / "factos.md.bak"
+        factos_path = Path(BASE_DIR) / "memory" / "factos.md"
+        if factos_bak.exists():
+            factos_bak.rename(factos_path)
+            restored.append("factos.md")
+        if restored:
+            await update.message.reply_text(f"Restaurado: {', '.join(restored)}")
+        else:
+            await update.message.reply_text("Nada para restaurar.")
+
+    else:
+        await update.message.reply_text(
+            "Testes disponíveis:\n"
+            "/testar_solver 1 — erro no audit.log\n"
+            "/testar_solver 2 — corromper heartbeat_state.json\n"
+            "/testar_solver 3 — remover factos.md\n"
+            "/testar_solver restaurar — restauro manual de emergência"
+        )
+
+
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /status — mostra o estado atual do Morgan."""
     config = load_config()
@@ -1144,6 +1216,7 @@ def main():
 
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).connect_timeout(30).read_timeout(30).write_timeout(30).post_init(post_init).build()
     app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
     app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
     app.run_polling()
 
