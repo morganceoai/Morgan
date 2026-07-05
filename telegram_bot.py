@@ -309,23 +309,39 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         return reply
 
 
-_FRASES_SCOUT = ["fala com o scout", "morgan scout", "passa ao scout", "chama o scout", "quero falar com o scout"]
-_FRASES_CEO = ["fala com o morgan", "volta ao morgan", "passa ao ceo", "morgan ceo", "quero falar com o morgan"]
+def _quer_scout(msg: str) -> bool:
+    """Deteta intenção de falar com o Scout de forma natural."""
+    m = msg.lower()
+    # Menção direta ao scout
+    if "scout" in m:
+        return True
+    # Tópicos de negócio/oportunidades que devem ir para o Scout
+    keywords = ["oportunidade", "negócio", "negocio", "rendimento passivo",
+                "mercado", "saas", "produto", "receita", "empreend", "startup",
+                "investimento", "empire", "império", "dinheiro passivo"]
+    return any(k in m for k in keywords)
+
+
+def _quer_ceo(msg: str) -> bool:
+    """Deteta intenção de voltar ao CEO."""
+    m = msg.lower()
+    return any(f in m for f in ["morgan ceo", "volta ao morgan", "fala com o morgan",
+                                 "morgan de volta", "ceo", "morgan principal"])
 
 
 def get_agente_reply(user_id: str, user_message: str) -> str:
     """Encaminha a mensagem para o agente ativo (CEO ou Scout)."""
     uid = "vasco"
-    msg_lower = user_message.lower().strip()
 
-    # Deteção de mudança de agente
-    if any(f in msg_lower for f in _FRASES_SCOUT):
-        agente_ativo[uid] = "scout"
-        return "Scout ativo. Sou o Morgan AI Scout — o teu agente de inteligência de mercado. O que queres saber?"
-
-    if any(f in msg_lower for f in _FRASES_CEO):
+    # Mudança explícita para CEO (tem prioridade)
+    if _quer_ceo(user_message):
         agente_ativo[uid] = "ceo"
         return "Morgan CEO de volta. Em que posso ajudar?"
+
+    # Mudança para Scout — explícita ou por tópico
+    if _quer_scout(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
+        agente_ativo[uid] = "scout"
+        return get_scout_reply(uid, user_message)
 
     agente = agente_ativo.get(uid, "ceo")
 
