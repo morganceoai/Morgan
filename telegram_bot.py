@@ -1252,7 +1252,16 @@ def main():
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
     app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
-    app.run_polling()
+
+    async def error_handler(update, context):
+        if isinstance(context.error, telegram.error.Conflict):
+            audit("CONFLICT", "Outra instância detetada — a aguardar 10s antes de retomar")
+            await asyncio.sleep(10)
+        else:
+            audit("TELEGRAM_ERRO", str(context.error))
+
+    app.add_error_handler(error_handler)
+    app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":
