@@ -52,8 +52,9 @@ FONTES_CREDÍVEIS = ["record.pt", "abola.pt", "ojogo.pt", "maisfutebol.iol.pt", 
 
 conversation_histories = {}  # Cache em memória durante a sessão
 pending_confirmations = {}   # {user_id: acao_pendente}
-agente_ativo = {}            # {user_id: "ceo" | "scout"}
+agente_ativo = {}            # {user_id: "ceo" | "scout" | "solver"}
 scout_histories = {}         # Histórico de conversa separado para o Scout
+solver_histories = {}        # Histórico de conversa separado para o Solver
 
 
 # ── Config ──────────────────────────────────────────────────────────────────
@@ -345,11 +346,124 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         agente_ativo[uid] = "scout"
         return get_scout_reply(uid, user_message)
 
+    # Mudança para Solver — explícita ou por tópico técnico
+    if _quer_solver(user_message) and agente_ativo.get(uid, "ceo") == "ceo":
+        agente_ativo[uid] = "solver"
+        return get_solver_reply(uid, user_message)
+
     agente = agente_ativo.get(uid, "ceo")
 
     if agente == "scout":
         return get_scout_reply(uid, user_message)
+    if agente == "solver":
+        return get_solver_reply(uid, user_message)
     return get_morgan_reply(uid, user_message)
+
+
+def build_solver_system() -> str:
+    TODAY = date.today().strftime("%d de %B de %Y")
+    memoria_vasco = load_memory()
+
+    # Lê as últimas linhas do audit.log para contexto
+    try:
+        with open(AUDIT_FILE, "r", encoding="utf-8") as f:
+            linhas = f.readlines()
+        audit_recente = "".join(linhas[-50:])
+    except Exception:
+        audit_recente = "Sem dados de audit disponíveis."
+
+    return f"""És o Morgan Solver — o agente técnico da BC Industries, responsável pela saúde e estabilidade do sistema Morgan.
+A data de hoje é {TODAY}.
+
+Tom: preciso, técnico, direto. Sempre em português europeu. Sem emojis. Sem rodeios.
+Reportas ao Morgan CEO. O Vasco pode falar diretamente contigo.
+Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
+
+## BC Industries — contexto:
+Dono: Vasco Botelho da Costa, treinador do Moreirense FC.
+Objetivo: €10.000/mês de rendimento passivo.
+{memoria_vasco}
+
+## A tua especialidade — stack técnico do Morgan:
+- Python 3.12, FastAPI, uvicorn
+- python-telegram-bot
+- Anthropic Claude API (claude-sonnet-4-6)
+- ElevenLabs TTS (eleven_multilingual_v2)
+- Deepgram STT (nova-2, nova-3)
+- Supabase (histórico de conversas)
+- Railway.app (deploy, logs, variáveis de ambiente)
+- GitHub (morganceoai/Morgan)
+- Tavily (pesquisa web)
+- API-Football (dados Primeira Liga)
+- Resemblyzer (voice ID — desativado)
+
+## Audit log recente (últimas 50 entradas):
+{audit_recente}
+
+## Como ages:
+- Diagnostica problemas com base no audit log e no que o Vasco te descreve
+- Pesquisa online soluções para erros específicos quando necessário
+- Propõe correções concretas com código ou passos claros
+- NUNCA modificas código nem fazes deploy sem aprovação explícita do Vasco
+- Se identificares um problema crítico que o Vasco não mencionou, alerta-o"""
+
+
+def get_solver_reply(user_id: str, user_message: str) -> str:
+    """Conversa direta com o Morgan Solver."""
+    sid = "solver"
+
+    if sid not in solver_histories:
+        solver_histories[sid] = get_context_messages(sid)
+
+    history = solver_histories[sid]
+    history.append({"role": "user", "content": user_message})
+    save_message(sid, "user", user_message)
+    audit("SOLVER_MENSAGEM", user_message[:100])
+
+    config = load_config()
+    modelo = config.get("modelo", "claude-sonnet-4-6")
+
+    while True:
+        response = anthropic_client.messages.create(
+            model=modelo,
+            max_tokens=1024,
+            system=build_solver_system(),
+            tools=TOOLS,
+            messages=history,
+        )
+
+        if response.stop_reason == "tool_use":
+            history.append({"role": "assistant", "content": response.content})
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = run_tool(block.name, block.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result
+                    })
+            history.append({"role": "user", "content": tool_results})
+            continue
+
+        reply = response.content[0].text
+        history.append({"role": "assistant", "content": reply})
+        save_message(sid, "assistant", reply)
+        audit("SOLVER_RESPOSTA", reply[:100])
+
+        if len(history) > 60:
+            solver_histories[sid] = history[-60:]
+
+        return reply
+
+
+def _quer_solver(msg: str) -> bool:
+    m = msg.lower()
+    if "solver" in m:
+        return True
+    keywords = ["erro", "bug", "partido", "não funciona", "nao funciona", "problema técnico",
+                "falha", "crash", "deploy", "railway", "código", "codigo", "corrigir", "fix"]
+    return any(k in m for k in keywords)
 
 
 # ── Heartbeat ────────────────────────────────────────────────────────────────
@@ -478,6 +592,7 @@ def mark_briefing_done():
 def build_scout_conversational_system() -> str:
     TODAY = date.today().strftime("%d de %B de %Y")
     contexto_historico = get_contexto_scout()
+    memoria_vasco = load_memory()
     return f"""És o Morgan AI Scout — o agente de inteligência de mercado do Vasco Botelho da Costa.
 A data de hoje é {TODAY}.
 
@@ -485,15 +600,18 @@ Tom: direto e analítico. Sempre em português europeu. Sem emojis. Sem rodeios.
 Reportas ao Morgan CEO e falas diretamente com o Vasco quando ele te invocar.
 Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
+## Quem é o Vasco:
+{memoria_vasco}
+
 ## Objectivo do Vasco — marcos de rendimento passivo:
 - M1: €1.000/mês | M2: €3.000/mês | M3: €10.000/mês | M4: €25.000/mês+
 
-## O que sabes — histórico acumulado:
+## Histórico de oportunidades acumulado:
 {contexto_historico}
 
 ## Como respondes em conversação:
 - Responde diretamente às perguntas do Vasco com base no teu histórico
-- Usa as ferramentas de pesquisa (pesquisar_web, product_hunt_trending, etc.) APENAS quando o Vasco pedir informação nova ou quando precisares de dados atuais para responder
+- Usa as ferramentas de pesquisa apenas quando precisares de dados atuais
 - Não corras todas as ferramentas automaticamente — só quando fizer sentido
 - Sê conciso e útil"""
 
