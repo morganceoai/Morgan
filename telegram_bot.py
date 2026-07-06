@@ -512,15 +512,15 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         agente_ativo[uid] = "ceo"
         return "Morgan CEO de volta. Em que posso ajudar?"
 
-    # Mudança para Scout — explícita ou por tópico (de qualquer agente)
-    if _quer_scout(user_message):
-        agente_ativo[uid] = "scout"
-        return "[SCOUT] " + get_scout_reply(uid, user_message)
-
-    # Mudança para Solver — explícita ou por tópico técnico (de qualquer agente)
+    # Solver tem prioridade — problema técnico supera qualquer outra intenção
     if _quer_solver(user_message):
         agente_ativo[uid] = "solver"
         return "[SOLVER] " + get_solver_reply(uid, user_message)
+
+    # Mudança para Scout — só se não for um problema técnico
+    if _quer_scout(user_message) and not _e_problema_tecnico(user_message):
+        agente_ativo[uid] = "scout"
+        return "[SCOUT] " + get_scout_reply(uid, user_message)
 
     agente = agente_ativo.get(uid, "ceo")
 
@@ -685,8 +685,10 @@ def _quer_solver(msg: str) -> bool:
     m = msg.lower()
     if "solver" in m:
         return True
-    keywords = ["erro", "bug", "partido", "não funciona", "nao funciona", "problema técnico",
-                "falha", "crash", "deploy", "railway", "código", "codigo", "corrigir", "fix"]
+    keywords = ["erro", "bug", "partido", "não funciona", "nao funciona", "não está a funcionar",
+                "nao esta a funcionar", "problema técnico", "falha", "crash", "deploy",
+                "railway", "código", "codigo", "corrigir", "fix", "não responde", "nao responde",
+                "parou", "deixou de"]
     return any(k in m for k in keywords)
 
 
