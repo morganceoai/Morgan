@@ -981,7 +981,14 @@ def mark_scout_done():
     save_state(state)
 
 
-_solver_ultimo_audit_pos = 0  # posição no audit.log da última verificação
+def _init_audit_pos() -> int:
+    """Arranca no fim do audit.log para ignorar erros históricos de deploys anteriores."""
+    try:
+        return os.path.getsize(AUDIT_FILE) if os.path.exists(AUDIT_FILE) else 0
+    except Exception:
+        return 0
+
+_solver_ultimo_audit_pos = _init_audit_pos()
 
 # Keywords exaustivos — cobre Python, Railway, APIs, sistema operativo, rede
 _PADROES_ERRO = [
