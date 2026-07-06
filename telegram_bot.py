@@ -1740,7 +1740,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🔍 A diagnosticar... (pode demorar 1-2 minutos)")
         loop = asyncio.get_event_loop()
         try:
-            reply = await loop.run_in_executor(None, get_agente_reply, user_id, user_message)
+            reply = await asyncio.wait_for(
+                loop.run_in_executor(None, get_agente_reply, user_id, user_message),
+                timeout=180  # 3 minutos máximo
+            )
+        except asyncio.TimeoutError:
+            audit("SOLVER_TIMEOUT", user_message[:80])
+            reply = "Solver: tempo limite excedido (3 min). Tenta uma pergunta mais simples ou verifica os logs do Railway diretamente."
         except Exception as e:
             audit("SOLVER_TRIGGER_ERRO", str(e))
             reply = f"Erro no Solver: {e}"

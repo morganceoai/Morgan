@@ -528,27 +528,54 @@ def solver_railway_logs(linhas: int = 100) -> str:
     if not token:
         return "RAILWAY_API_TOKEN não configurado. Adiciona a variável no Railway."
     try:
-        query = """
-        query serviceInstanceLogs($projectId: String!, $serviceId: String!, $limit: Int) {
-          serviceInstanceLogs(projectId: $projectId, serviceId: $serviceId, limit: $limit) {
+        # Railway API v2 — obtém o deployment mais recente e os seus logs
+        # Passo 1: último deployment do serviço
+        q_deploy = """
+        query($serviceId: String!, $projectId: String!) {
+          deployments(input: {serviceId: $serviceId, projectId: $projectId}, first: 1) {
+            edges { node { id status createdAt } }
+          }
+        }
+        """
+        r = req.post(
+            "https://backboard.railway.app/graphql/v2",
+            json={"query": q_deploy, "variables": {"serviceId": service_id, "projectId": project_id}},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            timeout=10,
+        )
+        data = r.json()
+        edges = data.get("data", {}).get("deployments", {}).get("edges", [])
+        if not edges:
+            # Fallback: devolve o que a API retornou para diagnóstico
+            return f"Sem deployments encontrados. Resposta API: {str(data)[:500]}"
+
+        deploy_id = edges[0]["node"]["id"]
+        deploy_status = edges[0]["node"].get("status", "?")
+
+        # Passo 2: logs do deployment
+        q_logs = """
+        query($deploymentId: String!) {
+          deploymentLogs(deploymentId: $deploymentId) {
             timestamp
             severity
             message
           }
         }
         """
-        r = req.post(
+        r2 = req.post(
             "https://backboard.railway.app/graphql/v2",
-            json={"query": query, "variables": {"projectId": project_id, "serviceId": service_id, "limit": linhas}},
+            json={"query": q_logs, "variables": {"deploymentId": deploy_id}},
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            timeout=15,
+            timeout=10,
         )
-        data = r.json()
-        logs = data.get("data", {}).get("serviceInstanceLogs", [])
+        data2 = r2.json()
+        logs = data2.get("data", {}).get("deploymentLogs", [])
         if not logs:
-            return "Sem logs disponíveis ou serviço sem actividade recente."
+            return f"Deployment {deploy_id} ({deploy_status}) sem logs. Resposta: {str(data2)[:300]}"
+
         linhas_txt = [f"[{l.get('timestamp','')}] [{l.get('severity','')}] {l.get('message','')}" for l in logs]
-        return "\n".join(linhas_txt[-linhas:])
+        cabecalho = f"Deployment: {deploy_id} | Status: {deploy_status} | {len(logs)} linhas\n---\n"
+        return cabecalho + "\n".join(linhas_txt[-linhas:])
     except Exception as e:
         return f"Erro a obter logs Railway: {e}"
 
