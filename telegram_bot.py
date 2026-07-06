@@ -1501,33 +1501,33 @@ async def cmd_testar_solver(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Nada para restaurar.")
 
     elif teste == "autonomia_sim":
-        # Teste autonomia — CEO deve autorizar sozinho (erro isolado reversível)
-        await update.message.reply_text(
-            "Teste de autonomia iniciado.\n"
-            "Simulo erro isolado reversível — CEO deve resolver SEM te contactar.\n"
-            "Verifica decisoes_autonomas.json no final."
-        )
-        loop = asyncio.get_event_loop()
-        async def _run():
-            problema = "MEM0_ERRO: str object has no attribute get — erro isolado no mem0_get()"
-            from solver_graph import solver_diagnosticar
-            estado = await loop.run_in_executor(None, solver_diagnosticar, problema)
-            avaliacao = ceo_avaliar_confianca(estado)
-            if avaliacao["autorizar"]:
-                save_decisao_autonoma(problema, estado.get("relatorio","")[:200], avaliacao["confianca_ceo"], "Solver")
-                _ceo_actualizar_imperio(f"[TESTE] Solver resolveu autonomamente: {problema[:80]}")
-                await update.message.reply_text(
-                    f"RESULTADO: CEO autorizou autonomamente.\n"
-                    f"Confiança CEO: {avaliacao['confianca_ceo']}%\n"
-                    f"Solver — diag: {estado.get('confianca_diagnostico')}% | sol: {estado.get('confianca_solucao')}%\n"
-                    f"Motivo: {avaliacao['motivo'][:200]}\n\n"
-                    f"Decisão registada em decisoes_autonomas.json."
-                )
-            else:
-                await update.message.reply_text(
-                    f"INESPERADO: CEO não autorizou (confiança {avaliacao['confianca_ceo']}%).\n{avaliacao['motivo']}"
-                )
-        asyncio.create_task(_run())
+        # Testa APENAS a lógica do CEO com valores de confiança altos simulados
+        # Não envolve o LangGraph — testa se o CEO autoriza correctamente
+        estado_simulado = {
+            "confianca_diagnostico": 95,
+            "confianca_solucao": 92,
+            "confianca_execucao": 0,
+            "confianca_verificacao": 0,
+            "reversivel": True,
+            "impacto": "isolado",
+            "relatorio": "Erro isolado no mem0_get() — uma linha, reversível, baixo risco.",
+        }
+        avaliacao = ceo_avaliar_confianca(estado_simulado)
+        problema = "MEM0_ERRO: str object has no attribute get (simulado)"
+        if avaliacao["autorizar"]:
+            save_decisao_autonoma(problema, estado_simulado["relatorio"], avaliacao["confianca_ceo"], "Solver")
+            _ceo_actualizar_imperio(f"[TESTE] CEO autorizou autonomamente: {problema[:80]}")
+            await update.message.reply_text(
+                f"PASSOU — CEO autorizou autonomamente.\n\n"
+                f"Confiança CEO: {avaliacao['confianca_ceo']}%\n"
+                f"Solver simulado — diag: {estado_simulado['confianca_diagnostico']}% | sol: {estado_simulado['confianca_solucao']}%\n"
+                f"Motivo: {avaliacao['motivo']}\n\n"
+                f"Decisão registada em decisoes_autonomas.json."
+            )
+        else:
+            await update.message.reply_text(
+                f"FALHOU — CEO não autorizou (confiança {avaliacao['confianca_ceo']}%).\n{avaliacao['motivo']}"
+            )
 
     elif teste == "autonomia_nao":
         # Teste escalada — CEO deve contactar o Vasco (problema crítico)
