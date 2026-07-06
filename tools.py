@@ -629,6 +629,20 @@ def solver_analisar_logs(linhas: int = 100) -> str:
         return f"Erro a ler audit.log: {e}"
 
 
+def solver_git_log() -> str:
+    """Mostra os últimos commits do repositório para o Solver verificar o que foi deployado."""
+    try:
+        result = subprocess.run(
+            "git log --oneline -10",
+            shell=True, capture_output=True, text=True,
+            cwd=str(MORGAN_DIR), timeout=30
+        )
+        output = (result.stdout + result.stderr).strip()
+        return output if output else "Sem commits encontrados."
+    except Exception as e:
+        return f"Erro: {e}"
+
+
 def solver_git_diff() -> str:
     """Mostra as alterações pendentes no repositório (read-only, sem confirmação)."""
     try:
@@ -929,6 +943,11 @@ TOOLS = [
         }
     },
     {
+        "name": "solver_git_log",
+        "description": "Mostra os últimos 10 commits do repositório. Usa para verificar o que já foi deployado em produção antes de diagnosticar um problema.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "solver_git_diff",
         "description": "Mostra as alterações pendentes no repositório — o que mudou e ainda não foi commitado. Usa antes de fazer commit para confirmar o que vai ser enviado.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -1014,6 +1033,7 @@ TOOL_FUNCTIONS = {
     "solver_analisar_logs": solver_analisar_logs,
     "solver_criar_ficheiro": solver_criar_ficheiro,
     "solver_executar_correcao": solver_executar_correcao,
+    "solver_git_log": solver_git_log,
     "solver_git_diff": solver_git_diff,
     "solver_git_commit_push": solver_git_commit_push,
     "solver_railway_deploy": solver_railway_deploy,
