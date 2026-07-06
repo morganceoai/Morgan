@@ -586,11 +586,32 @@ Objetivo: €10.000/mês de rendimento passivo.
 
 
 _SOLVER_PROBLEM_KEYWORDS = [
-    "erro", "error", "falhou", "falhar", "não funciona", "nao funciona",
-    "quebrado", "parou", "parou de", "bug", "problema com", "fix", "corrige",
-    "diagnostica", "verifica se", "está a dar erro", "crash", "exception",
-    "traceback", "timeout", "não responde", "nao responde", "não arranca",
-    "nao arranca", "503", "500", "502", "connection refused",
+    # Erro / falha
+    "erro", "error", "erros", "falha", "falhou", "falhar", "falhas",
+    "bug", "bugs", "defeito",
+    # Não funciona / não responde
+    "não funciona", "nao funciona", "não está a funcionar", "nao esta a funcionar",
+    "não funcionou", "nao funcionou", "não responde", "nao responde",
+    "não arranca", "nao arranca", "não liga", "nao liga", "não abre", "nao abre",
+    "não carrega", "nao carrega", "não conecta", "nao conecta",
+    "sem resposta", "não respondeu", "nao respondeu",
+    # Parou / bloqueou
+    "parou", "parou de", "deixou de", "bloqueou", "bloqueia", "bloqueado",
+    "travou", "trava", "parou a funcionar", "parou de responder",
+    # Problema / avaria
+    "problema", "problemas", "avaria", "avariado", "avariou",
+    "estragou", "estragado", "partido", "quebrou", "quebrado",
+    # Crash / sistema
+    "crash", "exception", "traceback", "timeout", "time out",
+    "503", "500", "502", "404", "connection refused", "connection error",
+    "down", "offline", "fora do ar",
+    # Diagnóstico explícito
+    "diagnostica", "verifica se", "investiga", "corrige", "corrija",
+    "fix", "reparar", "repara", "arranjar", "arranja",
+    "o que se passa", "o que aconteceu", "o que está errado", "o que está mal",
+    "está a dar erro", "está a falhar",
+    # Lento / degradado
+    "lento", "lenta", "devagar", "demorado", "demora muito",
 ]
 
 def _e_problema_tecnico(msg: str) -> bool:
@@ -685,10 +706,44 @@ def _quer_solver(msg: str) -> bool:
     m = msg.lower()
     if "solver" in m:
         return True
-    keywords = ["erro", "bug", "partido", "não funciona", "nao funciona", "não está a funcionar",
-                "nao esta a funcionar", "problema técnico", "falha", "crash", "deploy",
-                "railway", "código", "codigo", "corrigir", "fix", "não responde", "nao responde",
-                "parou", "deixou de"]
+    keywords = [
+        # Erro / falha genérica
+        "erro", "error", "erros", "falha", "falhou", "falhar", "falhas",
+        "bug", "bugs", "defeito", "defect",
+        # Não funciona / não responde
+        "não funciona", "nao funciona", "não está a funcionar", "nao esta a funcionar",
+        "não funcionou", "nao funcionou", "não funcionam", "nao funcionam",
+        "não responde", "nao responde", "sem resposta", "não respondeu", "nao respondeu",
+        "não arranca", "nao arranca", "não liga", "nao liga", "não abre", "nao abre",
+        "não carrega", "nao carrega", "não conecta", "nao conecta",
+        # Parou / deixou de
+        "parou", "parou de", "deixou de", "deixou de funcionar",
+        "parou a funcionar", "parou de responder",
+        "bloqueou", "bloqueia", "bloqueado", "travou", "trava",
+        # Problema / avaria
+        "problema", "problemas", "problema técnico", "problema no",
+        "avaria", "avariado", "avariou",
+        "estragou", "estragado", "está estragado",
+        "partido", "está partido", "está quebrado", "quebrou",
+        # Crash / sistema
+        "crash", "crashed", "exception", "traceback", "stack trace",
+        "timeout", "time out", "503", "500", "502", "404",
+        "connection refused", "connection error", "connection timeout",
+        "down", "offline", "fora do ar", "não está no ar", "nao esta no ar",
+        # Deploy / técnico
+        "deploy", "deployment", "railway", "servidor", "server",
+        "código", "codigo", "corrigir", "corrija", "fix", "fixar",
+        "reparar", "repara", "arranjar", "arranja",
+        "atualizar", "actualizar", "atualiza", "actualiza",
+        # Lento / degradado
+        "lento", "lenta", "devagar", "demorado", "demora muito",
+        "está muito lento", "está a demorar",
+        # Mensagens de diagnóstico
+        "diagnostica", "verifica", "verifica se", "investiga",
+        "o que se passa", "o que aconteceu", "o que está a acontecer",
+        "o que está errado", "o que está mal",
+        "porquê não", "porque nao", "por que não", "por que nao",
+    ]
     return any(k in m for k in keywords)
 
 
