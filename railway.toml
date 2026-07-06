@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "python -W ignore::DeprecationWarning telegram_bot.py"
+startCommand = "python set_webhook.py && python -W ignore::DeprecationWarning telegram_bot.py"
