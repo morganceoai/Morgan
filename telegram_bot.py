@@ -1476,7 +1476,7 @@ async def lifespan(fastapi_app: "FastAPI"):
 
     railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "morgan-production-0486.up.railway.app")
     webhook_url = f"https://{railway_domain}/telegram/webhook"
-    await _telegram_app.bot.set_webhook(webhook_url, drop_pending_updates=True)
+    await _telegram_app.bot.set_webhook(webhook_url)
     audit("WEBHOOK", f"Registado em {webhook_url}")
 
     task = asyncio.create_task(heartbeat_loop(_telegram_app), name="heartbeat_loop")

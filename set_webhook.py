@@ -12,7 +12,7 @@ WEBHOOK_URL = f"https://{DOMAIN}/telegram/webhook"
 if TOKEN:
     r = requests.post(
         f"https://api.telegram.org/bot{TOKEN}/setWebhook",
-        json={"url": WEBHOOK_URL, "drop_pending_updates": True},
+        json={"url": WEBHOOK_URL},
         timeout=10,
     )
     print(f"[set_webhook] {r.json()}")
