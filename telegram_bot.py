@@ -1728,9 +1728,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_id in pending_confirmations:
             acao = pending_confirmations[user_id]
             if any(p in texto for p in ("sim", "s", "yes", "confirmo", "vai", "prossegue", "faz",
-                                        "autorizo", "autoriza", "autorizava", "avança", "avanca",
-                                        "pode", "podes", "ok", "okay", "claro", "força", "forca",
-                                        "continua", "executa", "resolve", "corrige")):
+                                        "autorizo", "autoriza", "autorizava", "aprovo", "aprovado",
+                                        "avança", "avanca", "pode", "podes", "ok", "okay", "claro",
+                                        "força", "forca", "continua", "executa", "resolve", "corrige")):
                 del pending_confirmations[user_id]
                 audit("CONFIRMACAO_ACEITE", acao)
                 reply = get_morgan_reply(user_id, f"O Vasco confirmou. Prossegue com: {acao}")
