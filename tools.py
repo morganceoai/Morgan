@@ -522,12 +522,11 @@ def solver_railway_logs(linhas: int = 100) -> str:
     """Obtém os logs de produção do Railway via API GraphQL."""
     import os, requests as req
     token = os.getenv("RAILWAY_API_TOKEN", "")
-    project_id = os.getenv("RAILWAY_PROJECT_ID", "")
-    service_id = os.getenv("RAILWAY_SERVICE_ID", "")
+    # Railway injeta estas variáveis automaticamente em produção
+    project_id = os.getenv("RAILWAY_PROJECT_ID", "77619047-faab-42de-9a90-c525ae2f99f4")
+    service_id = os.getenv("RAILWAY_SERVICE_ID", "53a301b6-f998-4b9b-b736-cd6745065c2f")
     if not token:
         return "RAILWAY_API_TOKEN não configurado. Adiciona a variável no Railway."
-    if not project_id or not service_id:
-        return "RAILWAY_PROJECT_ID e RAILWAY_SERVICE_ID necessários. Obtém em railway.app → Settings."
     try:
         query = """
         query serviceInstanceLogs($projectId: String!, $serviceId: String!, $limit: Int) {
