@@ -187,7 +187,16 @@ def mem0_get(user_id: str, query: str) -> str:
         results = client.search(query=query, filters={"user_id": user_id}, limit=5)
         if not results:
             return ""
-        memorias = [r.get("memory", "") for r in results if r.get("memory")]
+        memorias = []
+        for r in results:
+            if isinstance(r, dict):
+                m = r.get("memory", "")
+            elif isinstance(r, str):
+                m = r
+            else:
+                continue
+            if m:
+                memorias.append(m)
         return "\n".join(f"- {m}" for m in memorias)
     except Exception as e:
         audit("MEM0_ERRO", str(e))
