@@ -585,18 +585,62 @@ Objetivo: €10.000/mês de rendimento passivo.
 - Se não tiveres a certeza da correcção, escala ao Vasco com o diagnóstico completo"""
 
 
+_SOLVER_PROBLEM_KEYWORDS = [
+    "erro", "error", "falhou", "falhar", "não funciona", "nao funciona",
+    "quebrado", "parou", "parou de", "bug", "problema com", "fix", "corrige",
+    "diagnostica", "verifica se", "está a dar erro", "crash", "exception",
+    "traceback", "timeout", "não responde", "nao responde", "não arranca",
+    "nao arranca", "503", "500", "502", "connection refused",
+]
+
+def _e_problema_tecnico(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in _SOLVER_PROBLEM_KEYWORDS)
+
+
 @traceable(name="morgan-solver", tags=["solver"])
 def get_solver_reply(user_id: str, user_message: str) -> str:
-    """Conversa direta com o Morgan Solver."""
+    """Conversa direta com o Morgan Solver. Usa LangGraph para problemas técnicos."""
     sid = "solver"
+    audit("SOLVER_MENSAGEM", user_message[:100])
 
+    # Modo LangGraph — para diagnóstico e correção estruturada
+    if _e_problema_tecnico(user_message):
+        try:
+            from solver_graph import solver_diagnosticar
+            audit("SOLVER_LANGGRAPH", "iniciando grafo")
+            resultado = solver_diagnosticar(user_message)
+            relatorio = resultado.get("relatorio", "Solver: sem relatório gerado.")
+            requer_aprovacao = resultado.get("requer_aprovacao", False)
+
+            if requer_aprovacao:
+                reply = (
+                    f"[SOLVER — DIAGNÓSTICO]\n{relatorio}\n\n"
+                    "⚠️ Este plano requer a tua aprovação antes de executar. "
+                    "Diz 'aprova' para prosseguir ou 'cancela' para abortar."
+                )
+            else:
+                reply = f"[SOLVER — RELATÓRIO]\n{relatorio}"
+
+            save_message(sid, "user", user_message)
+            save_message(sid, "assistant", reply)
+            mem0_add("solver", [
+                {"role": "user", "content": user_message},
+                {"role": "assistant", "content": reply}
+            ])
+            audit("SOLVER_LANGGRAPH_OK", reply[:100])
+            return reply
+        except Exception as e:
+            audit("SOLVER_LANGGRAPH_ERRO", str(e))
+            # Fallback para modo conversacional se LangGraph falhar
+
+    # Modo conversacional — para perguntas e discussões técnicas
     if sid not in solver_histories:
         solver_histories[sid] = get_context_messages(sid)
 
     history = solver_histories[sid]
     history.append({"role": "user", "content": user_message})
     save_message(sid, "user", user_message)
-    audit("SOLVER_MENSAGEM", user_message[:100])
 
     while True:
         response = anthropic_client.messages.create(
