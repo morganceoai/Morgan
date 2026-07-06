@@ -217,6 +217,23 @@ def save_estado_imperio(conteudo: str):
         f.write(conteudo)
     os.replace(tmp, IMPERIO_FILE)
 
+def _ceo_actualizar_imperio(evento: str):
+    """CEO regista um evento relevante no estado_imperio.md automaticamente."""
+    try:
+        agora = agora_lisboa().strftime("%d/%m/%Y %H:%M")
+        estado = load_estado_imperio()
+        linha = f"\n- [{agora}] {evento}"
+        # Adiciona à secção de eventos recentes ou cria-a
+        if "## Eventos recentes" in estado:
+            estado = estado.replace("## Eventos recentes", f"## Eventos recentes{linha}", 1)
+        else:
+            estado += f"\n\n## Eventos recentes{linha}"
+        save_estado_imperio(estado)
+        audit("IMPERIO_ACTUALIZADO", evento[:80])
+    except Exception as e:
+        audit("IMPERIO_ERRO", str(e))
+
+
 def load_decisoes_pendentes() -> list:
     if os.path.exists(DECISOES_FILE):
         with open(DECISOES_FILE, "r", encoding="utf-8") as f:
@@ -417,6 +434,12 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         if _tem_decisao_pendente(user_message):
             save_decisao_pendente(user_message[:120])
             audit("DECISAO_PENDENTE", user_message[:80])
+
+        # CEO actualiza o estado do império após tópicos relevantes
+        _TOPICOS_IMPERIO = ["aprova", "negócio", "negocio", "scout", "oportunidade",
+                            "receita", "€", "contrato", "moreirense", "decisão", "decisao"]
+        if any(t in user_message.lower() for t in _TOPICOS_IMPERIO):
+            _ceo_actualizar_imperio(f"Conversa com Vasco: {user_message[:100]}")
 
         # Sliding window — estima tokens (4 chars ≈ 1 token), mantém abaixo de 150k tokens
         total_chars = sum(len(str(m.get("content", ""))) for m in history)
@@ -923,6 +946,7 @@ async def run_solver_check(app) -> None:
             )
             await enviar_seguro(app.bot, f"[CEO sobre alerta do Solver]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
             audit("SOLVER_ALERTA", "Problemas detetados — CEO informou o Vasco")
+            _ceo_actualizar_imperio(f"Solver detectou problema: {saude[:200]}")
 
         except Exception as solver_erro:
             # Solver falhou — CEO assume e alerta diretamente
