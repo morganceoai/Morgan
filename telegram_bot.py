@@ -1499,9 +1499,14 @@ async def health():
 
 @llm_api.post("/telegram/webhook")
 async def telegram_webhook(request: FastAPIRequest):
-    data = await request.json()
-    update = Update.de_json(data, _telegram_app.bot)
-    await _telegram_app.process_update(update)
+    try:
+        data = await request.json()
+        update = Update.de_json(data, _telegram_app.bot)
+        await _telegram_app.process_update(update)
+    except Exception as e:
+        audit("WEBHOOK_ERRO", str(e))
+        import traceback
+        audit("WEBHOOK_TRACEBACK", traceback.format_exc()[:500])
     return {"ok": True}
 
 
