@@ -1500,12 +1500,84 @@ async def cmd_testar_solver(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("Nada para restaurar.")
 
+    elif teste == "autonomia_sim":
+        # Teste autonomia — CEO deve autorizar sozinho (erro isolado reversível)
+        await update.message.reply_text(
+            "Teste de autonomia iniciado.\n"
+            "Simulo erro isolado reversível — CEO deve resolver SEM te contactar.\n"
+            "Verifica decisoes_autonomas.json no final."
+        )
+        loop = asyncio.get_event_loop()
+        async def _run():
+            problema = "MEM0_ERRO: str object has no attribute get — erro isolado no mem0_get()"
+            from solver_graph import solver_diagnosticar
+            estado = await loop.run_in_executor(None, solver_diagnosticar, problema)
+            avaliacao = ceo_avaliar_confianca(estado)
+            if avaliacao["autorizar"]:
+                save_decisao_autonoma(problema, estado.get("relatorio","")[:200], avaliacao["confianca_ceo"], "Solver")
+                _ceo_actualizar_imperio(f"[TESTE] Solver resolveu autonomamente: {problema[:80]}")
+                await update.message.reply_text(
+                    f"RESULTADO: CEO autorizou autonomamente.\n"
+                    f"Confiança CEO: {avaliacao['confianca_ceo']}%\n"
+                    f"Solver — diag: {estado.get('confianca_diagnostico')}% | sol: {estado.get('confianca_solucao')}%\n"
+                    f"Motivo: {avaliacao['motivo'][:200]}\n\n"
+                    f"Decisão registada em decisoes_autonomas.json."
+                )
+            else:
+                await update.message.reply_text(
+                    f"INESPERADO: CEO não autorizou (confiança {avaliacao['confianca_ceo']}%).\n{avaliacao['motivo']}"
+                )
+        asyncio.create_task(_run())
+
+    elif teste == "autonomia_nao":
+        # Teste escalada — CEO deve contactar o Vasco (problema crítico)
+        await update.message.reply_text(
+            "Teste de escalada iniciado.\n"
+            "Simulo problema crítico — CEO DEVE contactar-te.\n"
+            "Aguarda mensagem do CEO em segundos."
+        )
+        loop = asyncio.get_event_loop()
+        async def _run_escala():
+            problema = "Railway deploy falhou — base de dados Supabase inacessível, perda de dados possível"
+            from solver_graph import solver_diagnosticar
+            estado = await loop.run_in_executor(None, solver_diagnosticar, problema)
+            # Força impacto crítico para garantir escalada no teste
+            estado["impacto"] = "crítico"
+            avaliacao = ceo_avaliar_confianca(estado)
+            if not avaliacao["autorizar"]:
+                c = avaliacao.get("confianca_solver", {})
+                traducao = get_morgan_reply(
+                    "vasco",
+                    f"Problema detectado. Confiança CEO: {avaliacao['confianca_ceo']}% — insuficiente para agir sozinho.\n\n"
+                    f"Diagnóstico Solver: {estado.get('relatorio','')[:500]}\n\n"
+                    f"Explica ao Vasco em linguagem simples o que se passa e o que precisas de autorização para fazer. Máximo 5 linhas."
+                )
+                await update.message.reply_text(
+                    f"[CEO — confiança {avaliacao['confianca_ceo']}%]\n\n{traducao}"
+                )
+            else:
+                await update.message.reply_text(
+                    f"INESPERADO: CEO autorizou sozinho (confiança {avaliacao['confianca_ceo']}%). Rever regras."
+                )
+        asyncio.create_task(_run_escala())
+
+    elif teste == "report":
+        # Teste do report diário — força geração imediata
+        await update.message.reply_text("A gerar report diário de teste...")
+        loop = asyncio.get_event_loop()
+        async def _run_report():
+            await run_daily_report(context.application)
+        asyncio.create_task(_run_report())
+
     else:
         await update.message.reply_text(
             "Testes disponíveis:\n"
             "/testar_solver 1 — erro no audit.log\n"
             "/testar_solver 2 — corromper heartbeat_state.json\n"
             "/testar_solver 3 — remover factos.md\n"
+            "/testar_solver autonomia_sim — CEO resolve sozinho (erro isolado)\n"
+            "/testar_solver autonomia_nao — CEO escala ao Vasco (problema crítico)\n"
+            "/testar_solver report — gera report diário agora\n"
             "/testar_solver restaurar — restauro manual de emergência"
         )
 
@@ -1687,6 +1759,7 @@ async def lifespan(fastapi_app: "FastAPI"):
     )
     _telegram_app.add_handler(CommandHandler("status", cmd_status))
     _telegram_app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
+    _telegram_app.add_handler(CommandHandler("testar_autonomia", cmd_testar_solver))
     _telegram_app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))
 
     await _telegram_app.initialize()
