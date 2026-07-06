@@ -1378,11 +1378,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Se vai para o Solver com LangGraph, responde imediatamente e corre em background
     if _quer_solver(user_message) and not _quer_ceo(user_message):
+        audit("SOLVER_TRIGGER", f"Routing para Solver: {user_message[:80]}")
         await update.message.reply_text("🔍 A diagnosticar... (pode demorar 1-2 minutos)")
         loop = asyncio.get_event_loop()
         try:
             reply = await loop.run_in_executor(None, get_agente_reply, user_id, user_message)
         except Exception as e:
+            audit("SOLVER_TRIGGER_ERRO", str(e))
             reply = f"Erro no Solver: {e}"
         await enviar_seguro(update.message, reply)
         return
