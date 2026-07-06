@@ -1064,6 +1064,8 @@ _IGNORAR_PREFIXOS = [
     "SOLVER_CHECK_ERRO",  # evita loop infinito
     "SOLVER_TRIGGER",
     "SOLVER_ALERTA",
+    "MEM0_ERRO",       # Mem0 é não-crítico — Morgan funciona sem ele
+    "MEM0_INIT_ERRO",  # falha de inicialização do Mem0 também não é crítica
 ]
 
 
