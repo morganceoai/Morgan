@@ -217,6 +217,82 @@ def save_estado_imperio(conteudo: str):
         f.write(conteudo)
     os.replace(tmp, IMPERIO_FILE)
 
+DECISOES_AUTONOMAS_FILE = os.path.join(BASE_DIR, "memory", "decisoes_autonomas.json")
+
+def load_decisoes_autonomas() -> list:
+    if os.path.exists(DECISOES_AUTONOMAS_FILE):
+        with open(DECISOES_AUTONOMAS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f).get("decisoes", [])
+    return []
+
+def save_decisao_autonoma(problema: str, solucao: str, confianca: int, agente: str):
+    decisoes = load_decisoes_autonomas()
+    decisoes.append({
+        "data": agora_lisboa().strftime("%d/%m/%Y %H:%M"),
+        "problema": problema[:200],
+        "solucao": solucao[:200],
+        "confianca": confianca,
+        "agente": agente,
+        "resultado": "pendente"
+    })
+    with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
+
+def marcar_decisao_autonoma_resolvida(problema: str):
+    decisoes = load_decisoes_autonomas()
+    for d in reversed(decisoes):
+        if d["problema"][:50] in problema or problema[:50] in d["problema"]:
+            d["resultado"] = "resolvido"
+            break
+    with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
+
+def ceo_avaliar_confianca(problema: str, diagnostico: str) -> int:
+    """CEO avalia confiança (0-100) para decidir se autoriza o Solver autonomamente.
+
+    ≥ 90 → CEO autoriza sozinho, não interrompe o Vasco
+    < 90 → CEO escala ao Vasco
+    """
+    confianca = 50  # base
+
+    # Sinais que aumentam confiança
+    if any(p in problema.lower() for p in ["mem0", "webhook", "import", "syntax", "dependência", "requirements"]):
+        confianca += 25  # problemas técnicos conhecidos e isolados
+    if any(p in diagnostico.lower() for p in ["linha", "uma linha", "cirúrgico", "reversível", "baixo risco"]):
+        confianca += 20
+    if "já foi corrigido" in diagnostico.lower() or "commit recente" in diagnostico.lower():
+        confianca += 30  # já resolvido, só confirmar
+    if any(p in diagnostico.lower() for p in ["backup", "reversível", "sem impacto no utilizador"]):
+        confianca += 15
+
+    # Sinais que diminuem confiança
+    if any(p in problema.lower() for p in ["base de dados", "supabase", "railway", "deploy", "produção"]):
+        confianca -= 20  # impacto em infraestrutura
+    if any(p in diagnostico.lower() for p in ["irreversível", "perda de dados", "estrutural", "crítico"]):
+        confianca -= 30
+    if "não sei" in diagnostico.lower() or "incerto" in diagnostico.lower():
+        confianca -= 25
+
+    return max(0, min(100, confianca))
+
+
+def should_run_daily_report() -> bool:
+    """Corre uma vez por dia às 22h."""
+    agora = agora_lisboa()
+    if agora.hour != 22:
+        return False
+    state = load_state()
+    chave = f"daily_report_{agora.strftime('%Y-%m-%d')}"
+    return not state.get(chave, False)
+
+def mark_daily_report_done():
+    agora = agora_lisboa()
+    state = load_state()
+    chave = f"daily_report_{agora.strftime('%Y-%m-%d')}"
+    state[chave] = True
+    save_state(state)
+
+
 def _ceo_actualizar_imperio(evento: str):
     """CEO regista um evento relevante no estado_imperio.md automaticamente."""
     try:
@@ -936,17 +1012,33 @@ async def run_solver_check(app) -> None:
             # Solver diagnostica tecnicamente
             diagnostico_tecnico = get_solver_reply(
                 "vasco",
-                f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica de forma técnica e concisa."
+                f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica de forma técnica e concisa. Indica se a correção é reversível e o nível de risco."
             )
-            # CEO traduz para linguagem humana e informa o Vasco
-            traducao = get_morgan_reply(
-                "vasco",
-                f"O Solver detetou um problema técnico e fez este diagnóstico:\n\n{diagnostico_tecnico}\n\n"
-                f"Explica ao Vasco em linguagem simples o que se passa, o impacto real no Morgan, e o que precisas de autorização para fazer. Máximo 5 linhas."
-            )
-            await enviar_seguro(app.bot, f"[CEO sobre alerta do Solver]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
-            audit("SOLVER_ALERTA", "Problemas detetados — CEO informou o Vasco")
-            _ceo_actualizar_imperio(f"Solver detectou problema: {saude[:200]}")
+
+            # CEO avalia confiança para decidir se autoriza sozinho
+            confianca = ceo_avaliar_confianca(saude, diagnostico_tecnico)
+            audit("CEO_CONFIANCA", f"{confianca}% — {'autonomo' if confianca >= 90 else 'escalando ao Vasco'}")
+
+            if confianca >= 90:
+                # CEO autoriza o Solver autonomamente
+                audit("CEO_AUTORIZA_SOLVER", f"Confiança {confianca}% — a resolver sem interromper o Vasco")
+                solucao = get_solver_reply(
+                    "ceo_autonomo",
+                    f"CEO autorizou. Confiança: {confianca}%. Corrige o problema:\n\n{diagnostico_tecnico}\n\nExecuta a correção agora."
+                )
+                save_decisao_autonoma(saude, solucao, confianca, "Solver")
+                _ceo_actualizar_imperio(f"Solver corrigiu autonomamente (confiança {confianca}%): {saude[:100]}")
+                audit("CEO_SOLVER_RESOLVEU", f"Problema corrigido autonomamente: {saude[:80]}")
+            else:
+                # Confiança insuficiente — CEO escala ao Vasco
+                traducao = get_morgan_reply(
+                    "vasco",
+                    f"O Solver detetou um problema técnico e fez este diagnóstico:\n\n{diagnostico_tecnico}\n\n"
+                    f"Explica ao Vasco em linguagem simples o que se passa, o impacto real no Morgan, e o que precisas de autorização para fazer. Máximo 5 linhas. Menciona que a tua confiança para resolver sozinho é de {confianca}%."
+                )
+                await enviar_seguro(app.bot, f"[CEO sobre alerta do Solver]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
+                audit("SOLVER_ALERTA", f"Confiança {confianca}% — CEO informou o Vasco")
+                _ceo_actualizar_imperio(f"Solver detectou problema (confiança {confianca}%, escalado ao Vasco): {saude[:100]}")
 
         except Exception as solver_erro:
             # Solver falhou — CEO assume e alerta diretamente
@@ -1092,6 +1184,46 @@ No final, bloco JSON interno:
 Dados reais, não generalidades. Cada oportunidade tem de ser concreta o suficiente para o Vasco agir amanhã se quiser."""
 
 
+async def run_daily_report(app):
+    """Gera e envia o report diário ao Vasco com tudo o que aconteceu."""
+    hoje = agora_lisboa().strftime("%d/%m/%Y")
+
+    # Recolhe decisões autónomas do dia
+    todas = load_decisoes_autonomas()
+    do_dia = [d for d in todas if d.get("data", "").startswith(hoje.split("/")[0] + "/" + hoje.split("/")[1])]
+
+    # Recolhe audit.log do dia
+    try:
+        with open(AUDIT_FILE, "r", encoding="utf-8") as f:
+            linhas_audit = [l for l in f.readlines() if hoje[:5] in l or len(l) > 0]
+        audit_resumo = "".join(linhas_audit[-80:])
+    except Exception:
+        audit_resumo = "Sem dados de audit disponíveis."
+
+    # CEO gera o report em linguagem humana
+    prompt = f"""Gera o report diário do Morgan para o Vasco. Data: {hoje}.
+
+Decisões autónomas tomadas hoje (sem interromper o Vasco):
+{json.dumps(do_dia, ensure_ascii=False, indent=2) if do_dia else "Nenhuma decisão autónoma hoje."}
+
+Audit log do dia (resumo técnico):
+{audit_resumo[-3000:]}
+
+Instruções para o report:
+- Linguagem humana, directa, sem jargão técnico
+- Estrutura: o que aconteceu / quem resolveu / resultado
+- Se houve decisões autónomas: explica o que foi resolvido sem o Vasco ser interrompido
+- Se nada aconteceu de relevante: diz isso claramente
+- No final: estado geral do sistema (saudável / atenção / problema)
+- Máximo 15 linhas
+- Sem emojis"""
+
+    loop = asyncio.get_event_loop()
+    report = await loop.run_in_executor(None, get_morgan_reply, "vasco", prompt)
+    await enviar_seguro(app.bot, f"Report diário — {hoje}\n\n{report}", chat_id=TELEGRAM_CHAT_ID)
+    audit("DAILY_REPORT_ENVIADO", f"{len(do_dia)} decisões autónomas hoje")
+
+
 async def run_scout_report(app):
     """Gera e envia o relatório semanal do Morgan AI Scout."""
     messages = [{"role": "user", "content": "Gera o relatório semanal de oportunidades de negócio com IA."}]
@@ -1154,6 +1286,15 @@ async def heartbeat_loop(app):
                     await run_solver_check(app)
                 except Exception as e:
                     audit("SOLVER_CHECK_ERRO", str(e))
+
+            # Report diário às 22h
+            if should_run_daily_report():
+                mark_daily_report_done()
+                audit("DAILY_REPORT", "A gerar report diário")
+                try:
+                    await run_daily_report(app)
+                except Exception as e:
+                    audit("DAILY_REPORT_ERRO", str(e))
 
             # Scout semanal — domingos às 20h
             if should_run_scout():
