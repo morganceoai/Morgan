@@ -1,8 +1,10 @@
 """
 Morgan Solver v2 — LangGraph
-Fluxo estruturado: Diagnose → Plan → Execute → Verify → Report
+Fluxo: Diagnose → Plan → Execute → Verify → Report
+Cada nó reporta confiança individual (0-100%).
 """
 import os
+import re
 import json
 from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, END
@@ -24,26 +26,30 @@ def get_client():
 class SolverState(TypedDict):
     messages: Annotated[list, add_messages]
     problema: str
+    # Outputs por nó
     diagnostico: str
     plano: str
     execucao: str
     verificacao: str
     relatorio: str
+    # Confiança por passo (0-100)
+    confianca_diagnostico: int
+    confianca_solucao: int
+    confianca_execucao: int
+    confianca_verificacao: int
+    # Meta
+    reversivel: bool
+    impacto: str          # "isolado" | "sistémico" | "crítico"
     requer_aprovacao: bool
     aprovado: bool
     iteracoes: int
 
 
-# ── Ferramentas disponíveis ao Solver ─────────────────────────────────────────
+# ── Utilitários ───────────────────────────────────────────────────────────────
 
 def _get_tools():
     from tools import TOOLS
-    # Só as ferramentas do Solver
-    solver_tools = [
-        t for t in TOOLS
-        if t["name"].startswith("solver_") or t["name"] in ["pesquisar_web"]
-    ]
-    return solver_tools
+    return [t for t in TOOLS if t["name"].startswith("solver_") or t["name"] in ["pesquisar_web"]]
 
 def _run_tool(name: str, inp: dict) -> str:
     from tools import TOOL_FUNCTIONS
@@ -55,6 +61,14 @@ def _run_tool(name: str, inp: dict) -> str:
     except Exception as e:
         return f"Erro: {e}"
 
+def _extrair_confianca(texto: str, campo: str) -> int:
+    """Extrai CAMPO: XX% do texto do Claude."""
+    pattern = rf"{campo}[:\s]+(\d{{1,3}})%"
+    m = re.search(pattern, texto, re.IGNORECASE)
+    if m:
+        return min(100, max(0, int(m.group(1))))
+    return 50  # default conservador
+
 def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
     kwargs = {
         "model": "claude-opus-4-8",
@@ -62,15 +76,13 @@ def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
         "system": system,
         "messages": messages,
     }
-    if tools:
-        kwargs["tools"] = tools
-
     client = get_client()
     msgs = list(messages)
 
     while True:
         response = client.messages.create(**{**kwargs, "messages": msgs})
         if response.stop_reason == "tool_use" and tools:
+            kwargs["tools"] = tools
             msgs.append({"role": "assistant", "content": response.content})
             tool_results = []
             for block in response.content:
@@ -92,105 +104,137 @@ def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
 # ── Nós do grafo ──────────────────────────────────────────────────────────────
 
 def node_diagnostico(state: SolverState) -> SolverState:
-    """Nó 1 — Diagnostica o problema com ferramentas reais."""
-    system = """És o Morgan Solver — agente de diagnóstico técnico da BC Industries.
-Usa as ferramentas para diagnosticar o problema. Sê preciso e técnico.
-Responde APENAS com o diagnóstico — o que está errado, onde, e qual a causa provável."""
+    system = """És o Morgan Solver. Diagnostica o problema com as ferramentas disponíveis.
+
+Obrigatório no final da resposta, neste formato exacto:
+DIAGNÓSTICO: [o que está errado e porquê]
+CONFIANÇA_DIAGNÓSTICO: XX%
+REVERSÍVEL: sim/não
+IMPACTO: isolado/sistémico/crítico"""
 
     texto = _chamar_claude(
         system=system,
-        messages=[{"role": "user", "content": f"Diagnostica este problema: {state['problema']}"}],
+        messages=[{"role": "user", "content": f"Diagnostica: {state['problema']}"}],
         tools=_get_tools(),
     )
-    return {**state, "diagnostico": texto, "iteracoes": state.get("iteracoes", 0) + 1}
+
+    confianca = _extrair_confianca(texto, "CONFIANÇA_DIAGNÓSTICO")
+    reversivel = "REVERSÍVEL: sim" in texto.lower()
+    impacto = "crítico" if "crítico" in texto.lower() else ("sistémico" if "sistémico" in texto.lower() else "isolado")
+
+    return {**state,
+            "diagnostico": texto,
+            "confianca_diagnostico": confianca,
+            "reversivel": reversivel,
+            "impacto": impacto,
+            "iteracoes": state.get("iteracoes", 0) + 1}
 
 
 def node_plano(state: SolverState) -> SolverState:
-    """Nó 2 — Cria plano de correção e decide se requer aprovação."""
-    system = """És o Morgan Solver. Com base no diagnóstico, cria um plano de correção concreto.
-Indica claramente:
-1. O que vais fazer (passos específicos)
-2. Se é reversível ou irreversível
-3. Se requer aprovação do Vasco (sim/não)
+    system = """És o Morgan Solver. Com base no diagnóstico, cria o plano de correção.
 
-Formato da resposta:
-PLANO: [descrição dos passos]
-REVERSÍVEL: [sim/não]
-REQUER_APROVAÇÃO: [sim/não]
-MOTIVO: [porquê requer ou não aprovação]"""
+Obrigatório no final da resposta, neste formato exacto:
+PLANO: [passos concretos]
+CONFIANÇA_SOLUÇÃO: XX%
+REQUER_APROVAÇÃO: sim/não
+MOTIVO_APROVAÇÃO: [porquê requer ou não aprovação do CEO/Vasco]"""
 
     texto = _chamar_claude(
         system=system,
         messages=[
             {"role": "user", "content": f"Problema: {state['problema']}"},
-            {"role": "assistant", "content": f"Diagnóstico: {state['diagnostico']}"},
+            {"role": "assistant", "content": state["diagnostico"]},
             {"role": "user", "content": "Cria o plano de correção."},
         ],
     )
 
-    requer = "REQUER_APROVACAO: SIM" in texto.upper() or "REQUER_APROVAÇÃO: SIM" in texto.upper()
-    return {**state, "plano": texto, "requer_aprovacao": requer}
+    confianca = _extrair_confianca(texto, "CONFIANÇA_SOLUÇÃO")
+    requer = "REQUER_APROVAÇÃO: SIM" in texto.upper() or "REQUER_APROVACAO: SIM" in texto.upper()
+
+    return {**state,
+            "plano": texto,
+            "confianca_solucao": confianca,
+            "requer_aprovacao": requer}
 
 
 def node_aguardar_aprovacao(state: SolverState) -> SolverState:
-    """Nó 3a — Marca que aguarda aprovação (o CEO informa o Vasco)."""
-    return {**state, "aprovado": False}
+    return {**state, "aprovado": False, "confianca_execucao": 0}
 
 
 def node_execucao(state: SolverState) -> SolverState:
-    """Nó 3b — Executa a correção com ferramentas reais."""
-    system = """És o Morgan Solver. Executa o plano de correção usando as ferramentas disponíveis.
-Documenta cada passo que executas e o resultado.
-Se algo correr mal, para e reporta."""
+    system = """És o Morgan Solver. Executa o plano aprovado com as ferramentas disponíveis.
+Documenta cada passo e o resultado. Se algo correr mal, para imediatamente.
+
+Obrigatório no final da resposta, neste formato exacto:
+EXECUÇÃO: [o que foi feito]
+CONFIANÇA_EXECUÇÃO: XX%"""
 
     texto = _chamar_claude(
         system=system,
         messages=[
             {"role": "user", "content": f"Problema: {state['problema']}"},
-            {"role": "assistant", "content": f"Diagnóstico: {state['diagnostico']}"},
+            {"role": "assistant", "content": state["diagnostico"]},
             {"role": "user", "content": f"Plano aprovado: {state['plano']}"},
-            {"role": "user", "content": "Executa o plano agora."},
+            {"role": "user", "content": "Executa agora."},
         ],
         tools=_get_tools(),
     )
-    return {**state, "execucao": texto}
+
+    confianca = _extrair_confianca(texto, "CONFIANÇA_EXECUÇÃO")
+    return {**state, "execucao": texto, "confianca_execucao": confianca}
 
 
 def node_verificacao(state: SolverState) -> SolverState:
-    """Nó 4 — Verifica se a correção funcionou."""
-    system = """És o Morgan Solver. Verifica se o problema foi resolvido.
-Usa as ferramentas para confirmar. Responde com:
-RESULTADO: [RESOLVIDO / PARCIALMENTE_RESOLVIDO / NÃO_RESOLVIDO]
-DETALHES: [o que verificaste]"""
+    system = """És o Morgan Solver. Verifica se o problema foi resolvido com as ferramentas disponíveis.
+
+Obrigatório no final da resposta, neste formato exacto:
+RESULTADO: RESOLVIDO / PARCIALMENTE_RESOLVIDO / NÃO_RESOLVIDO
+CONFIANÇA_VERIFICAÇÃO: XX%
+DETALHES: [o que verificaste e como]"""
 
     texto = _chamar_claude(
         system=system,
         messages=[
             {"role": "user", "content": f"Problema original: {state['problema']}"},
             {"role": "assistant", "content": f"Correção executada: {state['execucao']}"},
-            {"role": "user", "content": "Verifica se o problema foi resolvido."},
+            {"role": "user", "content": "Verifica se está resolvido."},
         ],
         tools=_get_tools(),
     )
-    return {**state, "verificacao": texto}
+
+    confianca = _extrair_confianca(texto, "CONFIANÇA_VERIFICAÇÃO")
+    return {**state, "verificacao": texto, "confianca_verificacao": confianca}
 
 
 def node_relatorio(state: SolverState) -> SolverState:
-    """Nó 5 — Gera relatório final para o CEO traduzir ao Vasco."""
-    partes = [
-        f"PROBLEMA: {state['problema']}",
-        f"DIAGNÓSTICO: {state['diagnostico']}",
-    ]
+    """Gera relatório estruturado para o CEO — inclui confiança por passo."""
+
     if state.get("requer_aprovacao") and not state.get("aprovado"):
-        partes.append(f"PLANO (aguarda aprovação): {state['plano']}")
-        relatorio = "\n\n".join(partes)
+        relatorio = (
+            f"PROBLEMA: {state['problema']}\n\n"
+            f"DIAGNÓSTICO (confiança {state.get('confianca_diagnostico', '?')}%):\n{state['diagnostico']}\n\n"
+            f"PLANO PROPOSTO (confiança solução {state.get('confianca_solucao', '?')}%):\n{state['plano']}\n\n"
+            f"REVERSÍVEL: {'Sim' if state.get('reversivel') else 'Não'}\n"
+            f"IMPACTO: {state.get('impacto', 'desconhecido')}\n\n"
+            f"AGUARDA APROVAÇÃO DO CEO/VASCO"
+        )
     else:
-        partes += [
-            f"PLANO: {state['plano']}",
-            f"EXECUÇÃO: {state['execucao']}",
-            f"VERIFICAÇÃO: {state['verificacao']}",
-        ]
-        relatorio = "\n\n".join(partes)
+        confianca_media = int((
+            state.get('confianca_diagnostico', 0) +
+            state.get('confianca_solucao', 0) +
+            state.get('confianca_execucao', 0) +
+            state.get('confianca_verificacao', 0)
+        ) / 4)
+
+        relatorio = (
+            f"PROBLEMA: {state['problema']}\n\n"
+            f"DIAGNÓSTICO (confiança {state.get('confianca_diagnostico', '?')}%):\n{state['diagnostico']}\n\n"
+            f"PLANO (confiança solução {state.get('confianca_solucao', '?')}%):\n{state['plano']}\n\n"
+            f"EXECUÇÃO (confiança execução {state.get('confianca_execucao', '?')}%):\n{state['execucao']}\n\n"
+            f"VERIFICAÇÃO (confiança verificação {state.get('confianca_verificacao', '?')}%):\n{state['verificacao']}\n\n"
+            f"REVERSÍVEL: {'Sim' if state.get('reversivel') else 'Não'} | IMPACTO: {state.get('impacto', 'desconhecido')}\n"
+            f"CONFIANÇA GLOBAL: {confianca_media}%"
+        )
 
     return {**state, "relatorio": relatorio}
 
@@ -234,12 +278,11 @@ def build_solver_graph():
 _graph = None
 
 def solver_diagnosticar(problema: str, aprovado: bool = False) -> dict:
-    """Corre o grafo do Solver para um problema dado. Devolve o estado final."""
     global _graph
     if _graph is None:
         _graph = build_solver_graph()
 
-    estado_inicial = {
+    estado_inicial: SolverState = {
         "messages": [],
         "problema": problema,
         "diagnostico": "",
@@ -247,10 +290,15 @@ def solver_diagnosticar(problema: str, aprovado: bool = False) -> dict:
         "execucao": "",
         "verificacao": "",
         "relatorio": "",
+        "confianca_diagnostico": 0,
+        "confianca_solucao": 0,
+        "confianca_execucao": 0,
+        "confianca_verificacao": 0,
+        "reversivel": True,
+        "impacto": "isolado",
         "requer_aprovacao": False,
         "aprovado": aprovado,
         "iteracoes": 0,
     }
 
-    resultado = _graph.invoke(estado_inicial)
-    return resultado
+    return _graph.invoke(estado_inicial)

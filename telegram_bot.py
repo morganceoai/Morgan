@@ -247,33 +247,90 @@ def marcar_decisao_autonoma_resolvida(problema: str):
     with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
         json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
 
-def ceo_avaliar_confianca(problema: str, diagnostico: str) -> int:
-    """CEO avalia confiança (0-100) para decidir se autoriza o Solver autonomamente.
+def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
+    """CEO avalia se pode autorizar o Solver autonomamente.
 
-    ≥ 90 → CEO autoriza sozinho, não interrompe o Vasco
-    < 90 → CEO escala ao Vasco
+    Recebe o estado completo do Solver (com confiança por passo).
+    Devolve dict com:
+      - confianca_ceo: 0-100 (confiança do CEO na decisão)
+      - autorizar: bool (True = CEO autoriza sozinho)
+      - motivo: str (explicação da decisão)
+
+    Regra absoluta: se qualquer dimensão < 70% ou impacto crítico → escalar ao Vasco.
+    CEO só autoriza sozinho se confianca_ceo ≥ 90.
     """
-    confianca = 50  # base
+    # Confiança do Solver por passo
+    c_diag = relatorio_solver.get("confianca_diagnostico", 0)
+    c_sol  = relatorio_solver.get("confianca_solucao", 0)
+    c_exec = relatorio_solver.get("confianca_execucao", 0)
+    c_ver  = relatorio_solver.get("confianca_verificacao", 0)
+    reversivel = relatorio_solver.get("reversivel", False)
+    impacto = relatorio_solver.get("impacto", "crítico")
 
-    # Sinais que aumentam confiança
-    if any(p in problema.lower() for p in ["mem0", "webhook", "import", "syntax", "dependência", "requirements"]):
-        confianca += 25  # problemas técnicos conhecidos e isolados
-    if any(p in diagnostico.lower() for p in ["linha", "uma linha", "cirúrgico", "reversível", "baixo risco"]):
-        confianca += 20
-    if "já foi corrigido" in diagnostico.lower() or "commit recente" in diagnostico.lower():
-        confianca += 30  # já resolvido, só confirmar
-    if any(p in diagnostico.lower() for p in ["backup", "reversível", "sem impacto no utilizador"]):
-        confianca += 15
+    # Avaliação de risco independente do CEO
+    # (CEO não precisa de saber Python — avalia risco e reversibilidade)
+    penalizacoes = []
+    bonus = []
 
-    # Sinais que diminuem confiança
-    if any(p in problema.lower() for p in ["base de dados", "supabase", "railway", "deploy", "produção"]):
-        confianca -= 20  # impacto em infraestrutura
-    if any(p in diagnostico.lower() for p in ["irreversível", "perda de dados", "estrutural", "crítico"]):
-        confianca -= 30
-    if "não sei" in diagnostico.lower() or "incerto" in diagnostico.lower():
-        confianca -= 25
+    # Regras de eliminação imediata
+    if impacto == "crítico":
+        return {"confianca_ceo": 0, "autorizar": False,
+                "motivo": f"Impacto crítico — escalar sempre ao Vasco independentemente da confiança do Solver."}
 
-    return max(0, min(100, confianca))
+    if not reversivel:
+        penalizacoes.append(("irreversível", -40))
+
+    if impacto == "sistémico":
+        penalizacoes.append(("impacto sistémico", -25))
+
+    # Confiança mínima do Solver por passo — qualquer passo < 70% é sinal de dúvida
+    for nome, val in [("diagnóstico", c_diag), ("solução", c_sol)]:
+        if val < 70:
+            penalizacoes.append((f"Solver incerto no {nome} ({val}%)", -30))
+        elif val >= 90:
+            bonus.append((f"Solver confiante no {nome} ({val}%)", +10))
+
+    # Execução e verificação só existem se o Solver já executou
+    if c_exec > 0:
+        if c_exec < 70:
+            penalizacoes.append((f"Solver incerto na execução ({c_exec}%)", -25))
+        if c_ver < 70:
+            penalizacoes.append((f"Solver incerto na verificação ({c_ver}%)", -20))
+        if c_ver >= 90:
+            bonus.append((f"Verificação confirmada ({c_ver}%)", +15))
+
+    if reversivel:
+        bonus.append(("acção reversível", +20))
+
+    if impacto == "isolado":
+        bonus.append(("impacto isolado", +15))
+
+    # Confiança base do CEO = média dos passos do Solver, ajustada
+    base = int((c_diag + c_sol) / 2) if c_exec == 0 else int((c_diag + c_sol + c_exec + c_ver) / 4)
+    total_pen = sum(v for _, v in penalizacoes)
+    total_bon = sum(v for _, v in bonus)
+    confianca_ceo = max(0, min(100, base + total_bon + total_pen))
+
+    autorizar = confianca_ceo >= 90
+
+    motivo_partes = []
+    if bonus:
+        motivo_partes.append("Factores positivos: " + ", ".join(f"{n} (+{abs(v)}%)" for n, v in bonus))
+    if penalizacoes:
+        motivo_partes.append("Factores negativos: " + ", ".join(f"{n} ({v}%)" for n, v in penalizacoes))
+    motivo_partes.append(f"Confiança CEO: {confianca_ceo}% → {'AUTORIZA AUTONOMAMENTE' if autorizar else 'ESCALA AO VASCO'}")
+
+    return {
+        "confianca_ceo": confianca_ceo,
+        "autorizar": autorizar,
+        "motivo": " | ".join(motivo_partes),
+        "confianca_solver": {
+            "diagnostico": c_diag,
+            "solucao": c_sol,
+            "execucao": c_exec,
+            "verificacao": c_ver,
+        }
+    }
 
 
 def should_run_daily_report() -> bool:
@@ -1015,30 +1072,52 @@ async def run_solver_check(app) -> None:
                 f"Deteção automática de problemas:\n\n{saude}\n\nDiagnostica de forma técnica e concisa. Indica se a correção é reversível e o nível de risco."
             )
 
-            # CEO avalia confiança para decidir se autoriza sozinho
-            confianca = ceo_avaliar_confianca(saude, diagnostico_tecnico)
-            audit("CEO_CONFIANCA", f"{confianca}% — {'autonomo' if confianca >= 90 else 'escalando ao Vasco'}")
+            # Solver corre o grafo completo com confiança por passo
+            try:
+                from solver_graph import solver_diagnosticar
+                estado_solver = solver_diagnosticar(saude)
+            except Exception as e:
+                audit("SOLVER_GRAPH_ERRO", str(e))
+                estado_solver = {"relatorio": diagnostico_tecnico,
+                                 "confianca_diagnostico": 50, "confianca_solucao": 50,
+                                 "confianca_execucao": 0, "confianca_verificacao": 0,
+                                 "reversivel": False, "impacto": "sistémico"}
 
-            if confianca >= 90:
-                # CEO autoriza o Solver autonomamente
-                audit("CEO_AUTORIZA_SOLVER", f"Confiança {confianca}% — a resolver sem interromper o Vasco")
-                solucao = get_solver_reply(
-                    "ceo_autonomo",
-                    f"CEO autorizou. Confiança: {confianca}%. Corrige o problema:\n\n{diagnostico_tecnico}\n\nExecuta a correção agora."
+            # CEO avalia com base nos dados granulares do Solver
+            avaliacao = ceo_avaliar_confianca(estado_solver)
+            confianca_ceo = avaliacao["confianca_ceo"]
+            audit("CEO_CONFIANCA", f"CEO:{confianca_ceo}% | Solver: diag={estado_solver.get('confianca_diagnostico')}% sol={estado_solver.get('confianca_solucao')}% | {avaliacao['motivo'][:100]}")
+
+            if avaliacao["autorizar"]:
+                # CEO autoriza autonomamente — não interrompe o Vasco
+                audit("CEO_AUTORIZA_SOLVER", f"Confiança CEO {confianca_ceo}% — resolvendo autonomamente")
+                save_decisao_autonoma(
+                    problema=saude,
+                    solucao=estado_solver.get("relatorio", "")[:200],
+                    confianca=confianca_ceo,
+                    agente="Solver"
                 )
-                save_decisao_autonoma(saude, solucao, confianca, "Solver")
-                _ceo_actualizar_imperio(f"Solver corrigiu autonomamente (confiança {confianca}%): {saude[:100]}")
-                audit("CEO_SOLVER_RESOLVEU", f"Problema corrigido autonomamente: {saude[:80]}")
+                _ceo_actualizar_imperio(f"Solver corrigiu autonomamente (CEO {confianca_ceo}%): {saude[:100]}")
+                audit("CEO_SOLVER_RESOLVEU", f"Resolvido autonomamente: {saude[:80]}")
             else:
-                # Confiança insuficiente — CEO escala ao Vasco
+                # Confiança insuficiente — CEO explica ao Vasco e pede autorização
+                c_solver = avaliacao.get("confianca_solver", {})
+                contexto = (
+                    f"Relatório do Solver:\n{estado_solver.get('relatorio', diagnostico_tecnico)}\n\n"
+                    f"Confiança por passo — Diagnóstico: {c_solver.get('diagnostico', '?')}% | "
+                    f"Solução: {c_solver.get('solucao', '?')}% | "
+                    f"Confiança CEO: {confianca_ceo}%\n"
+                    f"Motivo da escalada: {avaliacao['motivo']}"
+                )
                 traducao = get_morgan_reply(
                     "vasco",
-                    f"O Solver detetou um problema técnico e fez este diagnóstico:\n\n{diagnostico_tecnico}\n\n"
-                    f"Explica ao Vasco em linguagem simples o que se passa, o impacto real no Morgan, e o que precisas de autorização para fazer. Máximo 5 linhas. Menciona que a tua confiança para resolver sozinho é de {confianca}%."
+                    f"O Solver detectou um problema. Tenho {confianca_ceo}% de confiança para resolver sozinho — insuficiente para agir sem ti.\n\n"
+                    f"{contexto}\n\n"
+                    f"Explica ao Vasco em linguagem simples: o que está mal, o impacto real, e o que precisas de autorização para fazer. Máximo 6 linhas."
                 )
-                await enviar_seguro(app.bot, f"[CEO sobre alerta do Solver]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
-                audit("SOLVER_ALERTA", f"Confiança {confianca}% — CEO informou o Vasco")
-                _ceo_actualizar_imperio(f"Solver detectou problema (confiança {confianca}%, escalado ao Vasco): {saude[:100]}")
+                await enviar_seguro(app.bot, f"[CEO — confiança {confianca_ceo}%]\n\n{traducao}", chat_id=TELEGRAM_CHAT_ID)
+                audit("SOLVER_ALERTA", f"Escalado ao Vasco — CEO {confianca_ceo}%")
+                _ceo_actualizar_imperio(f"Problema escalado ao Vasco (CEO {confianca_ceo}%): {saude[:100]}")
 
         except Exception as solver_erro:
             # Solver falhou — CEO assume e alerta diretamente
