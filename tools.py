@@ -521,12 +521,12 @@ _CMD_WHITELIST = ["ps", "grep", "tail", "head", "cat", "ls", "wc", "df", "free",
 def solver_railway_logs(linhas: int = 100) -> str:
     """Obtém os logs de produção do Railway via API GraphQL."""
     import os, requests as req
-    token = os.getenv("RAILWAY_API_TOKEN", "")
-    # Railway injeta estas variáveis automaticamente em produção
-    project_id = os.getenv("RAILWAY_PROJECT_ID", "77619047-faab-42de-9a90-c525ae2f99f4")
-    service_id = os.getenv("RAILWAY_SERVICE_ID", "53a301b6-f998-4b9b-b736-cd6745065c2f")
+    # MORGAN_RAILWAY_TOKEN evita conflito com variáveis reservadas pelo Railway (RAILWAY_*)
+    token = os.getenv("MORGAN_RAILWAY_TOKEN", "")
+    project_id = "77619047-faab-42de-9a90-c525ae2f99f4"
+    service_id = "53a301b6-f998-4b9b-b736-cd6745065c2f"
     if not token:
-        return "RAILWAY_API_TOKEN não configurado. Adiciona a variável no Railway."
+        return "MORGAN_RAILWAY_TOKEN não configurado. Adiciona a variável no Railway (não usar prefixo RAILWAY_ — é reservado)."
     try:
         # Railway API v2 — obtém o deployment mais recente e os seus logs
         # Passo 1: último deployment do serviço
