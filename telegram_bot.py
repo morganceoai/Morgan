@@ -184,7 +184,7 @@ def mem0_get(user_id: str, query: str) -> str:
         client = get_mem0_client()
         if not client:
             return ""
-        results = client.search(query=query, user_id=user_id, limit=5)
+        results = client.search(query=query, filters={"user_id": user_id}, limit=5)
         if not results:
             return ""
         memorias = [r.get("memory", "") for r in results if r.get("memory")]
