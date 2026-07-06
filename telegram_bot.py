@@ -247,6 +247,42 @@ def marcar_decisao_autonoma_resolvida(problema: str):
     with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
         json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
 
+def _ceo_track_record(problema: str) -> dict:
+    """Consulta histórico de decisões passadas para problemas semelhantes.
+    Devolve bonus de confiança e contexto baseado em sucessos/falhas anteriores."""
+    decisoes = load_decisoes_autonomas()
+    if not decisoes:
+        return {"bonus": 0, "contexto": ""}
+
+    palavras = set(problema.lower().split())
+    semelhantes = []
+    for d in decisoes:
+        p_palavras = set(d.get("problema", "").lower().split())
+        overlap = len(palavras & p_palavras) / max(len(palavras), 1)
+        if overlap >= 0.3:
+            semelhantes.append(d)
+
+    if not semelhantes:
+        return {"bonus": 0, "contexto": ""}
+
+    total = len(semelhantes)
+    resolvidos = sum(1 for d in semelhantes if d.get("resultado") == "resolvido")
+    taxa = resolvidos / total if total > 0 else 0
+
+    # Bonus proporcional à taxa de sucesso histórico
+    if taxa >= 0.8:
+        bonus = 15
+        texto = f"histórico favorável ({resolvidos}/{total} resolvidos com sucesso)"
+    elif taxa >= 0.5:
+        bonus = 5
+        texto = f"histórico misto ({resolvidos}/{total} resolvidos)"
+    else:
+        bonus = -10
+        texto = f"histórico desfavorável ({resolvidos}/{total} resolvidos)"
+
+    return {"bonus": bonus, "contexto": texto}
+
+
 def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
     """CEO avalia se pode autorizar o Solver autonomamente.
 
@@ -304,6 +340,14 @@ def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
 
     if impacto == "isolado":
         bonus.append(("impacto isolado", +15))
+
+    # Track record — bonus/penalização com base em histórico de problemas semelhantes
+    track = _ceo_track_record(relatorio_solver.get("relatorio", ""))
+    if track["bonus"] != 0:
+        if track["bonus"] > 0:
+            bonus.append((track["contexto"], track["bonus"]))
+        else:
+            penalizacoes.append((track["contexto"], track["bonus"]))
 
     # Confiança base do CEO = média dos passos do Solver, ajustada
     base = int((c_diag + c_sol) / 2) if c_exec == 0 else int((c_diag + c_sol + c_exec + c_ver) / 4)
@@ -776,8 +820,14 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
     if _e_problema_tecnico(user_message):
         try:
             from solver_graph import solver_diagnosticar
+            # Mem0 — recupera contexto de problemas semelhantes antes de diagnosticar
+            mem_contexto = mem0_get("solver", user_message)
+            if mem_contexto:
+                user_message_enriquecido = f"{user_message}\n\n[Contexto de problemas anteriores semelhantes:\n{mem_contexto}]"
+            else:
+                user_message_enriquecido = user_message
             audit("SOLVER_LANGGRAPH", "iniciando grafo")
-            resultado = solver_diagnosticar(user_message)
+            resultado = solver_diagnosticar(user_message_enriquecido)
             relatorio = resultado.get("relatorio", "Solver: sem relatório gerado.")
             requer_aprovacao = resultado.get("requer_aprovacao", False)
 
@@ -792,9 +842,10 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
 
             save_message(sid, "user", user_message)
             save_message(sid, "assistant", reply)
+            # Guarda no Mem0 com contexto enriquecido para aprendizagem futura
             mem0_add("solver", [
                 {"role": "user", "content": user_message},
-                {"role": "assistant", "content": reply}
+                {"role": "assistant", "content": f"[confiança diag:{resultado.get('confianca_diagnostico',0)}% sol:{resultado.get('confianca_solucao',0)}% | reversivel:{resultado.get('reversivel')} | impacto:{resultado.get('impacto')}]\n{reply}"}
             ])
             audit("SOLVER_LANGGRAPH_OK", reply[:100])
             return reply
@@ -1104,6 +1155,11 @@ async def run_solver_check(app) -> None:
                     confianca=confianca_ceo,
                     agente="Solver"
                 )
+                # CEO aprende com a decisão no Mem0
+                mem0_add("ceo", [
+                    {"role": "user", "content": f"Problema: {saude[:300]}"},
+                    {"role": "assistant", "content": f"Autorizei autonomamente (confiança CEO {confianca_ceo}%). Solver: diag={estado_solver.get('confianca_diagnostico')}% sol={estado_solver.get('confianca_solucao')}%. Reversível={estado_solver.get('reversivel')}. Impacto={estado_solver.get('impacto')}."}
+                ])
                 _ceo_actualizar_imperio(f"Solver corrigiu autonomamente (CEO {confianca_ceo}%): {saude[:100]}")
                 audit("CEO_SOLVER_RESOLVEU", f"Resolvido autonomamente: {saude[:80]}")
             else:

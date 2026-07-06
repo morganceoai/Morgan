@@ -161,9 +161,66 @@ def node_aguardar_aprovacao(state: SolverState) -> SolverState:
     return {**state, "aprovado": False, "confianca_execucao": 0}
 
 
+def _pre_execution_tests() -> tuple[bool, str]:
+    """Corre testes básicos antes de executar qualquer correcção.
+    Devolve (passou, relatorio). Se falhar, a execução não deve prosseguir."""
+    import subprocess, sys
+    resultados = []
+
+    # 1. Sintaxe dos ficheiros Python críticos
+    for modulo in ["telegram_bot.py", "tools.py", "solver_graph.py"]:
+        try:
+            r = subprocess.run(
+                [sys.executable, "-m", "py_compile", modulo],
+                capture_output=True, text=True, timeout=15,
+                cwd=str(_MORGAN_DIR())
+            )
+            if r.returncode == 0:
+                resultados.append(f"OK: {modulo} — sintaxe válida")
+            else:
+                resultados.append(f"ERRO: {modulo} — {r.stderr.strip()[:200]}")
+                return False, "\n".join(resultados)
+        except Exception as e:
+            resultados.append(f"AVISO: não foi possível verificar {modulo}: {e}")
+
+    # 2. Import dos módulos críticos
+    criticos = ["anthropic", "telegram", "fastapi", "langgraph"]
+    for mod in criticos:
+        try:
+            r = subprocess.run(
+                [sys.executable, "-c", f"import {mod}"],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(_MORGAN_DIR())
+            )
+            if r.returncode == 0:
+                resultados.append(f"OK: {mod} importável")
+            else:
+                resultados.append(f"ERRO: {mod} — {r.stderr.strip()[:100]}")
+                return False, "\n".join(resultados)
+        except Exception as e:
+            resultados.append(f"AVISO: {mod}: {e}")
+
+    return True, "\n".join(resultados)
+
+
+def _MORGAN_DIR():
+    from pathlib import Path
+    return Path(__file__).parent
+
+
 def node_execucao(state: SolverState) -> SolverState:
-    system = """És o Morgan Solver. Executa o plano aprovado com as ferramentas disponíveis.
+    # Testes pré-execução — valida sintaxe e imports antes de qualquer correcção
+    passou, relatorio_testes = _pre_execution_tests()
+    if not passou:
+        return {**state,
+                "execucao": f"ABORTADO — testes pré-execução falharam:\n{relatorio_testes}",
+                "confianca_execucao": 0}
+
+    system = f"""És o Morgan Solver. Executa o plano aprovado com as ferramentas disponíveis.
 Documenta cada passo e o resultado. Se algo correr mal, para imediatamente.
+
+Testes pré-execução passaram:
+{relatorio_testes}
 
 Obrigatório no final da resposta, neste formato exacto:
 EXECUÇÃO: [o que foi feito]

@@ -518,6 +518,42 @@ _CMD_WHITELIST = ["ps", "grep", "tail", "head", "cat", "ls", "wc", "df", "free",
                   "python3", "pip", "railway", "git log", "git status", "git diff"]
 
 
+def solver_railway_logs(linhas: int = 100) -> str:
+    """Obtém os logs de produção do Railway via API GraphQL."""
+    import os, requests as req
+    token = os.getenv("RAILWAY_API_TOKEN", "")
+    project_id = os.getenv("RAILWAY_PROJECT_ID", "")
+    service_id = os.getenv("RAILWAY_SERVICE_ID", "")
+    if not token:
+        return "RAILWAY_API_TOKEN não configurado. Adiciona a variável no Railway."
+    if not project_id or not service_id:
+        return "RAILWAY_PROJECT_ID e RAILWAY_SERVICE_ID necessários. Obtém em railway.app → Settings."
+    try:
+        query = """
+        query serviceInstanceLogs($projectId: String!, $serviceId: String!, $limit: Int) {
+          serviceInstanceLogs(projectId: $projectId, serviceId: $serviceId, limit: $limit) {
+            timestamp
+            severity
+            message
+          }
+        }
+        """
+        r = req.post(
+            "https://backboard.railway.app/graphql/v2",
+            json={"query": query, "variables": {"projectId": project_id, "serviceId": service_id, "limit": linhas}},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            timeout=15,
+        )
+        data = r.json()
+        logs = data.get("data", {}).get("serviceInstanceLogs", [])
+        if not logs:
+            return "Sem logs disponíveis ou serviço sem actividade recente."
+        linhas_txt = [f"[{l.get('timestamp','')}] [{l.get('severity','')}] {l.get('message','')}" for l in logs]
+        return "\n".join(linhas_txt[-linhas:])
+    except Exception as e:
+        return f"Erro a obter logs Railway: {e}"
+
+
 def solver_ler_ficheiro(caminho: str) -> str:
     """Lê um ficheiro do sistema Morgan."""
     try:
@@ -905,6 +941,17 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "solver_railway_logs",
+        "description": "Obtém os logs reais de produção do Railway — o que está a acontecer no servidor. Usa para diagnosticar erros em produção que não aparecem no audit.log local. Requer RAILWAY_API_TOKEN, RAILWAY_PROJECT_ID e RAILWAY_SERVICE_ID configurados.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "linhas": {"type": "integer", "description": "Número de linhas de log a obter. Default: 100."}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "solver_ler_ficheiro",
         "description": "Lê um ficheiro do sistema Morgan. Usa para inspecionar código, configurações, ou ficheiros de memória durante diagnóstico.",
         "input_schema": {
@@ -1037,4 +1084,5 @@ TOOL_FUNCTIONS = {
     "solver_git_diff": solver_git_diff,
     "solver_git_commit_push": solver_git_commit_push,
     "solver_railway_deploy": solver_railway_deploy,
+    "solver_railway_logs": solver_railway_logs,
 }
