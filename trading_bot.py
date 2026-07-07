@@ -22,7 +22,7 @@ TESTNET = os.getenv("BINANCE_TESTNET", "true").lower() == "true"
 
 CONFIG = {
     "symbol":         "BTC/USDT",
-    "timeframe":      "1h",
+    "timeframe":      "30m",
     "capital":        float(os.getenv("BOT_CAPITAL", "100")),  # USDT a usar
     "risk_per_trade": 0.02,                                     # 2% do capital por trade
     "stop_loss":      0.015,                                    # 1.5% stop loss
