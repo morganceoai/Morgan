@@ -319,22 +319,22 @@ def scout_oportunidades() -> str:
     try:
         client = TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
-            # Máximo retorno, mínimo risco — qualquer área
-            "highest ROI AI business 2026 low risk passive income proven",
-            "AI SaaS highest revenue lowest competition 2026 solopreneur",
-            "best passive income AI business 2026 real founders revenue data",
+            # Máximo retorno, mínimo risco — mercado global
+            "highest ROI AI business 2026 low risk passive income proven founder",
+            "AI SaaS highest revenue lowest competition 2026 solopreneur indiehackers",
+            "best passive income AI business 2026 real founders revenue data case study",
             # Mercados com pouca concorrência e alta margem
             "AI niche tools underserved market high margin 2026 recurring revenue",
-            "micro SaaS AI monopoly niche 2026 10k month",
+            "micro SaaS AI vertical niche 2026 10k month monopoly founder",
             # Modelos de negócio validados com dados reais
-            "AI automation agency 5k 10k month 2026 case study",
-            "AI tools subscription revenue 2026 low churn high retention",
-            # Mercado lusófono — vantagem por falta de concorrência local
-            "AI SaaS Portugal Brasil mercado sem concorrência 2026 receita",
-            "ferramentas IA em português sem alternativas 2026",
-            # Oportunidades emergentes antes de ficarem saturadas
-            "AI business opportunity early 2026 untapped market growing fast",
-            "new AI tools category 2026 no competition first mover advantage",
+            "AI automation agency 5k 10k month 2026 case study real revenue",
+            "AI tools subscription revenue 2026 low churn high retention profitable",
+            # Oportunidades emergentes com vantagem de primeiro a chegar
+            "AI business opportunity early 2026 untapped market growing fast first mover",
+            "new AI tools category 2026 no competition blue ocean niche",
+            # Mercados lusófonos — pesquisa em inglês mas foco na vantagem de língua
+            "Portuguese language market AI tools gap opportunity 2026 Brazil Portugal",
+            "non-English AI SaaS market opportunity 2026 underserved language",
         ]
         resultados = []
         for query in queries:
@@ -794,6 +794,36 @@ def solver_executar_correcao(comando: str) -> str:
         return f"Erro: {e}"
 
 
+def consultar_historico_imperio() -> str:
+    """Lê o ficheiro de histórico do império — usado pelos agentes quando precisam de contexto passado."""
+    try:
+        hist = Path(__file__).parent / "memory" / "historico_imperio.md"
+        return hist.read_text(encoding="utf-8") if hist.exists() else "Histórico ainda não existe."
+    except Exception as e:
+        return f"Erro ao ler histórico: {e}"
+
+
+def atualizar_estado_imperio(seccao: str, conteudo: str) -> str:
+    """Atualiza uma secção do estado_imperio.md. Chamado pelo CEO após decisões relevantes."""
+    try:
+        f = Path(__file__).parent / "memory" / "estado_imperio.md"
+        texto = f.read_text(encoding="utf-8") if f.exists() else ""
+        # Acrescenta ao log de últimas ações
+        from datetime import datetime
+        linha_nova = f"- {datetime.now().strftime('%d/%m/%Y')}: {conteudo}"
+        if "## Histórico de acções relevantes" in texto:
+            texto = texto.replace(
+                "## Histórico de acções relevantes",
+                f"## Histórico de acções relevantes\n{linha_nova}"
+            )
+        else:
+            texto += f"\n\n## Histórico de acções relevantes\n{linha_nova}"
+        f.write_text(texto, encoding="utf-8")
+        return f"estado_imperio.md atualizado: {conteudo[:80]}"
+    except Exception as e:
+        return f"Erro ao atualizar estado: {e}"
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -1072,10 +1102,27 @@ TOOLS = [
             "properties": {
                 "acao": {
                     "type": "string",
-                    "description": "Descrição clara e concisa da ação a confirmar. Ex: 'enviar email ao teu agente a dizer que estás disponível para conversas'"
+                    "description": "Descrição clara e concisa da ação a confirmar."
                 }
             },
             "required": ["acao"]
+        }
+    },
+    {
+        "name": "consultar_historico_imperio",
+        "description": "Consulta o histórico de ações passadas do império BC Industries. Usa quando precisas de contexto histórico — decisões antigas, semanas anteriores do Scout, arquitectura explicada. Não carregado por defeito — só consulta quando relevante.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "atualizar_estado_imperio",
+        "description": "Atualiza o estado_imperio.md com uma nova entrada no log de ações. Usa após tomar decisões relevantes — aprovação de oportunidade, criação de sub-Morgan, resolução de problema, mudança de arquitectura.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "seccao": {"type": "string", "description": "Secção a atualizar (ex: 'Últimas ações', 'Oportunidades')"},
+                "conteudo": {"type": "string", "description": "O que registar, em 1-2 linhas."}
+            },
+            "required": ["seccao", "conteudo"]
         }
     }
 ]
@@ -1111,4 +1158,6 @@ TOOL_FUNCTIONS = {
     "solver_git_commit_push": solver_git_commit_push,
     "solver_railway_deploy": solver_railway_deploy,
     "solver_railway_logs": solver_railway_logs,
+    "consultar_historico_imperio": consultar_historico_imperio,
+    "atualizar_estado_imperio": atualizar_estado_imperio,
 }

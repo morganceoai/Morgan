@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Morgan">
+<meta name="theme-color" content="#080c10">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Morgan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:     #080c10;
+    --bg2:    #0b1018;
+    --cyan:   #00d4ff;
+    --cyan2:  #7ef4ff;
+    --green:  #00ff9d;
+    --amber:  #f5a623;
+    --violet: #9b6dff;
+    --red:    #ff3355;
+    --border: rgba(0,212,255,0.1);
+    --dim:    rgba(0,212,255,0.4);
+    --safe-top:    env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html, body {
+    height: 100%; background: var(--bg);
+    font-family: 'SF Mono', 'Courier New', monospace;
+    color: var(--cyan); overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: flex; flex-direction: column;
+    height: 100vh;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  /* ── HEADER ── */
+  .hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .hdr-left { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 8px var(--green);
+    animation: pulse 2.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .hdr-name { font-size: 12px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+  .hdr-time { font-size: 11px; color: var(--dim); letter-spacing: 1px; }
+
+  /* ── AVATAR ZONE ── */
+  .avatar-zone {
+    flex: 0 0 auto;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px 0 12px;
+  }
+  canvas#cvAvatar { display: block; }
+  .state-label {
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(0,212,255,0.3); margin-top: 10px; min-height: 14px;
+    transition: color .3s;
+  }
+  body.listening .state-label { color: var(--green); }
+  body.thinking  .state-label { color: var(--amber); }
+  body.speaking  .state-label { color: var(--cyan); }
+
+  /* ── CHAT ── */
+  .chat {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chat::-webkit-scrollbar { display: none; }
+
+  .msg {
+    max-width: 88%; padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; line-height: 1.6;
+    animation: fadeUp .25s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  .msg-user {
+    align-self: flex-end;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.18);
+    color: rgba(0,212,255,0.9);
+    letter-spacing: .3px;
+  }
+  .msg-morgan {
+    align-self: flex-start;
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.1);
+    color: rgba(0,212,255,0.75);
+    letter-spacing: .2px;
+  }
+  .msg-morgan.thinking-bubble {
+    opacity: .5;
+  }
+
+  /* ── INPUT BAR ── */
+  .input-bar {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .inp {
+    flex: 1;
+    background: rgba(0,212,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--cyan);
+    font-family: inherit; font-size: 14px; letter-spacing: .3px;
+    padding: 10px 16px;
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color .2s;
+  }
+  .inp::placeholder { color: rgba(0,212,255,0.2); }
+  .inp:focus { border-color: rgba(0,212,255,0.3); }
+
+  .btn-mic, .btn-send {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--dim); cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all .2s; font-size: 16px;
+  }
+  .btn-mic:active, .btn-send:active { transform: scale(.9); }
+  .btn-mic.active { border-color: var(--green); color: var(--green);
+    box-shadow: 0 0 12px rgba(0,255,157,0.3); }
+  .btn-send { border-color: rgba(0,212,255,0.2); color: var(--cyan); }
+
+  /* ── WAVEFORM ── */
+  .waveform {
+    display: flex; align-items: center; gap: 2px; height: 18px;
+    margin-top: 4px; justify-content: center;
+  }
+  .w-bar {
+    width: 2px; background: var(--cyan); border-radius: 1px;
+    height: 2px; opacity: .1; transition: opacity .2s;
+  }
+  body.listening .w-bar { opacity:.7; animation: wlisten .8s ease-in-out infinite; }
+  body.speaking  .w-bar { opacity:.9; animation: wspeak  .3s ease-in-out infinite; }
+  body.thinking  .w-bar { opacity:.2; animation: wthink  1.2s ease-in-out infinite; }
+  .w-bar:nth-child(1){animation-delay:.00s} .w-bar:nth-child(2){animation-delay:.08s}
+  .w-bar:nth-child(3){animation-delay:.16s} .w-bar:nth-child(4){animation-delay:.06s}
+  .w-bar:nth-child(5){animation-delay:.14s} .w-bar:nth-child(6){animation-delay:.02s}
+  .w-bar:nth-child(7){animation-delay:.10s} .w-bar:nth-child(8){animation-delay:.18s}
+  @keyframes wlisten { 0%,100%{height:2px} 50%{height:14px} }
+  @keyframes wspeak  { 0%,100%{height:2px} 50%{height:18px} }
+  @keyframes wthink  { 0%,100%{height:2px} 50%{height:7px}  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hdr">
+    <div class="hdr-left">
+      <div class="dot"></div>
+      <span class="hdr-name">Morgan</span>
+    </div>
+    <span class="hdr-time" id="clock">--:--</span>
+  </header>
+
+  <div class="avatar-zone">
+    <canvas id="cvAvatar" width="140" height="140"></canvas>
+    <div class="waveform">
+      <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+      <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+      <div class="w-bar"></div><div class="w-bar"></div>
+    </div>
+    <div class="state-label" id="stateLabel">pronto</div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="input-bar">
+    <button class="btn-mic" id="btnMic" onclick="toggleMic()">🎤</button>
+    <input class="inp" id="inp" type="text" placeholder="Escreve aqui..."
+      onkeydown="if(event.key==='Enter')sendText()"/>
+    <button class="btn-send" onclick="sendText()">↑</button>
+  </div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+function tick() {
+  const t = new Date();
+  document.getElementById('clock').textContent =
+    String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+}
+tick(); setInterval(tick, 10000);
+
+// ── AVATAR SPHERE ──
+const cv = document.getElementById('cvAvatar');
+const ctx = cv.getContext('2d');
+const CX = 70, CY = 70, R = 52;
+let t = 0, rotY = 0;
+const pts = Array.from({length: 2200}, () => {
+  const theta = Math.random() * Math.PI * 2;
+  const phi   = Math.acos(2 * Math.random() - 1);
+  const dist  = R * Math.pow(Math.random(), 0.2);
+  return {
+    ox: dist * Math.sin(phi) * Math.cos(theta),
+    oy: dist * Math.sin(phi) * Math.sin(theta),
+    oz: dist * Math.cos(phi),
+    sz: 0.15 + Math.random() * 0.5,
+    ba: 0.2 + Math.random() * 0.7,
+  };
+});
+
+function drawAvatar() {
+  t += 0.005; rotY += 0.0012;
+  ctx.clearRect(0, 0, 140, 140);
+  const breathe = Math.sin(t);
+  const cos = Math.cos(rotY), sin = Math.sin(rotY);
+  const fov = 700;
+
+  const proj = pts.map(p => {
+    const x = p.ox * cos + p.oz * sin;
+    const z = -p.ox * sin + p.oz * cos;
+    const s = fov / (fov + z + R);
+    const d3 = Math.sqrt(p.ox*p.ox + p.oy*p.oy + p.oz*p.oz) / R;
+    const cb = Math.pow(Math.max(0, 1 - d3), 1.5);
+    return {
+      px: CX + x * s, py: CY + p.oy * s, z,
+      sz: Math.max(0.3, p.sz * s * (1 + breathe * 0.06) * (1 + cb * 0.8)),
+      a:  Math.min(0.95, p.ba * (0.35 + cb * 0.9) * s),
+    };
+  }).sort((a, b) => a.z - b.z);
+
+  proj.forEach(p => {
+    ctx.fillStyle = `rgba(0,212,255,${p.a})`;
+    ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(drawAvatar);
+}
+drawAvatar();
+
+// ── STATE ──
+function setState(s) {
+  document.body.className = s;
+  const labels = { listening:'a ouvir', thinking:'a pensar', speaking:'a falar', idle:'', ready:'pronto' };
+  document.getElementById('stateLabel').textContent = labels[s] || s;
+}
+
+// ── CHAT ──
+const chatEl = document.getElementById('chat');
+
+function addMsg(text, role) {
+  const d = document.createElement('div');
+  d.className = 'msg msg-' + role;
+  d.textContent = text;
+  chatEl.appendChild(d);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return d;
+}
+
+// ── API ──
+const API = window.location.origin;
+
+async function sendText() {
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  addMsg(text, 'user');
+  setState('thinking');
+  const thinking = addMsg('…', 'morgan thinking-bubble');
+
+  try {
+    const r = await fetch(API + '/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: text }),
+    });
+    const d = await r.json();
+    thinking.remove();
+    addMsg(d.response || '(sem resposta)', 'morgan');
+    setState('ready');
+  } catch {
+    thinking.remove();
+    addMsg('Erro de ligação.', 'morgan');
+    setState('ready');
+  }
+}
+
+// ── MIC ──
+let dgWS = null, micStream = null, audioCtx2 = null, scriptProc = null;
+let micActive = false;
+
+async function toggleMic() {
+  if (micActive) { stopMic(); return; }
+  startMic();
+}
+
+async function startMic() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation:true, noiseSuppression:true }, video: false,
+    });
+    audioCtx2 = new AudioContext();
+    const src = audioCtx2.createMediaStreamSource(micStream);
+    const wsUrl = API.replace('http','ws') + '/ws/transcribe?sr=16000';
+    dgWS = new WebSocket(wsUrl);
+    dgWS.onopen = () => {
+      micActive = true;
+      document.getElementById('btnMic').classList.add('active');
+      setState('listening');
+      scriptProc = audioCtx2.createScriptProcessor(4096, 1, 1);
+      src.connect(scriptProc); scriptProc.connect(audioCtx2.destination);
+      const ratio = audioCtx2.sampleRate / 16000;
+      scriptProc.onaudioprocess = e => {
+        if (!dgWS || dgWS.readyState !== 1) return;
+        const inp = e.inputBuffer.getChannelData(0);
+        const out = new Int16Array(Math.round(inp.length / ratio));
+        for (let i = 0; i < out.length; i++)
+          out[i] = Math.max(-32768, Math.min(32767, Math.round(inp[Math.round(i*ratio)] * 32767)));
+        dgWS.send(out.buffer);
+      };
+    };
+    dgWS.onmessage = ev => {
+      const d = JSON.parse(ev.data);
+      if (d.type === 'interim') {
+        document.getElementById('stateLabel').textContent = d.text;
+      } else if (d.type === 'speech_final' || d.type === 'final') {
+        const txt = d.text.trim();
+        if (!txt) return;
+        stopMic();
+        addMsg(txt, 'user');
+        setState('thinking');
+        replyVoice(txt);
+      }
+    };
+    dgWS.onclose = () => stopMic();
+    dgWS.onerror = () => stopMic();
+  } catch(e) {
+    setState('ready');
+  }
+}
+
+function stopMic() {
+  micActive = false;
+  document.getElementById('btnMic').classList.remove('active');
+  if (scriptProc) { scriptProc.disconnect(); scriptProc = null; }
+  if (dgWS) { dgWS.close(); dgWS = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  setState('ready');
+}
+
+async function replyVoice(txt) {
+  const thinking = addMsg('…', 'morgan thinking-bubble');
+  try {
+    const r = await fetch(API + '/api/chat-speak', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: txt }),
+    });
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let replyBubble = null;
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) { setState('ready'); return; }
+        dec.decode(value).split('\n').forEach(line => {
+          if (!line.startsWith('data:')) return;
+          try {
+            const d = JSON.parse(line.slice(5));
+            if (d.type === 'speaking') {
+              thinking.remove();
+              if (!replyBubble) replyBubble = addMsg(d.text, 'morgan');
+              else replyBubble.textContent = d.text;
+              setState('speaking');
+            }
+            if (d.type === 'done') setState('ready');
+          } catch {}
+        });
+        read();
+      });
+    }
+    read();
+  } catch {
+    thinking.remove();
+    addMsg('Erro de voz.', 'morgan');
+    setState('ready');
+  }
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── INIT ──
+setState('ready');
+</script>
+</body>
+</html>

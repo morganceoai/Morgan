@@ -515,6 +515,11 @@ Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica)
 {estado}
 {pendentes_txt}
 
+## Responsabilidades de CEO — usa as ferramentas correspondentes:
+- Quando tomares uma decisão relevante (aprovação, criação de negócio, mudança de arquitectura), chama `atualizar_estado_imperio` para registar.
+- Quando precisares de contexto histórico (o que aconteceu antes desta semana), chama `consultar_historico_imperio`.
+- Coordenas: Scout (inteligência de mercado), Solver (manutenção), Coach (análise tática), Creator (construção de negócios).
+
 ## Quando o Vasco pedir notícias ou um resumo do que se passa, faz SEMPRE estas três pesquisas:
 1. Notícias recentes do Moreirense FC em 2026 (resultados, lesões, transferências, rumores)
 2. Notícias da Primeira Liga portuguesa em 2026 — todos os clubes
@@ -697,6 +702,20 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         return reply
 
 
+def _quer_coach(msg: str) -> bool:
+    """Deteta intenção de falar com o Morgan Coach."""
+    m = msg.lower()
+    if any(k in m for k in ["morgan coach", "coach", "treinador", "tático", "tatico",
+                              "treino", "treinos", "adversário", "adversario", "jogo de",
+                              "próximo jogo", "proximo jogo", "análise tática", "analise tatica",
+                              "pré-jogo", "pre-jogo", "pós-jogo", "pos-jogo", "plantel",
+                              "jogador", "formação", "formacao", "pressão", "pressao alta",
+                              "bloco médio", "bloco medio", "moreirense", "liga portugal",
+                              "transfermarkt", "scout de jogador", "perfil tático"]):
+        return True
+    return False
+
+
 def _quer_scout(msg: str) -> bool:
     """Deteta intenção de falar com o Scout de forma natural."""
     m = msg.lower()
@@ -717,8 +736,17 @@ def _quer_ceo(msg: str) -> bool:
                                  "morgan de volta", "ceo", "morgan principal"])
 
 
+def get_coach_reply_telegram(user_message: str) -> str:
+    """Wrapper para o Coach Agent."""
+    try:
+        from coach_agent import get_coach_reply
+        return "[COACH] " + get_coach_reply(user_message)
+    except Exception as e:
+        return f"[COACH] Erro ao ativar o Morgan Coach: {e}"
+
+
 def get_agente_reply(user_id: str, user_message: str) -> str:
-    """Encaminha a mensagem para o agente ativo (CEO ou Scout)."""
+    """Encaminha a mensagem para o agente ativo (CEO, Scout, Coach ou Solver)."""
     uid = "vasco"
 
     # Mudança explícita para CEO (tem prioridade)
@@ -731,6 +759,11 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         agente_ativo[uid] = "solver"
         return "[SOLVER] " + get_solver_reply(uid, user_message)
 
+    # Coach — análise tática e profissão (antes do Scout para não confundir mercado de jogadores com Scout)
+    if _quer_coach(user_message) and not _e_problema_tecnico(user_message):
+        agente_ativo[uid] = "coach"
+        return get_coach_reply_telegram(user_message)
+
     # Mudança para Scout — só se não for um problema técnico
     if _quer_scout(user_message) and not _e_problema_tecnico(user_message):
         agente_ativo[uid] = "scout"
@@ -742,6 +775,8 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         return "[SCOUT] " + get_scout_reply(uid, user_message)
     if agente == "solver":
         return "[SOLVER] " + get_solver_reply(uid, user_message)
+    if agente == "coach":
+        return get_coach_reply_telegram(user_message)
     return get_morgan_reply(uid, user_message)
 
 
@@ -1285,6 +1320,11 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
 {contexto_semantico}
 
+## Metodologia de pesquisa — OBRIGATÓRIO:
+- Pesquisa SEMPRE em inglês primeiro — fontes como IndieHackers, HN, Product Hunt, AppSumo têm dados reais de receita
+- PT/BR é uma vantagem de execução, não de descoberta — descobre global, executa local
+- Traduz e adapta os resultados para PT-PT no final
+
 ## Como respondes em conversação:
 - Responde diretamente às perguntas do Vasco com base no teu histórico
 - Usa as ferramentas de pesquisa apenas quando precisares de dados atuais
@@ -1305,8 +1345,15 @@ Reportas ao Morgan CEO. O dono é o Vasco Botelho da Costa.
 ## Perfil do Vasco (usa para filtrar oportunidades relevantes):
 {memoria_vasco}
 
-## Vantagens competitivas do Vasco — usa como desempate, não como filtro:
-- Falante nativo de português europeu — mercado PT/BR/ES pouco servido por ferramentas IA
+## Metodologia de pesquisa — OBRIGATÓRIO:
+- Pesquisa SEMPRE em inglês primeiro — o mercado global tem 10-20x mais dados e casos reais validados
+- Fontes prioritárias: Product Hunt, Hacker News, IndieHackers, r/entrepreneur, r/SideProject, r/indiehackers, AppSumo, MicroAcquire, Gumroad, Lemon Squeezy, Substack trends
+- Só depois de analisar o mercado global filtras o que tem vantagem competitiva em PT/BR ou pode ser adaptado
+- PT/BR é uma vantagem competitiva real (menos concorrência, barreira de língua), não um filtro inicial de pesquisa
+- Apresenta sempre os resultados em português europeu, mas os dados vêm de fontes globais
+
+## Vantagens competitivas do Vasco — usa como desempate:
+- Falante nativo de português europeu — mercado PT/BR/ES com menos concorrência em IA
 - Insider do futebol profissional — vantagem se surgir oportunidade nessa área
 - Constrói com IA sem escrever código (Morgan executa)
 - Disponibilidade para começar imediatamente

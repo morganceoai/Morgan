@@ -25,6 +25,10 @@ from tools import TOOLS, TOOL_FUNCTIONS
 from memory_store import load_memory
 from scout_memory import _load as load_scout
 from conversation_store import get_context_messages, save_message as store_save
+from voice_id import enroll_voice, is_vasco, has_profile, load_profile
+
+# Pré-carregar perfil de voz se existir
+load_profile()
 
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY")
 ELEVENLABS_KEY = os.getenv("ELEVENLABS_API_KEY")
@@ -188,9 +192,23 @@ def chat_with_morgan(user_text: str) -> str:
     return reply
 
 
+PWA_DIR = Path(__file__).parent / "pwa"
+
 @app.get("/")
 async def serve_interface():
     return FileResponse(DESKTOP_DIR / "index.html")
+
+@app.get("/pwa/")
+@app.get("/pwa/index.html")
+async def serve_pwa():
+    return FileResponse(PWA_DIR / "index.html")
+
+@app.get("/pwa/{filename}")
+async def serve_pwa_file(filename: str):
+    f = PWA_DIR / filename
+    if f.exists():
+        return FileResponse(f)
+    return FileResponse(PWA_DIR / "index.html")
 
 
 @app.get("/api/widgets")
@@ -210,6 +228,7 @@ async def get_widgets():
         pass
 
     # Scout
+    import re as _re
     scout_data = load_scout()
     total_ops = len(scout_data.get("oportunidades", {}))
     aprovadas = len(scout_data.get("aprovadas", []))
@@ -217,6 +236,27 @@ async def get_widgets():
         nome for nome, info in scout_data.get("oportunidades", {}).items()
         if info.get("vezes_visto", 0) >= 2
     ]
+
+    def _short_nome(nome: str) -> str:
+        abrevs = {
+            "directório": "Dir.", "micro-saas": "SaaS", "micro": "SaaS",
+            "relatórios": "Relat", "produtos": "Tmpl", "compra": "Blog",
+        }
+        first = nome.split()[0].lower().rstrip(",.")
+        return abrevs.get(first, nome[:5])
+
+    def _score(info: dict) -> int:
+        for nota in info.get("notas", []):
+            m = _re.search(r"(\d+)\s+fonte", nota)
+            if m:
+                return min(92, int(m.group(1)) * 20 + 20)
+        return 60 + info.get("vezes_visto", 1) * 5
+
+    top_ops = sorted(
+        [{"label": _short_nome(n), "score": _score(i), "nome": n}
+         for n, i in scout_data.get("oportunidades", {}).items()],
+        key=lambda x: -x["score"]
+    )[:3]
 
     # Próximo jogo Moreirense
     proximo_jogo = {"adversario": "--", "data": "--", "competicao": "--"}
@@ -280,7 +320,7 @@ async def get_widgets():
         "time": agora.strftime("%H:%M:%S"),
         "date": agora.strftime("%A, %d %B %Y").capitalize(),
         "weather": {"temp": weather_text, "desc": weather_desc},
-        "scout": {"total": total_ops, "aprovadas": aprovadas, "recorrentes": recorrentes[:3]},
+        "scout": {"total": total_ops, "aprovadas": aprovadas, "recorrentes": recorrentes[:3], "top": top_ops},
         "proximo_jogo": proximo_jogo,
         "ultimo_resultado": ultimo_resultado,
     }
@@ -540,18 +580,36 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
         await audio_queue.put(None)
 
 
+@app.post("/api/enroll-voice")
+async def enroll_voice_endpoint(request: Request):
+    """Recebe chunks PCM acumulados e cria o perfil de voz do Vasco."""
+    body = await request.body()
+    if len(body) < 16000 * 2 * 2:  # mínimo ~2s a 16kHz 16-bit
+        return JSONResponse({"ok": False, "error": "Amostra muito curta. Fala durante pelo menos 3 segundos."})
+    ok = enroll_voice([body])
+    return JSONResponse({"ok": ok, "message": "Perfil de voz guardado." if ok else "Erro ao criar perfil."})
+
+
+@app.get("/api/voice-id-status")
+async def voice_id_status():
+    return JSONResponse({"enrolled": has_profile()})
+
+
 @app.websocket("/ws/transcribe")
 async def ws_transcribe(websocket: WebSocket):
-    """Proxy WebSocket: browser → Deepgram Live API → browser. Bypassa o SDK (bug Python 3.12)."""
+    """Proxy WebSocket: browser → Deepgram Live API → browser com verificação de voz."""
     await websocket.accept()
-    sample_rate = int(websocket.query_params.get("sr", "44100"))
+    sample_rate = int(websocket.query_params.get("sr", "16000"))
 
     dg_url = (
         f"wss://api.deepgram.com/v1/listen"
         f"?model=nova-2&language=pt&encoding=linear16"
         f"&sample_rate={sample_rate}&channels=1"
-        f"&interim_results=true&endpointing=600&smart_format=true&vad_events=true"
+        f"&interim_results=true&endpointing=400&smart_format=true&vad_events=true"
     )
+
+    # Buffer de áudio para verificação de voz
+    audio_buffer: list[bytes] = []
 
     try:
         import websockets as ws_lib
@@ -567,9 +625,25 @@ async def ws_transcribe(websocket: WebSocket):
                         text = (alts[0].get("transcript", "") if alts else "").strip()
                         is_final = data.get("is_final", False)
                         speech_final = data.get("speech_final", False)
-                        if text:
-                            t = "speech_final" if speech_final else ("final" if is_final else "interim")
-                            await websocket.send_text(json.dumps({"type": t, "text": text}))
+
+                        if not text:
+                            continue
+
+                        if speech_final:
+                            # Verificar se é o Vasco antes de enviar ao browser
+                            loop = asyncio.get_event_loop()
+                            vasco, sim = await loop.run_in_executor(
+                                None, is_vasco, list(audio_buffer)
+                            )
+                            audio_buffer.clear()
+                            if not vasco:
+                                print(f"Voice ID: voz rejeitada (sim={sim})")
+                                continue
+                            await websocket.send_text(json.dumps({"type": "speech_final", "text": text}))
+                        elif is_final:
+                            await websocket.send_text(json.dumps({"type": "final", "text": text}))
+                        else:
+                            await websocket.send_text(json.dumps({"type": "interim", "text": text}))
                     except Exception:
                         pass
 
@@ -577,6 +651,7 @@ async def ws_transcribe(websocket: WebSocket):
                 try:
                     while True:
                         audio = await websocket.receive_bytes()
+                        audio_buffer.append(audio)
                         await dg_ws.send(audio)
                 except WebSocketDisconnect:
                     pass
