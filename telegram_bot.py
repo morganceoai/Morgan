@@ -212,6 +212,32 @@ def mem0_add(user_id: str, messages: list):
     except Exception as e:
         audit("MEM0_ERRO", str(e))
 
+def mem0_collective_add(agent: str, content: str):
+    """Guarda facto/insight na memória colectiva partilhada por todos os agentes."""
+    try:
+        client = get_mem0_client()
+        if client:
+            client.add([{"role": "assistant", "content": f"[{agent}] {content}"}], user_id="collective")
+    except Exception as e:
+        audit("MEM0_COLLECTIVE_ERRO", str(e))
+
+def mem0_collective_get(query: str) -> str:
+    """Recupera memórias colectivas relevantes para qualquer agente."""
+    try:
+        client = get_mem0_client()
+        if not client:
+            return ""
+        results = client.search(query=query, filters={"user_id": "collective"}, limit=5)
+        memorias = []
+        for r in results:
+            m = r.get("memory", "") if isinstance(r, dict) else str(r)
+            if m:
+                memorias.append(m)
+        return "\n".join(f"- {m}" for m in memorias)
+    except Exception as e:
+        audit("MEM0_COLLECTIVE_ERRO", str(e))
+        return ""
+
 
 # ── Estado do Império ────────────────────────────────────────────────────────
 
@@ -387,6 +413,22 @@ def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
     }
 
 
+def should_run_ceo_proactivo() -> bool:
+    """CEO proactivo corre uma vez por dia às 7h."""
+    if time.time() - PROCESS_START < 600:
+        return False
+    agora = agora_lisboa()
+    state = load_state()
+    chave = f"ceo_proactivo_{agora.strftime('%Y-%m-%d')}"
+    return not state.get(chave, False)
+
+def mark_ceo_proactivo_done():
+    state = load_state()
+    chave = f"ceo_proactivo_{agora_lisboa().strftime('%Y-%m-%d')}"
+    state[chave] = True
+    save_state(state)
+
+
 def should_run_daily_report() -> bool:
     """Corre uma vez por dia às 22h. Ignora nas primeiras 3 minutos após arranque."""
     if time.time() - PROCESS_START < 600:
@@ -494,6 +536,7 @@ def build_system_prompt(user_message: str = "") -> str:
     estado = load_estado_imperio()
     pendentes = load_decisoes_pendentes()
     mem0_contexto = mem0_get("vasco", user_message) if user_message else ""
+    mem0_colectiva = mem0_collective_get(user_message) if user_message else ""
     pendentes_txt = ""
     if pendentes:
         itens = "\n".join(f"- {p['assunto']} (desde {p['data']})" for p in pendentes)
@@ -513,6 +556,9 @@ Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica)
 
 ## Memórias relevantes para esta conversa (Mem0):
 {mem0_contexto if mem0_contexto else "Sem memórias anteriores relevantes."}
+
+## Memória colectiva dos agentes (Scout, Solver, Creator, Coach):
+{mem0_colectiva if mem0_colectiva else "Sem memórias colectivas ainda."}
 
 ## Estado atual do Império — BC Industries:
 {estado}
@@ -1457,6 +1503,50 @@ Instruções para o report:
     audit("DAILY_REPORT_ENVIADO", f"{len(do_dia)} decisões autónomas hoje")
 
 
+async def run_ceo_proactivo(app):
+    """CEO acorda às 7h, revê o estado do império e atribui tarefas aos agentes."""
+    hoje = agora_lisboa().strftime("%d/%m/%Y")
+
+    try:
+        with open(AUDIT_FILE, "r", encoding="utf-8") as f:
+            audit_recente = "".join(f.readlines()[-50:])
+    except Exception:
+        audit_recente = ""
+
+    memoria_colectiva = mem0_collective_get("estado agentes tarefas pendentes negócios")
+    bot_status = ""
+    try:
+        from trading_bot import get_status
+        s = get_status()
+        bot_status = f"Trading Bot: {'ativo' if s['active'] else 'pausado'} | PnL hoje: {s['pnl_today']:+.4f} USDT | Sinal: {s['last_signal'] or 'nenhum'}"
+    except Exception:
+        pass
+
+    prompt = f"""És o Morgan CEO. São 7h de {hoje}. Revê o estado do império e decide o que fazer hoje.
+
+Estado do sistema (audit recente):
+{audit_recente[-2000:]}
+
+{f'Trading Bot: {bot_status}' if bot_status else ''}
+
+Memória colectiva dos agentes:
+{memoria_colectiva or 'Sem memórias colectivas ainda.'}
+
+Com base neste estado:
+1. Resume em 2 linhas o que aconteceu ontem
+2. Atribui 1-3 tarefas concretas aos agentes disponíveis (Scout, Solver, Creator, Coach)
+3. Indica se há algo que requer atenção do Vasco
+
+Formato: directo, máximo 10 linhas, sem emojis. Começa com "CEO — Briefing {hoje}"."""
+
+    loop = asyncio.get_event_loop()
+    briefing = await loop.run_in_executor(None, get_morgan_reply, "vasco", prompt)
+    await enviar_seguro(app.bot, briefing, chat_id=TELEGRAM_CHAT_ID)
+
+    mem0_collective_add("CEO", f"Briefing {hoje}: {briefing[:200]}")
+    audit("CEO_PROACTIVO", f"Briefing matinal enviado — {hoje}")
+
+
 async def run_scout_report(app):
     """Gera e envia o relatório semanal do Morgan AI Scout."""
     messages = [{"role": "user", "content": "Gera o relatório semanal de oportunidades de negócio com IA."}]
@@ -1519,6 +1609,15 @@ async def heartbeat_loop(app):
                     await run_solver_check(app)
                 except Exception as e:
                     audit("SOLVER_CHECK_ERRO", str(e))
+
+            # CEO proactivo às 7h
+            if agora_lisboa().hour == 7 and should_run_ceo_proactivo():
+                mark_ceo_proactivo_done()
+                audit("CEO_PROACTIVO", "Briefing matinal iniciado")
+                try:
+                    await run_ceo_proactivo(app)
+                except Exception as e:
+                    audit("CEO_PROACTIVO_ERRO", str(e))
 
             # Report diário às 22h
             if should_run_daily_report():
