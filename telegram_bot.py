@@ -1522,6 +1522,30 @@ async def heartbeat_loop(app):
                 except Exception as e:
                     audit("DAILY_REPORT_ERRO", str(e))
 
+            # Trading bot — ciclo a cada hora
+            try:
+                from trading_bot import run_cycle, get_status
+                result = run_cycle()
+                if result.get("status") == "trade_fechado":
+                    pnl = result.get("pnl", 0)
+                    emoji = "🟢" if pnl >= 0 else "🔴"
+                    msg = (
+                        f"{emoji} **Trading Bot** — trade fechado\n"
+                        f"Par: {result['symbol']} @ {result['price']:.2f}\n"
+                        f"Motivo: {result['reason']}\n"
+                        f"PnL: `{pnl:+.4f} USDT` | Total: `{result['pnl_total']:+.4f} USDT`"
+                    )
+                    await enviar_seguro(app.bot, msg, chat_id=TELEGRAM_CHAT_ID)
+                elif result.get("status") in ("drawdown_diario", "drawdown_total"):
+                    await enviar_seguro(app.bot, result["message"], chat_id=TELEGRAM_CHAT_ID)
+                    audit("BOT_DRAWDOWN", result["status"])
+                elif result.get("status") == "erro":
+                    audit("BOT_ERRO", result.get("message", ""))
+            except ImportError:
+                pass
+            except Exception as e:
+                audit("BOT_ERRO", str(e))
+
             # Scout semanal — domingos às 20h
             if should_run_scout():
                 mark_scout_done()
@@ -1729,6 +1753,45 @@ async def cmd_testar_solver(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def cmd_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /bot — estado e relatório do trading bot."""
+    try:
+        from trading_bot import get_status, run_cycle, pause_bot, resume_bot
+        args = context.args
+
+        if args and args[0] == "pausar":
+            pause_bot()
+            await enviar_seguro(update.message, "Trading bot pausado.")
+            return
+        if args and args[0] == "retomar":
+            resume_bot()
+            await enviar_seguro(update.message, "Trading bot retomado.")
+            return
+        if args and args[0] == "ciclo":
+            result = run_cycle()
+            await enviar_seguro(update.message, f"Ciclo manual:\n```\n{json.dumps(result, indent=2, ensure_ascii=False)}\n```")
+            return
+
+        s = get_status()
+        modo = "🧪 TESTNET" if s["testnet"] else "💰 REAL"
+        estado = "🟢 Ativo" if s["active"] else "🔴 Pausado"
+        pos = s.get("position")
+        pos_txt = f"\nPosição: {pos['side'].upper()} {pos['size']} @ {pos['entry']:.2f}" if pos else "\nSem posição aberta"
+        linhas = [
+            f"**Trading Bot — {modo}**\n",
+            estado,
+            f"Par: {s['symbol']}",
+            f"PnL hoje: `{s['pnl_today']:+.4f} USDT`",
+            f"PnL total: `{s['pnl_total']:+.4f} USDT`",
+            f"Trades: {s['trades']}",
+            f"Último sinal: {s['last_signal'] or '—'}",
+            pos_txt,
+        ]
+        await enviar_seguro(update.message, "\n".join(linhas))
+    except Exception as e:
+        await enviar_seguro(update.message, f"Erro no bot: {e}")
+
+
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /status — mostra o estado atual do Morgan."""
     config = load_config()
@@ -1911,6 +1974,7 @@ async def lifespan(fastapi_app: "FastAPI"):
         .build()
     )
     _telegram_app.add_handler(CommandHandler("status", cmd_status))
+    _telegram_app.add_handler(CommandHandler("bot", cmd_bot))
     _telegram_app.add_handler(CommandHandler("testar_solver", cmd_testar_solver))
     _telegram_app.add_handler(CommandHandler("testar_autonomia", cmd_testar_solver))
     _telegram_app.add_handler(MessageHandler((filters.TEXT | filters.VOICE) & ~filters.COMMAND, handle_message))

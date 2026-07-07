@@ -18,6 +18,42 @@ CREATOR_STATE_FILE = MEMORY_DIR / "creator_state.json"
 # Mantido em False até haver receita ativa. Mudar para True manualmente ou via CEO.
 REPORTS_ENABLED = False
 
+# ── Thresholds de autonomia hierárquica ──────────────────────────────────────
+# Quando um negócio atinge estes valores, ganha gestão própria automaticamente.
+# Abaixo de €500: Morgan CEO gere directamente.
+# €500–€2k: 2-3 agentes operacionais, CEO ainda supervisiona.
+# €2k–€5k: negócio ganha CEO próprio, Morgan CEO recebe relatórios.
+# €5k+: CEO + CFO próprios — empresa autónoma dentro do império.
+AUTONOMY_THRESHOLDS = [
+    {
+        "receita_min": 500,
+        "receita_max": 2000,
+        "estrutura": "multi_agente",
+        "agentes": ["ops", "crescimento"],
+        "descricao": "Equipa básica — Ops + Crescimento",
+        "ceo_proprio": False,
+        "cfo_proprio": False,
+    },
+    {
+        "receita_min": 2000,
+        "receita_max": 5000,
+        "estrutura": "ceo_proprio",
+        "agentes": ["ceo", "ops", "marketing"],
+        "descricao": "CEO próprio — Morgan CEO recebe relatórios",
+        "ceo_proprio": True,
+        "cfo_proprio": False,
+    },
+    {
+        "receita_min": 5000,
+        "receita_max": None,  # sem tecto
+        "estrutura": "empresa_autonoma",
+        "agentes": ["ceo", "cfo", "ops", "marketing", "suporte"],
+        "descricao": "Empresa autónoma — CEO + CFO próprios",
+        "ceo_proprio": True,
+        "cfo_proprio": True,
+    },
+]
+
 
 # ── Knowledge Registry — o Creator sabe onde ir buscar o que precisa por domínio ──
 
@@ -280,9 +316,68 @@ def activar_sub_morgan(oportunidade: str, mensagem: str) -> str:
             return ""
 
 
+def verificar_autonomia(sub_id: str) -> dict:
+    """
+    Verifica se um negócio atingiu receita suficiente para ganhar gestão própria.
+    Retorna a estrutura recomendada e se é uma mudança face ao estado actual.
+    """
+    state = _load_state()
+    sub = state["sub_morgans"].get(sub_id)
+    if not sub:
+        return {"status": "nao_encontrado"}
+
+    receita = sub.get("receita_atual", 0)
+    estrutura_atual = sub.get("estrutura_autonomia", "ceo_central")
+
+    # Determinar threshold aplicável
+    threshold_aplicavel = None
+    for t in AUTONOMY_THRESHOLDS:
+        r_max = t["receita_max"] if t["receita_max"] else float("inf")
+        if t["receita_min"] <= receita < r_max:
+            threshold_aplicavel = t
+            break
+
+    if not threshold_aplicavel:
+        # Abaixo de €500 — CEO central gere directamente
+        nova_estrutura = "ceo_central"
+        descricao = "CEO central gere directamente"
+        agentes = []
+        ceo_proprio = False
+        cfo_proprio = False
+    else:
+        nova_estrutura = threshold_aplicavel["estrutura"]
+        descricao = threshold_aplicavel["descricao"]
+        agentes = threshold_aplicavel["agentes"]
+        ceo_proprio = threshold_aplicavel["ceo_proprio"]
+        cfo_proprio = threshold_aplicavel["cfo_proprio"]
+
+    mudou = nova_estrutura != estrutura_atual
+
+    if mudou:
+        sub["estrutura_autonomia"] = nova_estrutura
+        sub["agentes_autonomia"] = agentes
+        sub["ceo_proprio"] = ceo_proprio
+        sub["cfo_proprio"] = cfo_proprio
+        _save_state(state)
+
+    return {
+        "status": "ok",
+        "sub_id": sub_id,
+        "nome": sub["nome"],
+        "receita": receita,
+        "estrutura": nova_estrutura,
+        "descricao": descricao,
+        "agentes_necessarios": agentes,
+        "ceo_proprio": ceo_proprio,
+        "cfo_proprio": cfo_proprio,
+        "mudanca": mudou,
+        "alerta_vasco": mudou and ceo_proprio,  # avisa o Vasco quando ganha CEO próprio
+    }
+
+
 def avancar_fase(sub_id: str) -> dict:
     """Avança o sub-Morgan para a próxima fase do ciclo de vida."""
-    FASES = ["validacao", "mvp", "lancamento", "crescimento", "consolidacao", "analise"]
+    FASES = ["validacao", "mvp", "lancamento", "crescimento", "consolidacao", "analise", "autonomia"]
     state = _load_state()
     sub = state["sub_morgans"].get(sub_id)
     if not sub:
@@ -300,16 +395,37 @@ def avancar_fase(sub_id: str) -> dict:
 
 
 def registar_receita(sub_id: str, receita_mensal: float) -> dict:
-    """Atualiza a receita de um sub-Morgan. Ativa reports se > 0."""
+    """Atualiza a receita de um sub-Morgan. Ativa reports e verifica autonomia."""
     state = _load_state()
     sub = state["sub_morgans"].get(sub_id)
     if not sub:
         return {"status": "nao_encontrado"}
+    receita_anterior = sub.get("receita_atual", 0)
     sub["receita_atual"] = receita_mensal
     if receita_mensal > 0:
         sub["reports_enabled"] = True
     _save_state(state)
-    return {"status": "ok", "receita": receita_mensal, "reports_enabled": sub["reports_enabled"]}
+
+    # Verificar se muda de patamar de autonomia
+    autonomia = verificar_autonomia(sub_id)
+
+    resultado = {
+        "status": "ok",
+        "receita_anterior": receita_anterior,
+        "receita_atual": receita_mensal,
+        "reports_enabled": sub["reports_enabled"],
+        "estrutura": autonomia["estrutura"],
+        "descricao_estrutura": autonomia["descricao"],
+    }
+
+    if autonomia["alerta_vasco"]:
+        resultado["alerta"] = (
+            f"🏢 {sub['nome']} atingiu €{receita_mensal:.0f}/mês — "
+            f"recomendo criar {autonomia['descricao']}. "
+            f"Agentes necessários: {', '.join(autonomia['agentes_necessarios'])}."
+        )
+
+    return resultado
 
 
 def report_global_creator() -> str:

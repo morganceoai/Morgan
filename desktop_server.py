@@ -198,6 +198,11 @@ PWA_DIR = Path(__file__).parent / "pwa"
 async def serve_interface():
     return FileResponse(DESKTOP_DIR / "index.html")
 
+@app.get("/v2")
+@app.get("/v2/")
+async def serve_interface_v2():
+    return FileResponse(DESKTOP_DIR / "index_v2.html")
+
 @app.get("/pwa/")
 @app.get("/pwa/index.html")
 async def serve_pwa():
@@ -665,3 +670,7 @@ async def ws_transcribe(websocket: WebSocket):
             await websocket.send_text(json.dumps({"type": "error", "text": str(e)}))
         except Exception:
             pass
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8765)

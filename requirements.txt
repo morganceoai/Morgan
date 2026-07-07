@@ -54,3 +54,4 @@ mem0ai
 langsmith
 qdrant-client
 langgraph
+ccxt==4.4.83
