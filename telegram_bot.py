@@ -481,6 +481,11 @@ async def ceo_convocar_solver(bot, motivo: str) -> str:
 
 # ── Prompts ──────────────────────────────────────────────────────────────────
 
+def _cached_system(texto: str) -> list:
+    """Converte system prompt em formato cacheável pela Anthropic (poupa até 58% de tokens)."""
+    return [{"type": "text", "text": texto, "cache_control": {"type": "ephemeral"}}]
+
+
 def build_system_prompt(user_message: str = "") -> str:
     TODAY = agora_lisboa().strftime("%d de %B de %Y")
     estado = load_estado_imperio()
@@ -575,7 +580,7 @@ def get_morgan_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=1024,
-            system=build_system_prompt(user_message),
+            system=_cached_system(build_system_prompt(user_message)),
             tools=TOOLS,
             messages=history,
         )
@@ -657,7 +662,7 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=1024,
-            system=build_scout_conversational_system(user_message),
+            system=_cached_system(build_scout_conversational_system(user_message)),
             tools=TOOLS,
             messages=history,
         )
@@ -894,7 +899,7 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=2048,
-            system=build_solver_system(),
+            system=_cached_system(build_solver_system()),
             tools=TOOLS,
             messages=history,
         )
@@ -1020,7 +1025,7 @@ def run_heartbeat_check(check: dict) -> str | None:
         response = anthropic_client.messages.create(
             model=modelo,
             max_tokens=512,
-            system=build_heartbeat_system(),
+            system=_cached_system(build_heartbeat_system()),
             tools=TOOLS,
             messages=messages,
         )
@@ -1406,7 +1411,7 @@ async def run_scout_report(app):
         response = anthropic_client.messages.create(
             model="claude-opus-4-8",
             max_tokens=4096,
-            system=build_scout_system(),
+            system=_cached_system(build_scout_system()),
             tools=TOOLS,
             messages=messages,
         )
