@@ -389,7 +389,7 @@ def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
 
 def should_run_daily_report() -> bool:
     """Corre uma vez por dia às 22h. Ignora nas primeiras 3 minutos após arranque."""
-    if time.time() - PROCESS_START < 180:
+    if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
     if agora.hour != 22:
@@ -1088,7 +1088,7 @@ def run_heartbeat_check(check: dict) -> str | None:
 
 def should_run_scout() -> bool:
     """Corre todos os domingos às 20h. Ignora nas primeiras 3 minutos após arranque."""
-    if time.time() - PROCESS_START < 180:
+    if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
     if agora.weekday() != 6 or agora.hour != 20:
@@ -1285,7 +1285,7 @@ async def run_solver_check(app) -> None:
 
 def should_run_briefing() -> bool:
     """Verifica se está na hora do briefing (7h ou 20h) e se ainda não foi enviado hoje."""
-    if time.time() - PROCESS_START < 180:
+    if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
     hora = agora.hour
