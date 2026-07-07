@@ -64,6 +64,7 @@ ELEVENLABS_SOLVER_VOICE_ID = "IZipF5JhqPlWzpduTV0E"
 
 BASE_DIR = os.path.dirname(__file__)
 STATE_FILE = os.path.join(BASE_DIR, "memory", "heartbeat_state.json")
+PROCESS_START = time.time()
 SENT_FILE = os.path.join(BASE_DIR, "memory", "noticias_enviadas.json")
 AUDIT_FILE = os.path.join(BASE_DIR, "memory", "audit.log")
 CONFIG_FILE = os.path.join(BASE_DIR, "config.yaml")
@@ -387,7 +388,9 @@ def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
 
 
 def should_run_daily_report() -> bool:
-    """Corre uma vez por dia às 22h."""
+    """Corre uma vez por dia às 22h. Ignora nas primeiras 3 minutos após arranque."""
+    if time.time() - PROCESS_START < 180:
+        return False
     agora = agora_lisboa()
     if agora.hour != 22:
         return False
@@ -1084,7 +1087,9 @@ def run_heartbeat_check(check: dict) -> str | None:
 
 
 def should_run_scout() -> bool:
-    """Corre todos os domingos às 20h."""
+    """Corre todos os domingos às 20h. Ignora nas primeiras 3 minutos após arranque."""
+    if time.time() - PROCESS_START < 180:
+        return False
     agora = agora_lisboa()
     if agora.weekday() != 6 or agora.hour != 20:
         return False
@@ -1280,6 +1285,8 @@ async def run_solver_check(app) -> None:
 
 def should_run_briefing() -> bool:
     """Verifica se está na hora do briefing (7h ou 20h) e se ainda não foi enviado hoje."""
+    if time.time() - PROCESS_START < 180:
+        return False
     agora = agora_lisboa()
     hora = agora.hour
     if hora not in (7, 20):
