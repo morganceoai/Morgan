@@ -71,7 +71,7 @@ def _extrair_confianca(texto: str, campo: str) -> int:
 
 def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
     kwargs = {
-        "model": "claude-opus-4-8",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 2048,
         "system": system,
         "messages": messages,

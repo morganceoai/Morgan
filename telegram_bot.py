@@ -892,7 +892,7 @@ def get_solver_reply(user_id: str, user_message: str) -> str:
 
     while True:
         response = anthropic_client.messages.create(
-            model="claude-opus-4-8",
+            model="claude-sonnet-4-6",
             max_tokens=2048,
             system=build_solver_system(),
             tools=TOOLS,
@@ -1099,7 +1099,7 @@ _IGNORAR_PREFIXOS = [
 
 
 async def should_trigger_solver() -> bool:
-    """Verifica se há erros novos no audit.log ou nos logs do Railway."""
+    """Verifica se há erros novos no audit.log. Só dispara após 3+ erros distintos."""
     global _solver_ultimo_audit_pos
     if is_quiet_hours():
         return False
@@ -1119,7 +1119,8 @@ async def should_trigger_solver() -> bool:
             if any(p in linha_upper for p in _PADROES_ERRO):
                 erros.append(linha)
 
-        return len(erros) > 0
+        # Só dispara se houver 3+ erros — evita activações por erros transitórios únicos
+        return len(erros) >= 3
     except Exception:
         return False
 
