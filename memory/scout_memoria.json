@@ -1,0 +1,156 @@
+{
+  "oportunidades": {
+    "Relatórios táticos automáticos em PT/ES (pivô futebol)": {
+      "primeira_vez": "2026-W26",
+      "vezes_visto": 1,
+      "semanas": ["2026-W26"],
+      "descricao": "Camada de linguagem natural por cima do XML do Metrica/SportsCode — relatórios pré/pós jogo e briefings para jogadores em português",
+      "receita_estimada": "500-3.000€/mês por clube",
+      "notas": ["2026-W26: Pivô validado: não competir com Metrica/Once Sport mas construir por cima deles. Vantagem insider do Vasco. Validar com 3 clubes antes de construir."]
+    },
+    "Directório de terapeutas global": {
+      "primeira_vez": "2026-W26",
+      "vezes_visto": 2,
+      "semanas": ["2026-W26", "2026-W28"],
+      "descricao": "Directório vertical de terapeutas/psicólogos por país. Monetização: €40-150/mês por terapeuta (listagem premium). Cada país é um sub-Morgan separado.",
+      "receita_estimada": "3.000-15.000€/mês por país em 18 meses",
+      "mercados_por_confianca": [
+        {"pais": "Itália", "confianca": 91, "motivo": "Sem directório local dominante. Mercado europeu, menor concorrência confirmada."},
+        {"pais": "Espanha", "confianca": 88, "motivo": "Plataformas existem (Terapify/TherapyChat) mas não directórios puros."},
+        {"pais": "Índia", "confianca": 85, "motivo": "Mercado $151M→$464M. Sem directório puro. Volume alto."},
+        {"pais": "América Latina", "confianca": 83, "motivo": "LatinxTherapy focada EUA. Sem player local sólido em ES."},
+        {"pais": "França", "confianca": 82, "motivo": "Doctolib domina médicos em geral mas não terapeutas específico."},
+        {"pais": "Alemanha", "confianca": 74, "motivo": "therapie.de existe. Regulação Heilpraktiker mais complexa."}
+      ],
+      "caso_real": "£8k MRR em 18 meses · 200 terapeutas · £150/mês · UK",
+      "primeiro_mercado": "Itália",
+      "notas": [
+        "2026-W26: Directório PT/BR inicial — aprovado pelo Vasco.",
+        "2026-W28: Pivot global. Cada país é nicho próprio. Começar em Itália (maior gap, mercado EU)."
+      ]
+    },
+    "Directório de tutores global": {
+      "primeira_vez": "2026-W28",
+      "vezes_visto": 1,
+      "semanas": ["2026-W28"],
+      "descricao": "Directório vertical de tutores/explicadores por país. Cada país tem mercado próprio. Competição de Superprof existe mas fraca em versões locais.",
+      "receita_estimada": "2.000-15.000€/mês por país",
+      "mercados_por_confianca": [
+        {"pais": "Itália", "confianca": 90, "motivo": "Sem player local. Alta cultura de explicadores presenciais sub-digitalizada."},
+        {"pais": "Indonésia", "confianca": 87, "motivo": "Mercado $1.3B. Sem directório local dominante. 60M+ estudantes."},
+        {"pais": "Alemanha/DACH", "confianca": 84, "motivo": "18-20% mercado EU. €5B investimento digital. GoStudent é plataforma, não directório."},
+        {"pais": "Índia", "confianca": 86, "motivo": "$23.73B oportunidade. BYJU's/Vedantu são plataformas. Directório verificado diferente."},
+        {"pais": "Espanha", "confianca": 81, "motivo": "Superprof presente mas qualidade inconsistente."}
+      ],
+      "modelo_receita": "Opção A (subscription tutor €20-50/mês) para arrancar, escalar para comissão",
+      "primeiro_mercado": "Itália",
+      "notas": ["2026-W28: Análise global exaustiva. Itália primeiro (aproveita infra do directório de terapeutas)."]
+    },
+    "Templates planners digitais — mercados não-ingleses": {
+      "primeira_vez": "2026-W26",
+      "vezes_visto": 2,
+      "semanas": ["2026-W26", "2026-W28"],
+      "descricao": "Planners digitais (GoodNotes/Notability) vendidos no Etsy em idiomas sub-representados. Mercado $830M→$1.58B (2033). Etsy gera tráfego orgânico.",
+      "receita_estimada": "€2.000-5.000€/mês com 50-100 produtos ativos",
+      "mercados_por_confianca": [
+        {"idioma": "Alemão (DE/AT/CH)", "confianca": 92, "motivo": "4.38% mercado global de planners. Oferta em Alemão quase zero no Etsy."},
+        {"idioma": "Espanhol (ES/LATAM)", "confianca": 89, "motivo": "500M falantes. Gap confirmado. Volume alto."},
+        {"idioma": "Francês", "confianca": 86, "motivo": "3.28% mercado + África francófona. Etsy FR sub-servido."},
+        {"idioma": "Italiano", "confianca": 84, "motivo": "2.38% mercado. Etsy IT quase vazio em planners localizados."}
+      ],
+      "5_categorias": ["Planner anual/semanal/diário", "Planner objectivos e hábitos", "Planner académico/estudante", "Planner negócios/freelancer", "Planner saúde/fitness"],
+      "plataformas": ["Etsy (tráfego orgânico)", "Gumroad (audiência própria)"],
+      "notas": [
+        "2026-W26: Templates PT/BR aprovados — 5 categorias.",
+        "2026-W28: Pivot global. Foco em DE e ES primeiro. 50 produtos nos primeiros 30 dias."
+      ]
+    },
+    "Templates Notion — mercados não-ingleses": {
+      "primeira_vez": "2026-W28",
+      "vezes_visto": 1,
+      "semanas": ["2026-W28"],
+      "descricao": "Notion templates em idiomas não-ingleses. 100M utilizadores Notion. Caso real: $500k com um único template. Mercado não-inglês virtualmente inexplorado.",
+      "receita_estimada": "€500-5.000€/mês escalando com audiência",
+      "4_categorias_top": ["Produtividade e gestão pessoal (2ª Brain)", "Finanças pessoais (budget trackers)", "Calendário editorial/criadores", "CRM e negócios (freelancer hub)"],
+      "plataformas": ["Gumroad", "Etsy", "Notion Marketplace (0% comissão)"],
+      "mercados_inicio": ["Espanhol", "Francês"],
+      "notas": ["2026-W28: Análise global. Começar ES+FR, depois DE. Publicar em 3 plataformas simultâneo."]
+    },
+    "Micro-SaaS vertical de nicho": {
+      "primeira_vez": "2026-W26",
+      "vezes_visto": 1,
+      "semanas": ["2026-W26"],
+      "descricao": "Ferramenta que resolve o problema completo de um grupo muito específico, não uma ferramenta IA genérica",
+      "receita_estimada": "5.000-50.000€/mês",
+      "notas": ["2026-W26: 4 fontes. Caso real 16k/mês em nicho minúsculo. Morgan constrói o código."]
+    },
+    "Compra de blog/site com receita existente": {
+      "primeira_vez": "2026-W26",
+      "vezes_visto": 1,
+      "semanas": ["2026-W26"],
+      "descricao": "Adquirir site que já fatura e escalá-lo com IA, em vez de construir do zero",
+      "receita_estimada": "1.000-3.000€/mês por activo",
+      "notas": ["2026-W26: Passivo imediato mas exige 10-20k€ de capital."]
+    }
+  },
+  "historico_semanal": [
+    {
+      "semana": "2026-W26",
+      "oportunidades": [
+        "Relatórios táticos automáticos em PT/ES (pivô futebol)",
+        "Directório de nicho PT/BR monetizado",
+        "Micro-SaaS vertical de nicho",
+        "Compra de blog/site com receita existente",
+        "Produtos digitais/templates em PT"
+      ]
+    },
+    {
+      "semana": "2026-W28",
+      "oportunidades": [
+        "Directório de terapeutas global",
+        "Directório de tutores global",
+        "Templates planners digitais — mercados não-ingleses",
+        "Templates Notion — mercados não-ingleses"
+      ],
+      "notas": "Pesquisa exaustiva global — 53 queries Tavily. Pivot de PT/BR para mercado mundial. Cada país é nicho próprio."
+    }
+  ],
+  "aprovadas": [
+    {
+      "nome": "Directório de terapeutas global",
+      "aprovada_em": "2026-07-08",
+      "estado": "a_implementar",
+      "primeiro_mercado": "Itália",
+      "notas": "Aprovada pelo Vasco (inicialmente como 'Directório PT/BR', pivot para global em 2026-W28). Creator lança sub-Morgan Morgan Terapisti IT."
+    },
+    {
+      "nome": "Templates planners digitais — mercados não-ingleses",
+      "aprovada_em": "2026-07-08",
+      "estado": "a_implementar",
+      "5_categorias": ["Planner anual/semanal/diário", "Planner objectivos e hábitos", "Planner académico/estudante", "Planner negócios/freelancer", "Planner saúde/fitness"],
+      "primeiro_mercado": "Alemão + Espanhol",
+      "notas": "Aprovada pelo Vasco (5 categorias). Creator lança sub-Morgan Morgan Planners DE+ES."
+    },
+    {
+      "nome": "Directório de tutores global",
+      "aprovada_em": "2026-07-08",
+      "estado": "a_aprofundar",
+      "primeiro_mercado": "Itália",
+      "notas": "Aprovada com análise global. Lançar após directório de terapeutas (aproveita infra)."
+    },
+    {
+      "nome": "Templates Notion — mercados não-ingleses",
+      "aprovada_em": "2026-07-08",
+      "estado": "a_aprofundar",
+      "primeiro_mercado": "Espanhol + Francês",
+      "notas": "Aprovada com análise global. Lançar em paralelo com planners."
+    }
+  ],
+  "sequencia_implementacao": [
+    {"fase": 1, "meses": "1-2", "accao": "Lançar Morgan Planners ES+DE no Etsy", "receita_esperada": "€0-500/mês"},
+    {"fase": 1, "meses": "1-2", "accao": "Lançar Morgan Notion ES+FR (Gumroad + Etsy + Notion Marketplace)", "receita_esperada": "€0-200/mês"},
+    {"fase": 2, "meses": "3-5", "accao": "Lançar Morgan Terapisti IT (directório terapeutas Itália)", "receita_esperada": "€500-3.000/mês"},
+    {"fase": 3, "meses": "6-12", "accao": "Directório tutores Itália + Terapeutas Espanha + Planners FR+IT", "receita_esperada": "€3.000-10.000/mês"},
+    {"fase": 4, "meses": "12+", "accao": "Replicar directórios em Alemanha, Índia, América Latina", "receita_esperada": "€10.000-20.000/mês"}
+  ]
+}

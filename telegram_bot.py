@@ -569,7 +569,7 @@ A data de hoje é {TODAY}. Usa sempre esta data. Quando pesquisares, inclui semp
 Tom: firme e direto no trabalho, compreensivo e de apoio quando necessário. Sempre em português europeu. Trata o Vasco pelo primeiro nome. Nunca uses emojis — zero emojis em qualquer resposta. Sem excessos de pontuação ou entusiasmo artificial.
 
 Tens acesso a ferramentas para pesquisar na web, obter dados da Primeira Liga, e gerir a tua memória.
-Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica).
+Coordenas o Scout (inteligência de negócio), o Solver (manutenção técnica), o CFO (finanças e trading), o Coach (análise tática de futebol) e o Creator (construção de negócios).
 
 ## O que sabes sobre o Vasco:
 {load_memory()}
@@ -587,7 +587,7 @@ Coordenas o Scout (inteligência de negócio) e o Solver (manutenção técnica)
 ## Responsabilidades de CEO — usa as ferramentas correspondentes:
 - Quando tomares uma decisão relevante (aprovação, criação de negócio, mudança de arquitectura), chama `atualizar_estado_imperio` para registar.
 - Quando precisares de contexto histórico (o que aconteceu antes desta semana), chama `consultar_historico_imperio`.
-- Coordenas: Scout (inteligência de mercado), Solver (manutenção), Coach (análise tática), Creator (construção de negócios).
+- Coordenas: Scout (inteligência de mercado), Solver (manutenção), CFO (finanças e trading), Coach (análise tática), Creator (construção de negócios).
 
 ## Quando o Vasco pedir notícias ou um resumo do que se passa, faz SEMPRE estas três pesquisas:
 1. Notícias recentes do Moreirense FC em 2026 (resultados, lesões, transferências, rumores)
@@ -771,6 +771,16 @@ def get_scout_reply(user_id: str, user_message: str) -> str:
         return reply
 
 
+def _quer_cfo(msg: str) -> bool:
+    """Deteta intenção de falar com o Morgan CFO."""
+    m = msg.lower()
+    return any(k in m for k in ["morgan cfo", "cfo", "trading bot", "trading", "pnl",
+                                  "drawdown", "capital", "lucro", "perda", "trades",
+                                  "win rate", "posição aberta", "financeiro", "finanças",
+                                  "btc", "bitcoin", "usdt", "binance", "ema", "bot parou",
+                                  "relatório financeiro", "relatorio financeiro"])
+
+
 def _quer_coach(msg: str) -> bool:
     """Deteta intenção de falar com o Morgan Coach."""
     m = msg.lower()
@@ -814,6 +824,15 @@ def get_coach_reply_telegram(user_message: str) -> str:
         return f"[COACH] Erro ao ativar o Morgan Coach: {e}"
 
 
+def get_cfo_reply_telegram(user_message: str) -> str:
+    """Wrapper para o CFO Agent."""
+    try:
+        from cfo_agent import get_cfo_reply
+        return "[CFO] " + get_cfo_reply(user_message)
+    except Exception as e:
+        return f"[CFO] Erro ao ativar o Morgan CFO: {e}"
+
+
 def get_agente_reply(user_id: str, user_message: str) -> str:
     """Encaminha a mensagem para o agente ativo (CEO, Scout, Coach ou Solver)."""
     uid = "vasco"
@@ -827,6 +846,11 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
     if _quer_solver(user_message):
         agente_ativo[uid] = "solver"
         return "[SOLVER] " + get_solver_reply(uid, user_message)
+
+    # CFO — trading e finanças
+    if _quer_cfo(user_message) and not _e_problema_tecnico(user_message):
+        agente_ativo[uid] = "cfo"
+        return get_cfo_reply_telegram(user_message)
 
     # Coach — análise tática e profissão (antes do Scout para não confundir mercado de jogadores com Scout)
     if _quer_coach(user_message) and not _e_problema_tecnico(user_message):
@@ -846,6 +870,8 @@ def get_agente_reply(user_id: str, user_message: str) -> str:
         return "[SOLVER] " + get_solver_reply(uid, user_message)
     if agente == "coach":
         return get_coach_reply_telegram(user_message)
+    if agente == "cfo":
+        return get_cfo_reply_telegram(user_message)
     return get_morgan_reply(uid, user_message)
 
 
@@ -1632,6 +1658,19 @@ async def heartbeat_loop(app):
                     await run_daily_report(app)
                 except Exception as e:
                     audit("DAILY_REPORT_ERRO", str(e))
+
+            # CFO — alertas críticos de drawdown (a qualquer hora)
+            try:
+                from cfo_agent import verificar_alertas_criticos
+                alertas = verificar_alertas_criticos()
+                for alerta in alertas:
+                    chave_alerta = f"cfo_alerta_{alerta[:40]}"
+                    if not _dedup_check(chave_alerta):
+                        _dedup_mark(chave_alerta)
+                        await enviar_seguro(app.bot, f"[CFO] ALERTA: {alerta}", chat_id=TELEGRAM_CHAT_ID)
+                        audit("CFO_ALERTA", alerta[:80])
+            except Exception as e:
+                audit("CFO_ERRO", str(e))
 
             # Trading bot — ciclo a cada hora
             try:

@@ -62,23 +62,75 @@ DOMAIN_KNOWLEDGE = {
         "fontes_pesquisa": [
             "profitable directory website niche 2026 indiehackers revenue",
             "directory business model monetization case study AppSumo",
-            "niche directory PT BR market gap opportunity 2026",
+            "niche directory Italy Spain therapist tutor gap opportunity 2026",
         ],
         "comunidades": ["IndieHackers", "r/indiehackers", "r/entrepreneur", "MicroAcquire"],
         "ferramentas_data": ["Ahrefs (SEO)", "SimilarWeb (tráfego)", "Google Trends"],
         "metricas_sucesso": ["visitantes/mês", "listagens pagas", "receita afiliados"],
         "plataformas_venda": ["listagens diretas", "afiliados", "leads pagos"],
     },
+    "directorio_terapeutas": {
+        "fontes_pesquisa": [
+            "therapist directory Italy Spain France niche site revenue 2026",
+            "psychology directory listing fee model Psychology Today alternative",
+            "mental health professional directory monetization €50-150/month listing 2026",
+        ],
+        "comunidades": ["IndieHackers", "r/indiehackers", "r/entrepreneur"],
+        "ferramentas_data": ["WordPress + Directorist plugin", "Google Maps API", "Stripe"],
+        "metricas_sucesso": ["terapeutas listados", "% premium pagos", "MRR"],
+        "plataformas_venda": ["listagem premium €40-150/mês", "leads pagos", "booking integrado"],
+        "primeiro_mercado": "Itália",
+        "modelo_receita": "Listagem básica gratuita (cria massa crítica) + premium €40-150/mês",
+        "caso_real": "£8k MRR em 18 meses · 200 terapeutas · £150/mês (UK)",
+        "contas_necessarias": ["Domínio (Cloudflare €10/ano)", "Hosting WordPress (Hetzner €10/mês)",
+                               "Directorist Plugin ($99/ano)", "Stripe (2.9%+€0.30)", "SendGrid (email onboarding)"],
+    },
+    "directorio_tutores": {
+        "fontes_pesquisa": [
+            "tutor directory Italy Indonesia niche site 2026 revenue Superprof alternative",
+            "tutoring directory listing model subscription per tutor 2026",
+            "private tutoring marketplace gap local directory verified tutors 2026",
+        ],
+        "comunidades": ["IndieHackers", "r/entrepreneur", "r/SaaS"],
+        "ferramentas_data": ["WordPress + Directorist plugin", "Google Maps API", "Stripe"],
+        "metricas_sucesso": ["tutores listados", "% premium pagos", "MRR", "sessões marcadas"],
+        "plataformas_venda": ["subscription tutor €20-50/mês", "comissão por aula 10-20%"],
+        "primeiro_mercado": "Itália",
+        "modelo_receita": "Opção A — subscription tutor €20-50/mês para arrancar",
+        "contas_necessarias": ["Domínio (Cloudflare €10/ano)", "Hosting WordPress (Hetzner €10/mês)",
+                               "Directorist Plugin ($99/ano)", "Stripe (2.9%+€0.30)"],
+    },
     "templates_digitais": {
         "fontes_pesquisa": [
-            "digital products templates Gumroad bestsellers 2026 revenue",
-            "Etsy digital downloads passive income 2026 Portugal Brazil",
-            "notion templates Lemon Squeezy top sellers 2026",
+            "digital planner Etsy German Spanish non-English market gap 2026",
+            "GoodNotes Notability planner template bestseller non-English 2026",
+            "Etsy digital downloads passive income 2026 German Spanish French Italian",
         ],
-        "comunidades": ["r/passive_income", "Gumroad creators", "AppSumo marketplace"],
-        "ferramentas_data": ["Gumroad analytics", "Etsy stats", "Lemon Squeezy dashboard"],
-        "metricas_sucesso": ["unidades vendidas/mês", "preço médio", "churn"],
-        "plataformas_venda": ["Gumroad", "Lemon Squeezy", "Etsy", "Payhip"],
+        "comunidades": ["r/passive_income", "Gumroad creators", "Etsy sellers"],
+        "ferramentas_data": ["Gumroad analytics", "Etsy stats", "Canva Pro API"],
+        "metricas_sucesso": ["unidades vendidas/mês", "preço médio €10-30", "reviews"],
+        "plataformas_venda": ["Etsy (tráfego orgânico)", "Gumroad (audiência própria)"],
+        "5_categorias": ["Planner anual/semanal/diário", "Planner objectivos e hábitos",
+                         "Planner académico/estudante", "Planner negócios/freelancer", "Planner saúde/fitness"],
+        "primeiros_mercados": ["Alemão (DE/AT/CH)", "Espanhol (ES/LATAM)"],
+        "contas_necessarias": ["Etsy seller (requer ID do Vasco)", "Canva Pro ($15/mês)",
+                               "Gumroad (10% comissão)", "Pinterest Business (gratuito)"],
+    },
+    "templates_notion": {
+        "fontes_pesquisa": [
+            "Notion template non-English market Spanish French German 2026 revenue",
+            "Notion template Gumroad Etsy bestseller productivity finance 2026",
+            "Notion marketplace template creator revenue passive income 2026",
+        ],
+        "comunidades": ["Notion template creators", "r/Notion", "Gumroad creators"],
+        "ferramentas_data": ["Gumroad analytics", "Etsy stats", "Notion Marketplace"],
+        "metricas_sucesso": ["unidades vendidas/mês", "preço médio €5-49", "avaliações"],
+        "plataformas_venda": ["Gumroad (10%)", "Etsy (6.5%+$0.20/listing)", "Notion Marketplace (0%)"],
+        "4_categorias": ["Produtividade e gestão pessoal (2ª Brain)", "Finanças pessoais (budget tracker)",
+                         "Calendário editorial/criadores", "CRM e negócios (freelancer hub)"],
+        "primeiros_mercados": ["Espanhol", "Francês"],
+        "contas_necessarias": ["Gumroad (gratuito)", "Etsy seller (requer ID do Vasco)",
+                               "Notion Marketplace (gratuito)", "Mailchimp (lista de email)"],
     },
     "relatorios_taticos": {
         "fontes_pesquisa": [
@@ -135,26 +187,86 @@ def _save_state(state: dict):
 TEMPLATES = {
     "directorio": {
         "nome": "Morgan Directório",
-        "descricao": "Gere directório de nicho PT/BR — conteúdo, SEO, monetização",
+        "descricao": "Gere directório de nicho — conteúdo, SEO, monetização",
         "ferramentas": ["pesquisar_web", "tavily_search"],
         "prompt_base": """És o Morgan Directório, um sub-agente especializado em construir e gerir
-directórios de nicho em português. O teu trabalho é:
-1. Identificar categorias e subcategorias relevantes para o nicho
-2. Pesquisar e catalogar entidades relevantes
-3. Sugerir estratégias de monetização (listagens pagas, leads, afiliados)
-4. Gerar conteúdo SEO optimizado em PT-PT
+directórios de nicho por país. O teu trabalho é:
+1. Identificar categorias e subcategorias relevantes para o nicho e país
+2. Pesquisar e catalogar entidades relevantes (terapeutas, tutores, etc.)
+3. Sugerir estratégias de monetização (listagens pagas €40-150/mês, leads, afiliados)
+4. Gerar conteúdo SEO optimizado no idioma do mercado-alvo
+5. Planear campanha de cold outreach automático via email para atrair primeiros listados
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
+    "directorio_terapeutas": {
+        "nome": "Morgan Terapisti IT",
+        "descricao": "Directório de terapeutas — primeiro mercado: Itália",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan Terapisti, sub-agente especializado no directório de terapeutas/psicólogos.
+Primeiro mercado: Itália. Depois: Espanha, França, América Latina.
+O teu trabalho:
+1. Encontrar terapeutas italianos via Google Maps + Ordine degli Psicologi
+2. Gerar emails de outreach personalizados em italiano (oferecer listagem gratuita 3 meses)
+3. Criar perfis no directório com conteúdo SEO em italiano
+4. Gerir conversão de gratuito para premium (€60-80/mês)
+5. Relatório mensal ao CEO: terapeutas listados, % premium, MRR
+Referência: Psychology Today ($29.95/mês US) · caso real UK: £8k MRR/18 meses com £150/mês
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
+    "directorio_tutores": {
+        "nome": "Morgan Tutori IT",
+        "descricao": "Directório de tutores — primeiro mercado: Itália",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan Tutori, sub-agente especializado no directório de tutores/explicadores.
+Primeiro mercado: Itália. Depois: Indonésia, Alemanha, Espanha.
+O teu trabalho:
+1. Encontrar tutores italianos via Google Maps + plataformas existentes
+2. Gerar emails de outreach em italiano (listagem gratuita para os primeiros 50)
+3. Criar perfis verificados com conteúdo SEO em italiano
+4. Modelo: subscription €20-35/mês por tutor (começar simples, depois comissão por aula)
+5. Relatório mensal ao CEO: tutores listados, % premium, MRR, sessões marcadas
+Referência: Superprof (27M tutores em 50 países) — mas sem versão local curada em IT
 Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
     },
     "templates_digitais": {
-        "nome": "Morgan Templates",
-        "descricao": "Cria e vende produtos digitais/templates em português",
+        "nome": "Morgan Planners",
+        "descricao": "Cria e vende planners digitais em idiomas sub-representados no Etsy",
         "ferramentas": ["pesquisar_web"],
-        "prompt_base": """És o Morgan Templates, especializado em criar e vender produtos digitais
-em português (templates, planeadores, guias). O teu trabalho é:
-1. Identificar nichos com baixa concorrência em PT
-2. Criar produtos digitais de alta margem
-3. Optimizar páginas de venda em Gumroad/Etsy
-4. Monitorizar vendas e ajustar estratégia
+        "prompt_base": """És o Morgan Planners, especializado em criar e vender planners digitais
+(GoodNotes/Notability) em idiomas com gap confirmado no Etsy.
+Primeiros mercados: Alemão (DE/AT/CH) e Espanhol (ES/LATAM).
+O teu trabalho:
+1. Criar 50+ planners nos primeiros 30 dias nas 5 categorias aprovadas:
+   — Planner anual/semanal/diário
+   — Planner objectivos e hábitos
+   — Planner académico/estudante
+   — Planner negócios/freelancer
+   — Planner saúde/fitness
+2. Optimizar títulos e tags SEO em alemão e espanhol para o Etsy
+3. Publicar também no Gumroad como backup
+4. Monitorizar vendas e ajustar keywords
+5. Relatório mensal: unidades vendidas, receita, reviews
+Referência: Rachel Jimenez $9.5k/mês · PlannerKate milhões em receita total
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
+    "templates_notion": {
+        "nome": "Morgan Notion",
+        "descricao": "Cria e vende Notion templates em idiomas sub-representados",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan Notion, especializado em criar e vender Notion templates
+em idiomas com pouca concorrência.
+Primeiros mercados: Espanhol e Francês. Depois: Alemão.
+O teu trabalho:
+1. Criar templates nas 4 categorias top (por ordem de prioridade):
+   — Produtividade e gestão pessoal (Segunda Brain, dashboards)
+   — Finanças pessoais (budget tracker, controlo de despesas)
+   — Calendário editorial / criadores de conteúdo
+   — CRM e negócios (freelancer hub, pipeline de clientes)
+2. Publicar em 3 plataformas: Gumroad + Etsy + Notion Marketplace
+3. Optimizar descrições em espanhol e francês
+4. Construir lista de email com os primeiros compradores
+5. Relatório mensal: vendas, receita, plataforma mais eficaz
+Referência: $500k com um único template de finance tracker
 Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
     },
     "relatorios_taticos": {
@@ -187,7 +299,11 @@ Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
 
 OPORTUNIDADE_TO_TEMPLATE = {
     "Directório de nicho PT/BR monetizado": "directorio",
+    "Directório de terapeutas global": "directorio_terapeutas",
+    "Directório de tutores global": "directorio_tutores",
     "Produtos digitais/templates em PT": "templates_digitais",
+    "Templates planners digitais — mercados não-ingleses": "templates_digitais",
+    "Templates Notion — mercados não-ingleses": "templates_notion",
     "Relatórios táticos automáticos em PT/ES (pivô futebol)": "relatorios_taticos",
     "Micro-SaaS vertical de nicho": "micro_saas",
 }
