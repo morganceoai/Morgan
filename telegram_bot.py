@@ -417,39 +417,54 @@ def ceo_avaliar_confianca(relatorio_solver: dict) -> dict:
     }
 
 
+def _dedup_check(chave: str) -> bool:
+    """Verifica se uma tarefa agendada já foi executada. Mem0 primeiro (sobrevive a redeploy), ficheiro como cache."""
+    try:
+        client = get_mem0_client()
+        if client:
+            res = client.search(query=chave, filters={"user_id": "briefing_dedup"}, limit=1)
+            if res:
+                m = res[0].get("memory", "") if isinstance(res[0], dict) else str(res[0])
+                if chave in m:
+                    return True
+    except Exception:
+        pass
+    return load_state().get(chave, False)
+
+def _dedup_mark(chave: str):
+    """Regista tarefa como executada em Mem0 + ficheiro local."""
+    try:
+        client = get_mem0_client()
+        if client:
+            client.add([{"role": "assistant", "content": chave}], user_id="briefing_dedup")
+    except Exception:
+        pass
+    state = load_state()
+    state[chave] = True
+    save_state(state)
+
 def should_run_ceo_proactivo() -> bool:
     """CEO proactivo corre uma vez por dia às 7h."""
     if time.time() - PROCESS_START < 600:
         return False
-    agora = agora_lisboa()
-    state = load_state()
-    chave = f"ceo_proactivo_{agora.strftime('%Y-%m-%d')}"
-    return not state.get(chave, False)
+    chave = f"ceo_proactivo_{agora_lisboa().strftime('%Y-%m-%d')}"
+    return not _dedup_check(chave)
 
 def mark_ceo_proactivo_done():
-    state = load_state()
-    chave = f"ceo_proactivo_{agora_lisboa().strftime('%Y-%m-%d')}"
-    state[chave] = True
-    save_state(state)
+    _dedup_mark(f"ceo_proactivo_{agora_lisboa().strftime('%Y-%m-%d')}")
 
 
 def should_run_daily_report() -> bool:
-    """Corre uma vez por dia às 22h. Ignora nas primeiras 3 minutos após arranque."""
+    """Corre uma vez por dia às 22h."""
     if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
     if agora.hour != 22:
         return False
-    state = load_state()
-    chave = f"daily_report_{agora.strftime('%Y-%m-%d')}"
-    return not state.get(chave, False)
+    return not _dedup_check(f"daily_report_{agora.strftime('%Y-%m-%d')}")
 
 def mark_daily_report_done():
-    agora = agora_lisboa()
-    state = load_state()
-    chave = f"daily_report_{agora.strftime('%Y-%m-%d')}"
-    state[chave] = True
-    save_state(state)
+    _dedup_mark(f"daily_report_{agora_lisboa().strftime('%Y-%m-%d')}")
 
 
 def _ceo_actualizar_imperio(evento: str):
@@ -1138,23 +1153,16 @@ def run_heartbeat_check(check: dict) -> str | None:
 
 
 def should_run_scout() -> bool:
-    """Corre todos os domingos às 20h. Ignora nas primeiras 3 minutos após arranque."""
+    """Corre todos os domingos às 20h."""
     if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
     if agora.weekday() != 6 or agora.hour != 20:
         return False
-    state = load_state()
-    chave = f"scout_{agora.strftime('%Y-%W')}"
-    return not state.get(chave, False)
-
+    return not _dedup_check(f"scout_{agora.strftime('%Y-%W')}")
 
 def mark_scout_done():
-    agora = agora_lisboa()
-    chave = f"scout_{agora.strftime('%Y-%W')}"
-    state = load_state()
-    state[chave] = True
-    save_state(state)
+    _dedup_mark(f"scout_{agora_lisboa().strftime('%Y-%W')}")
 
 
 def _init_audit_pos() -> int:
@@ -1339,20 +1347,12 @@ def should_run_briefing() -> bool:
     if time.time() - PROCESS_START < 600:
         return False
     agora = agora_lisboa()
-    hora = agora.hour
-    if hora not in (7, 20):
+    if agora.hour not in (7, 20):
         return False
-    state = load_state()
-    chave = f"briefing_{agora.strftime('%Y-%m-%d_%H')}"
-    return not state.get(chave, False)
-
+    return not _dedup_check(f"briefing_{agora.strftime('%Y-%m-%d_%H')}")
 
 def mark_briefing_done():
-    agora = agora_lisboa()
-    chave = f"briefing_{agora.strftime('%Y-%m-%d_%H')}"
-    state = load_state()
-    state[chave] = True
-    save_state(state)
+    _dedup_mark(f"briefing_{agora_lisboa().strftime('%Y-%m-%d_%H')}")
 
 
 def build_scout_conversational_system(query: str = "") -> str:
