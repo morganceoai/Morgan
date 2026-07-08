@@ -4,281 +4,882 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BC Industries</title>
-  <meta name="description" content="BC Industries — Building autonomous digital businesses.">
+  <meta name="description" content="BC Industries — Autonomous digital businesses built to generate passive income at scale.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #0a0a0a;
-      --white: #f5f5f0;
-      --gray-1: #1a1a1a;
-      --gray-2: #2a2a2a;
-      --gray-3: #888;
-      --gray-4: #ccc;
-      --accent: #e8e0d0;
-      --font: 'Georgia', serif;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      --bg: #060608;
+      --surface: #0d0d12;
+      --surface-2: #13131a;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0f0f5;
+      --muted: rgba(240,240,245,0.45);
+      --dim: rgba(240,240,245,0.2);
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-glow: rgba(99,102,241,0.3);
+      --green: #10b981;
+      --amber: #f59e0b;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--black);
-      color: var(--white);
-      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
       font-size: 16px;
       line-height: 1.6;
-      min-height: 100vh;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    /* ── Layout ── */
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 2rem;
+    /* ── Canvas BG ── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
+
+    .wrapper { position: relative; z-index: 1; }
 
     /* ── Nav ── */
     nav {
-      padding: 2.5rem 0;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 0 40px;
+      height: 64px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(6,6,8,0.8);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
     }
 
     .logo {
-      font-family: var(--font-sans);
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
     }
 
-    .nav-contact {
-      font-size: 13px;
-      color: var(--gray-3);
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .nav-link {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--muted);
       text-decoration: none;
-      letter-spacing: 0.05em;
       transition: color 0.2s;
     }
 
-    .nav-contact:hover { color: var(--white); }
+    .nav-link:hover { color: var(--text); }
+
+    .nav-cta {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .nav-cta:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.15);
+    }
 
     /* ── Hero ── */
     .hero {
-      padding: 8rem 0 6rem;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 100px 40px 80px;
+      position: relative;
     }
 
-    .hero-label {
-      font-size: 11px;
-      letter-spacing: 0.2em;
+    .hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 20px;
+      padding: 6px 14px 6px 10px;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.2s forwards;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero-badge span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: var(--gray-3);
-      margin-bottom: 2.5rem;
     }
 
     .hero-title {
-      font-family: var(--font);
-      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.35s forwards;
+    }
+
+    .hero-title .line-1 { display: block; color: var(--text); }
+
+    .hero-title .line-2 {
+      display: block;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
       font-weight: 400;
-      line-height: 1.25;
-      color: var(--white);
-      margin-bottom: 2rem;
-      max-width: 580px;
-    }
-
-    .hero-title em {
-      font-style: italic;
-      color: var(--accent);
-    }
-
-    .hero-body {
-      font-size: 15px;
-      color: var(--gray-3);
-      max-width: 420px;
-      line-height: 1.8;
-    }
-
-    /* ── Divider ── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--gray-2);
-      margin: 4rem 0;
-    }
-
-    /* ── About ── */
-    .section {
-      padding: 2rem 0 4rem;
-    }
-
-    .section-label {
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--gray-3);
-      margin-bottom: 2rem;
-    }
-
-    .section-text {
-      font-size: 15px;
-      color: var(--gray-4);
-      line-height: 1.9;
-      max-width: 540px;
-    }
-
-    .section-text + .section-text {
-      margin-top: 1.2rem;
-    }
-
-    /* ── Pillars ── */
-    .pillars {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 2rem;
-      margin-top: 3rem;
-    }
-
-    .pillar {
-      border-top: 1px solid var(--gray-2);
-      padding-top: 1.5rem;
-    }
-
-    .pillar-num {
-      font-size: 11px;
-      letter-spacing: 0.15em;
-      color: var(--gray-3);
-      margin-bottom: 0.75rem;
-    }
-
-    .pillar-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 0.5rem;
-      letter-spacing: 0.02em;
-    }
-
-    .pillar-desc {
-      font-size: 13px;
-      color: var(--gray-3);
+      color: var(--muted);
       line-height: 1.7;
+      max-width: 540px;
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.65s forwards;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 26px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      box-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 40px rgba(99,102,241,0.5);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.09);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 40px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.8s forwards;
+    }
+
+    .stat-item {
+      padding: 0 32px;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:first-child { padding-left: 0; }
+    .stat-item:last-child { border-right: none; }
+
+    .stat-val {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--text), var(--muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Section ── */
+    section.main {
+      padding: 120px 40px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .section-tag::before {
+      content: '';
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .section-desc {
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 520px;
+      margin-bottom: 64px;
+    }
+
+    /* ── Portfolio Grid ── */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .portfolio-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .portfolio-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% -20%, var(--card-glow, rgba(99,102,241,0.08)), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .portfolio-card:hover {
+      border-color: rgba(255,255,255,0.13);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .portfolio-card:hover::before { opacity: 1; }
+
+    .portfolio-card.col-2 {
+      grid-column: span 2;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .icon-dirs { background: rgba(99,102,241,0.12); --card-glow: rgba(99,102,241,0.1); }
+    .icon-digital { background: rgba(16,185,129,0.12); --card-glow: rgba(16,185,129,0.1); }
+    .icon-capital { background: rgba(245,158,11,0.12); --card-glow: rgba(245,158,11,0.1); }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .dirs .card-label { color: var(--accent); }
+    .digital .card-label { color: var(--green); }
+    .capital .card-label { color: var(--amber); }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .card-ventures {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .venture-pill {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--surface-2);
+    }
+
+    .venture-pill.active {
+      border-color: rgba(99,102,241,0.4);
+      color: var(--accent);
+      background: rgba(99,102,241,0.08);
+    }
+
+    /* ── Process ── */
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .process-step {
+      background: var(--surface);
+      padding: 32px 24px;
+      position: relative;
+    }
+
+    .process-step:hover { background: var(--surface-2); }
+
+    .step-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .step-desc {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.65;
     }
 
     /* ── Contact ── */
     .contact-section {
-      padding: 4rem 0 6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 80px 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin: 0 40px 120px;
     }
 
-    .contact-line {
-      font-family: var(--font);
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 400;
-      color: var(--white);
-      margin-bottom: 2rem;
-      line-height: 1.4;
+    .contact-section::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.12), transparent 70%);
+      pointer-events: none;
     }
 
-    .contact-email {
-      font-size: 14px;
-      color: var(--gray-3);
+    .contact-section h2 {
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .contact-section p {
+      font-size: 16px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .contact-email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 28px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
       text-decoration: none;
-      border-bottom: 1px solid var(--gray-2);
-      padding-bottom: 2px;
-      transition: color 0.2s, border-color 0.2s;
-      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      position: relative;
     }
 
-    .contact-email:hover {
-      color: var(--white);
-      border-color: var(--gray-4);
+    .contact-email-btn:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-1px);
     }
+
+    .contact-email-btn svg { opacity: 0.5; }
 
     /* ── Footer ── */
     footer {
-      padding: 2.5rem 0;
-      border-top: 1px solid var(--gray-2);
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 12px;
     }
 
-    .footer-copy {
-      font-size: 12px;
-      color: var(--gray-3);
-      letter-spacing: 0.05em;
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .footer-loc {
-      font-size: 12px;
-      color: var(--gray-3);
-      letter-spacing: 0.05em;
+    .footer-logo-mark {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .footer-name { font-size: 13px; font-weight: 600; color: var(--muted); }
+
+    .footer-right { font-size: 12.5px; color: var(--dim); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-right { gap: 16px; }
+      .nav-link { display: none; }
+      .hero { padding: 90px 20px 60px; }
+      .stats-strip { margin: 0 20px; grid-template-columns: repeat(2, 1fr); }
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
+      .stat-item:nth-child(2n) { border-right: none; }
+      section.main { padding: 80px 20px; }
+      .portfolio-grid { grid-template-columns: 1fr; }
+      .portfolio-card.col-2 { grid-column: span 1; }
+      .process-grid { grid-template-columns: 1fr 1fr; }
+      .contact-section { margin: 0 20px 80px; padding: 48px 28px; }
+      footer { padding: 24px 20px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <nav>
-      <a class="logo" href="/">BC Industries</a>
-      <a class="nav-contact" href="mailto:morganceoai@gmail.com">Contact</a>
-    </nav>
 
-    <section class="hero">
-      <p class="hero-label">Building what works</p>
+<canvas id="bg-canvas"></canvas>
+
+<div class="wrapper">
+
+  <!-- NAV -->
+  <nav>
+    <a class="logo" href="/">
+      <div class="logo-mark">BC</div>
+      <span class="logo-text">BC Industries</span>
+    </a>
+    <div class="nav-right">
+      <a class="nav-link" href="#ventures">Ventures</a>
+      <a class="nav-link" href="#process">Process</a>
+      <a class="nav-cta" href="mailto:morganceoai@gmail.com">Get in touch</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <div class="badge-dot"></div>
+        <span>Building autonomous ventures</span>
+      </div>
       <h1 class="hero-title">
-        Autonomous businesses.<br>
-        <em>Built to last.</em>
+        <span class="line-1">Digital businesses</span>
+        <span class="line-2">that run themselves.</span>
       </h1>
-      <p class="hero-body">
-        BC Industries builds and operates independent digital businesses — directories, products, and platforms that generate value without constant oversight.
+      <p class="hero-sub">
+        BC Industries builds, launches, and operates independent digital businesses — directories, digital products, and systematic capital. Designed to generate value with minimal ongoing effort.
       </p>
-    </section>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#ventures">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          See our ventures
+        </a>
+        <a class="btn btn-ghost" href="mailto:morganceoai@gmail.com">Contact</a>
+      </div>
+    </div>
+  </section>
 
-    <hr class="divider">
+  <!-- STATS -->
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-val">4</div>
+      <div class="stat-label">Active ventures</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">3</div>
+      <div class="stat-label">Markets targeted</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">€0</div>
+      <div class="stat-label">External funding</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">100%</div>
+      <div class="stat-label">Owned & operated</div>
+    </div>
+  </div>
 
-    <section class="section">
-      <p class="section-label">What we do</p>
-      <p class="section-text">
-        We identify underserved markets and build simple, focused businesses to serve them. Each venture is designed to operate autonomously, with technology handling the repetitive and AI handling the complex.
-      </p>
-      <p class="section-text">
-        We are not a consultancy. We are not an agency. We build and own the things we make.
-      </p>
+  <!-- VENTURES -->
+  <section class="main" id="ventures">
+    <div class="reveal">
+      <div class="section-tag">Portfolio</div>
+      <h2 class="section-title">Three pillars.<br>Built to compound.</h2>
+      <p class="section-desc">Each business is designed to operate autonomously, serve an underserved niche, and generate recurring revenue without requiring our constant attention.</p>
+    </div>
 
-      <div class="pillars">
-        <div class="pillar">
-          <p class="pillar-num">01</p>
-          <p class="pillar-title">Directories</p>
-          <p class="pillar-desc">Vertical professional networks connecting people with the right services across Europe and beyond.</p>
-        </div>
-        <div class="pillar">
-          <p class="pillar-num">02</p>
-          <p class="pillar-title">Digital products</p>
-          <p class="pillar-desc">Templates, planners, and tools built for underserved language markets with zero marginal cost to scale.</p>
-        </div>
-        <div class="pillar">
-          <p class="pillar-num">03</p>
-          <p class="pillar-title">Capital</p>
-          <p class="pillar-desc">Systematic, rules-based investing as a complement to operational revenue. No speculation.</p>
+    <div class="portfolio-grid reveal">
+
+      <div class="portfolio-card dirs col-2">
+        <div class="card-icon icon-dirs">🗂</div>
+        <div class="card-label">Directories</div>
+        <div class="card-title">Vertical professional directories</div>
+        <p class="card-desc">We build niche directories connecting professionals with the people looking for them — in markets where aggregation is still fragmented. Free to join, premium to stand out.</p>
+        <div class="card-ventures">
+          <span class="venture-pill active">Terapisti.it</span>
+          <span class="venture-pill active">Tutori.it</span>
+          <span class="venture-pill">Next: Germany</span>
+          <span class="venture-pill">Next: France</span>
         </div>
       </div>
-    </section>
 
-    <hr class="divider">
+      <div class="portfolio-card digital">
+        <div class="card-icon icon-digital">📦</div>
+        <div class="card-label">Digital products</div>
+        <div class="card-title">Templates for non-English markets</div>
+        <p class="card-desc">Planners, Notion templates, and productivity tools built for Spanish, German, and French speakers — markets where quality digital products in native language are rare.</p>
+        <div class="card-ventures">
+          <span class="venture-pill active">DE Planners</span>
+          <span class="venture-pill active">ES Planners</span>
+          <span class="venture-pill active">Notion ES/FR</span>
+        </div>
+      </div>
 
-    <section class="contact-section">
-      <p class="contact-line">If you have a reason to reach us,<br>you already know how.</p>
-      <a class="contact-email" href="mailto:morganceoai@gmail.com">morganceoai@gmail.com</a>
-    </section>
+      <div class="portfolio-card capital">
+        <div class="card-icon icon-capital">📈</div>
+        <div class="card-label">Capital</div>
+        <div class="card-title">Systematic, rules-based investing</div>
+        <p class="card-desc">Algorithmic trading as a complement to operational cashflow. Rule-based entries, hard risk limits, no discretion. Capital working around the clock.</p>
+        <div class="card-ventures">
+          <span class="venture-pill active">BTC/USDT Bot</span>
+          <span class="venture-pill">Expanding</span>
+        </div>
+      </div>
 
-    <footer>
-      <span class="footer-copy">&copy; 2026 BC Industries</span>
-      <span class="footer-loc">Portugal</span>
-    </footer>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="main" id="process" style="padding-top: 0">
+    <div class="reveal">
+      <div class="section-tag">How we work</div>
+      <h2 class="section-title">From idea to revenue.</h2>
+      <p class="section-desc">A repeatable playbook for every venture we build — from market validation to autonomous operation.</p>
+    </div>
+
+    <div class="process-grid reveal">
+      <div class="process-step">
+        <div class="step-num">01 — Validate</div>
+        <div class="step-title">Find the gap</div>
+        <p class="step-desc">We scan markets for underserved niches where demand exists and supply is fragmented. Data first, opinion last.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-num">02 — Build</div>
+        <div class="step-title">Ship fast</div>
+        <p class="step-desc">A working product in weeks, not months. We focus on the core loop that creates value — nothing else until that's proven.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-num">03 — Distribute</div>
+        <div class="step-title">Find first users</div>
+        <p class="step-desc">Direct outreach, SEO, and platform presence. We don't wait for traffic — we go get the first 100 customers ourselves.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-num">04 — Automate</div>
+        <div class="step-title">Remove ourselves</div>
+        <p class="step-desc">Every manual process gets replaced by automation. The goal is a business that operates without us — and keeps growing while we build the next.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <div class="contact-section reveal" id="contact">
+    <h2>Build something with us.</h2>
+    <p>We partner with founders, operators, and investors who think in decades, not quarters.</p>
+    <a class="contact-email-btn" href="mailto:morganceoai@gmail.com">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.3"/></svg>
+      morganceoai@gmail.com
+    </a>
   </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      <div class="footer-logo-mark">BC</div>
+      <span class="footer-name">BC Industries</span>
+    </div>
+    <div class="footer-right">© 2026 · Portugal · Building autonomously.</div>
+  </footer>
+
+</div>
+
+<script>
+  // ── Particle canvas ──
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    const count = Math.floor((W * H) / 18000);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.5 + 0.3,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        o: Math.random() * 0.4 + 0.05,
+      });
+    }
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid lines (very subtle)
+    ctx.strokeStyle = 'rgba(99,102,241,0.03)';
+    ctx.lineWidth = 1;
+    const gridSize = 80;
+    for (let x = 0; x < W; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Particles
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(99,102,241,${p.o})`;
+      ctx.fill();
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    });
+
+    requestAnimationFrame(drawParticles);
+  }
+
+  resize();
+  createParticles();
+  drawParticles();
+  window.addEventListener('resize', () => { resize(); createParticles(); });
+
+  // ── Scroll reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => observer.observe(r));
+
+  // ── Counter animation ──
+  const STATS = [
+    { val: 4,   prefix: '',  suffix: '' },
+    { val: 3,   prefix: '',  suffix: '' },
+    { val: 0,   prefix: '€', suffix: '' },
+    { val: 100, prefix: '',  suffix: '%' },
+  ];
+
+  const statsObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const els = e.target.querySelectorAll('.stat-val');
+        els.forEach((el, i) => {
+          const { val, prefix, suffix } = STATS[i];
+          const duration = 1200;
+          const startTime = performance.now();
+          function tick(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 3);
+            el.textContent = prefix + Math.round(val * ease) + suffix;
+            if (t < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        });
+        statsObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const strip = document.querySelector('.stats-strip');
+  if (strip) statsObserver.observe(strip);
+</script>
+
 </body>
 </html>
