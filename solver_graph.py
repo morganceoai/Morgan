@@ -222,6 +222,12 @@ Documenta cada passo e o resultado. Se algo correr mal, para imediatamente.
 Testes pré-execução passaram:
 {relatorio_testes}
 
+FLUXO DE CORRECÇÃO OBRIGATÓRIO:
+1. Usa solver_ler_ficheiro para ler o ficheiro antes de editar
+2. Usa solver_editar_ficheiro para edições cirúrgicas (preferível) ou solver_criar_ficheiro para reescritas completas
+3. Usa solver_git_commit_push para fazer commit e push — o deploy é automático via GitHub Actions, NÃO precisas de chamar solver_railway_deploy
+4. Verifica o resultado com solver_executar_diagnostico
+
 Obrigatório no final da resposta, neste formato exacto:
 EXECUÇÃO: [o que foi feito]
 CONFIANÇA_EXECUÇÃO: XX%"""

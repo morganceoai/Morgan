@@ -760,6 +760,27 @@ def solver_railway_deploy() -> str:
         return f"Erro: {e}"
 
 
+def solver_editar_ficheiro(caminho: str, texto_antigo: str, texto_novo: str) -> str:
+    """Edição cirúrgica — substitui texto_antigo por texto_novo num ficheiro. Mais seguro que reescrever o ficheiro inteiro."""
+    try:
+        p = Path(caminho)
+        if not p.is_absolute():
+            p = MORGAN_DIR / caminho
+        p = p.resolve()
+        if not any(str(p).startswith(str(d.resolve())) for d in ALLOWED_DIRS):
+            return f"Acesso negado: {caminho} está fora do directório Morgan."
+        if not p.exists():
+            return f"Ficheiro não encontrado: {caminho}"
+        conteudo = p.read_text(encoding="utf-8")
+        if texto_antigo not in conteudo:
+            return f"Texto não encontrado no ficheiro. Confirma o texto exacto a substituir."
+        novo_conteudo = conteudo.replace(texto_antigo, texto_novo, 1)
+        p.write_text(novo_conteudo, encoding="utf-8")
+        return f"Edição aplicada em {caminho}."
+    except Exception as e:
+        return f"Erro a editar ficheiro: {e}"
+
+
 def solver_criar_ficheiro(caminho: str, conteudo: str) -> str:
     """Cria ou sobrescreve um ficheiro no sistema Morgan. REQUER confirmação prévia do Vasco."""
     try:
@@ -1072,6 +1093,19 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "solver_editar_ficheiro",
+        "description": "Edição cirúrgica de um ficheiro — substitui texto_antigo por texto_novo. Mais seguro que reescrever o ficheiro inteiro. APENAS usa após aprovação do Vasco.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "caminho": {"type": "string", "description": "Caminho do ficheiro relativo ao dir Morgan."},
+                "texto_antigo": {"type": "string", "description": "Texto exacto a substituir."},
+                "texto_novo": {"type": "string", "description": "Texto de substituição."}
+            },
+            "required": ["caminho", "texto_antigo", "texto_novo"]
+        }
+    },
+    {
         "name": "solver_criar_ficheiro",
         "description": "Cria ou actualiza um ficheiro no sistema Morgan. APENAS usa após o Vasco aprovar explicitamente via pedir_confirmacao. Nunca uses sem aprovação.",
         "input_schema": {
@@ -1151,6 +1185,7 @@ TOOL_FUNCTIONS = {
     "solver_executar_diagnostico": solver_executar_diagnostico,
     "solver_verificar_saude": solver_verificar_saude,
     "solver_analisar_logs": solver_analisar_logs,
+    "solver_editar_ficheiro": solver_editar_ficheiro,
     "solver_criar_ficheiro": solver_criar_ficheiro,
     "solver_executar_correcao": solver_executar_correcao,
     "solver_git_log": solver_git_log,
