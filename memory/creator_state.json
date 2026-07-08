@@ -1,0 +1,167 @@
+{
+  "sub_morgans": {
+    "directorio_terapeutas_20260708": {
+      "id": "directorio_terapeutas_20260708",
+      "oportunidade": "Directório de terapeutas global",
+      "nome": "Morgan Terapisti IT",
+      "descricao": "Directório de terapeutas — primeiro mercado: Itália",
+      "ferramentas": [
+        "pesquisar_web"
+      ],
+      "prompt_base": "És o Morgan Terapisti, sub-agente especializado no directório de terapeutas/psicólogos.\nPrimeiro mercado: Itália. Depois: Espanha, França, América Latina.\nO teu trabalho:\n1. Encontrar terapeutas italianos via Google Maps + Ordine degli Psicologi\n2. Gerar emails de outreach personalizados em italiano (oferecer listagem gratuita 3 meses)\n3. Criar perfis no directório com conteúdo SEO em italiano\n4. Gerir conversão de gratuito para premium (€60-80/mês)\n5. Relatório mensal ao CEO: terapeutas listados, % premium, MRR\nReferência: Psychology Today ($29.95/mês US) · caso real UK: £8k MRR/18 meses com £150/mês\nReportas ao Morgan CEO. A última decisão é sempre do Vasco.",
+      "criado_em": "2026-07-08T12:22:55.508674",
+      "fase": "validacao",
+      "receita_atual": 0.0,
+      "reports_enabled": false,
+      "fontes_pesquisa": [
+        "therapist directory Italy Spain France niche site revenue 2026",
+        "psychology directory listing fee model Psychology Today alternative",
+        "mental health professional directory monetization €50-150/month listing 2026"
+      ],
+      "comunidades": [
+        "IndieHackers",
+        "r/indiehackers",
+        "r/entrepreneur"
+      ],
+      "metricas_sucesso": [
+        "terapeutas listados",
+        "% premium pagos",
+        "MRR"
+      ],
+      "vantagem_vasco": "",
+      "mem0_user_id": "sub_directorio_terapeutas",
+      "metricas": {
+        "interacoes": 0,
+        "tarefas_concluidas": 0
+      }
+    },
+    "directorio_tutores_20260708": {
+      "id": "directorio_tutores_20260708",
+      "oportunidade": "Directório de tutores global",
+      "nome": "Morgan Tutori IT",
+      "descricao": "Directório de tutores — primeiro mercado: Itália",
+      "ferramentas": [
+        "pesquisar_web"
+      ],
+      "prompt_base": "És o Morgan Tutori, sub-agente especializado no directório de tutores/explicadores.\nPrimeiro mercado: Itália. Depois: Indonésia, Alemanha, Espanha.\nO teu trabalho:\n1. Encontrar tutores italianos via Google Maps + plataformas existentes\n2. Gerar emails de outreach em italiano (listagem gratuita para os primeiros 50)\n3. Criar perfis verificados com conteúdo SEO em italiano\n4. Modelo: subscription €20-35/mês por tutor (começar simples, depois comissão por aula)\n5. Relatório mensal ao CEO: tutores listados, % premium, MRR, sessões marcadas\nReferência: Superprof (27M tutores em 50 países) — mas sem versão local curada em IT\nReportas ao Morgan CEO. A última decisão é sempre do Vasco.",
+      "criado_em": "2026-07-08T12:22:55.508996",
+      "fase": "validacao",
+      "receita_atual": 0.0,
+      "reports_enabled": false,
+      "fontes_pesquisa": [
+        "tutor directory Italy Indonesia niche site 2026 revenue Superprof alternative",
+        "tutoring directory listing model subscription per tutor 2026",
+        "private tutoring marketplace gap local directory verified tutors 2026"
+      ],
+      "comunidades": [
+        "IndieHackers",
+        "r/entrepreneur",
+        "r/SaaS"
+      ],
+      "metricas_sucesso": [
+        "tutores listados",
+        "% premium pagos",
+        "MRR",
+        "sessões marcadas"
+      ],
+      "vantagem_vasco": "",
+      "mem0_user_id": "sub_directorio_tutores",
+      "metricas": {
+        "interacoes": 0,
+        "tarefas_concluidas": 0
+      }
+    },
+    "templates_digitais_20260708": {
+      "id": "templates_digitais_20260708",
+      "oportunidade": "Templates planners digitais — mercados não-ingleses",
+      "nome": "Morgan Planners",
+      "descricao": "Cria e vende planners digitais em idiomas sub-representados no Etsy",
+      "ferramentas": [
+        "pesquisar_web"
+      ],
+      "prompt_base": "És o Morgan Planners, especializado em criar e vender planners digitais\n(GoodNotes/Notability) em idiomas com gap confirmado no Etsy.\nPrimeiros mercados: Alemão (DE/AT/CH) e Espanhol (ES/LATAM).\nO teu trabalho:\n1. Criar 50+ planners nos primeiros 30 dias nas 5 categorias aprovadas:\n   — Planner anual/semanal/diário\n   — Planner objectivos e hábitos\n   — Planner académico/estudante\n   — Planner negócios/freelancer\n   — Planner saúde/fitness\n2. Optimizar títulos e tags SEO em alemão e espanhol para o Etsy\n3. Publicar também no Gumroad como backup\n4. Monitorizar vendas e ajustar keywords\n5. Relatório mensal: unidades vendidas, receita, reviews\nReferência: Rachel Jimenez $9.5k/mês · PlannerKate milhões em receita total\nReportas ao Morgan CEO. A última decisão é sempre do Vasco.",
+      "criado_em": "2026-07-08T12:22:55.509249",
+      "fase": "validacao",
+      "receita_atual": 0.0,
+      "reports_enabled": false,
+      "fontes_pesquisa": [
+        "digital planner Etsy German Spanish non-English market gap 2026",
+        "GoodNotes Notability planner template bestseller non-English 2026",
+        "Etsy digital downloads passive income 2026 German Spanish French Italian"
+      ],
+      "comunidades": [
+        "r/passive_income",
+        "Gumroad creators",
+        "Etsy sellers"
+      ],
+      "metricas_sucesso": [
+        "unidades vendidas/mês",
+        "preço médio €10-30",
+        "reviews"
+      ],
+      "vantagem_vasco": "",
+      "mem0_user_id": "sub_templates_digitais",
+      "metricas": {
+        "interacoes": 0,
+        "tarefas_concluidas": 0
+      }
+    },
+    "templates_notion_20260708": {
+      "id": "templates_notion_20260708",
+      "oportunidade": "Templates Notion — mercados não-ingleses",
+      "nome": "Morgan Notion",
+      "descricao": "Cria e vende Notion templates em idiomas sub-representados",
+      "ferramentas": [
+        "pesquisar_web"
+      ],
+      "prompt_base": "És o Morgan Notion, especializado em criar e vender Notion templates\nem idiomas com pouca concorrência.\nPrimeiros mercados: Espanhol e Francês. Depois: Alemão.\nO teu trabalho:\n1. Criar templates nas 4 categorias top (por ordem de prioridade):\n   — Produtividade e gestão pessoal (Segunda Brain, dashboards)\n   — Finanças pessoais (budget tracker, controlo de despesas)\n   — Calendário editorial / criadores de conteúdo\n   — CRM e negócios (freelancer hub, pipeline de clientes)\n2. Publicar em 3 plataformas: Gumroad + Etsy + Notion Marketplace\n3. Optimizar descrições em espanhol e francês\n4. Construir lista de email com os primeiros compradores\n5. Relatório mensal: vendas, receita, plataforma mais eficaz\nReferência: $500k com um único template de finance tracker\nReportas ao Morgan CEO. A última decisão é sempre do Vasco.",
+      "criado_em": "2026-07-08T12:22:55.509600",
+      "fase": "validacao",
+      "receita_atual": 0.0,
+      "reports_enabled": false,
+      "fontes_pesquisa": [
+        "Notion template non-English market Spanish French German 2026 revenue",
+        "Notion template Gumroad Etsy bestseller productivity finance 2026",
+        "Notion marketplace template creator revenue passive income 2026"
+      ],
+      "comunidades": [
+        "Notion template creators",
+        "r/Notion",
+        "Gumroad creators"
+      ],
+      "metricas_sucesso": [
+        "unidades vendidas/mês",
+        "preço médio €5-49",
+        "avaliações"
+      ],
+      "vantagem_vasco": "",
+      "mem0_user_id": "sub_templates_notion",
+      "metricas": {
+        "interacoes": 0,
+        "tarefas_concluidas": 0
+      }
+    }
+  },
+  "criados_em": [
+    {
+      "id": "directorio_terapeutas_20260708",
+      "oportunidade": "Directório de terapeutas global",
+      "data": "2026-07-08T12:22:55.508678"
+    },
+    {
+      "id": "directorio_tutores_20260708",
+      "oportunidade": "Directório de tutores global",
+      "data": "2026-07-08T12:22:55.508998"
+    },
+    {
+      "id": "templates_digitais_20260708",
+      "oportunidade": "Templates planners digitais — mercados não-ingleses",
+      "data": "2026-07-08T12:22:55.509251"
+    },
+    {
+      "id": "templates_notion_20260708",
+      "oportunidade": "Templates Notion — mercados não-ingleses",
+      "data": "2026-07-08T12:22:55.509601"
+    }
+  ]
+}
