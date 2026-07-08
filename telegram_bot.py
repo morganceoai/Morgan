@@ -248,6 +248,7 @@ def load_estado_imperio() -> str:
     return ""
 
 def save_estado_imperio(conteudo: str):
+    os.makedirs(os.path.dirname(IMPERIO_FILE), exist_ok=True)
     tmp = IMPERIO_FILE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(conteudo)
@@ -261,6 +262,11 @@ def load_decisoes_autonomas() -> list:
             return json.load(f).get("decisoes", [])
     return []
 
+def _save_decisoes_autonomas(decisoes: list):
+    os.makedirs(os.path.dirname(DECISOES_AUTONOMAS_FILE), exist_ok=True)
+    with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
+
 def save_decisao_autonoma(problema: str, solucao: str, confianca: int, agente: str):
     decisoes = load_decisoes_autonomas()
     decisoes.append({
@@ -271,8 +277,7 @@ def save_decisao_autonoma(problema: str, solucao: str, confianca: int, agente: s
         "agente": agente,
         "resultado": "pendente"
     })
-    with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
-        json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
+    _save_decisoes_autonomas(decisoes)
 
 def marcar_decisao_autonoma_resolvida(problema: str):
     decisoes = load_decisoes_autonomas()
@@ -280,8 +285,7 @@ def marcar_decisao_autonoma_resolvida(problema: str):
         if d["problema"][:50] in problema or problema[:50] in d["problema"]:
             d["resultado"] = "resolvido"
             break
-    with open(DECISOES_AUTONOMAS_FILE, "w", encoding="utf-8") as f:
-        json.dump({"decisoes": decisoes}, f, ensure_ascii=False, indent=2)
+    _save_decisoes_autonomas(decisoes)
 
 def _ceo_track_record(problema: str) -> dict:
     """Consulta histórico de decisões passadas para problemas semelhantes.
@@ -476,6 +480,7 @@ def save_decisao_pendente(assunto: str):
     data = agora_lisboa().strftime("%d/%m/%Y")
     if not any(p["assunto"] == assunto for p in pendentes):
         pendentes.append({"assunto": assunto, "data": data, "follow_up": False})
+    os.makedirs(os.path.dirname(DECISOES_FILE), exist_ok=True)
     tmp = DECISOES_FILE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump({"pendentes": pendentes}, f, indent=2, ensure_ascii=False)
