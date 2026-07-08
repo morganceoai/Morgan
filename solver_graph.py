@@ -2,14 +2,86 @@
 Morgan Solver v2 — LangGraph
 Fluxo: Diagnose → Plan → Execute → Verify → Report
 Cada nó reporta confiança individual (0-100%).
+Confiança < 90% → escala ao Claude Code automaticamente.
 """
 import os
 import re
 import json
+import subprocess
+from datetime import datetime
+from pathlib import Path
 from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 import anthropic
+
+FIXES_FILE = Path(__file__).parent / "memory" / "solver_fixes.json"
+
+
+def _load_fixes() -> list:
+    """Carrega histórico de fixes anteriores."""
+    if FIXES_FILE.exists():
+        try:
+            return json.loads(FIXES_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+    return []
+
+def _save_fix(problema: str, diagnostico: str, fix: str, confianca: int):
+    """Guarda fix bem-sucedido no histórico."""
+    fixes = _load_fixes()
+    fixes.append({
+        "data": datetime.now().isoformat(),
+        "problema": problema[:300],
+        "diagnostico": diagnostico[:300],
+        "fix": fix[:500],
+        "confianca": confianca,
+    })
+    fixes = fixes[-100:]  # máximo 100 fixes
+    FIXES_FILE.parent.mkdir(exist_ok=True)
+    FIXES_FILE.write_text(json.dumps(fixes, indent=2, ensure_ascii=False), encoding="utf-8")
+
+def _fixes_relevantes(problema: str) -> str:
+    """Retorna fixes anteriores relevantes para o problema actual."""
+    fixes = _load_fixes()
+    if not fixes:
+        return ""
+    # Procura fixes com palavras-chave em comum
+    palavras = set(problema.lower().split())
+    relevantes = []
+    for f in reversed(fixes):
+        palavras_fix = set(f["problema"].lower().split())
+        if len(palavras & palavras_fix) >= 2:
+            relevantes.append(f"Problema similar: {f['problema'][:100]}\nFix aplicado: {f['fix'][:200]}\nConfiança: {f['confianca']}%")
+    return "\n\n".join(relevantes[:3]) if relevantes else ""
+
+def _escalar_claude_code(problema: str, diagnostico: str, plano: str) -> str:
+    """Escala para o Claude Code quando confiança < 90%. Invoca claude CLI com contexto completo."""
+    try:
+        morgan_dir = Path(__file__).parent
+        prompt = f"""Morgan Solver escalou este problema por confiança insuficiente.
+
+PROBLEMA: {problema}
+
+DIAGNÓSTICO DO SOLVER: {diagnostico[:500]}
+
+PLANO DO SOLVER: {plano[:500]}
+
+Analisa o código, aplica o fix necessário, faz commit e push. O deploy é automático via GitHub Actions."""
+
+        result = subprocess.run(
+            ["claude", "--print", prompt],
+            capture_output=True, text=True,
+            cwd=str(morgan_dir), timeout=300
+        )
+        if result.returncode == 0 and result.stdout:
+            return f"Claude Code resolveu:\n{result.stdout[:1000]}"
+        else:
+            return f"Claude Code indisponível: {result.stderr[:200]}"
+    except FileNotFoundError:
+        return "Claude Code CLI não disponível neste ambiente."
+    except Exception as e:
+        return f"Erro ao escalar para Claude Code: {e}"
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 _client = None
@@ -104,7 +176,12 @@ def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
 # ── Nós do grafo ──────────────────────────────────────────────────────────────
 
 def node_diagnostico(state: SolverState) -> SolverState:
-    system = """És o Morgan Solver. Diagnostica o problema com as ferramentas disponíveis.
+    fixes_hist = _fixes_relevantes(state["problema"])
+    historico_bloco = ""
+    if fixes_hist:
+        historico_bloco = f"\n\nFIXES ANTERIORES RELEVANTES (usa como ponto de partida):\n{fixes_hist}\n"
+
+    system = f"""És o Morgan Solver. Diagnostica o problema com as ferramentas disponíveis.{historico_bloco}
 
 Obrigatório no final da resposta, neste formato exacto:
 DIAGNÓSTICO: [o que está errado e porquê]
@@ -247,6 +324,18 @@ CONFIANÇA_EXECUÇÃO: XX%"""
     return {**state, "execucao": texto, "confianca_execucao": confianca}
 
 
+def node_escalar_claude_code(state: SolverState) -> SolverState:
+    """Invocado quando confiança < 90%. Chama Claude Code CLI em vez de perguntar ao Vasco."""
+    resultado = _escalar_claude_code(
+        state["problema"],
+        state.get("diagnostico", ""),
+        state.get("plano", ""),
+    )
+    return {**state,
+            "execucao": resultado,
+            "confianca_execucao": 85}  # Claude Code é mais capaz — confiança base 85%
+
+
 def node_verificacao(state: SolverState) -> SolverState:
     system = """És o Morgan Solver. Verifica se o problema foi resolvido com as ferramentas disponíveis.
 
@@ -266,6 +355,16 @@ DETALHES: [o que verificaste e como]"""
     )
 
     confianca = _extrair_confianca(texto, "CONFIANÇA_VERIFICAÇÃO")
+
+    # Guarda fix no histórico se resolvido com sucesso
+    if "RESOLVIDO" in texto.upper() and "NÃO_RESOLVIDO" not in texto.upper():
+        _save_fix(
+            problema=state["problema"],
+            diagnostico=state.get("diagnostico", "")[:300],
+            fix=state.get("execucao", "")[:500],
+            confianca=confianca,
+        )
+
     return {**state, "verificacao": texto, "confianca_verificacao": confianca}
 
 
@@ -289,10 +388,13 @@ def node_relatorio(state: SolverState) -> SolverState:
             state.get('confianca_verificacao', 0)
         ) / 4)
 
+        via_claude = state.get("confianca_solucao", 100) < 90 and not state.get("requer_aprovacao")
+        executor = "Claude Code (escalado — confiança solução <90%)" if via_claude else "Solver autónomo"
         relatorio = (
             f"PROBLEMA: {state['problema']}\n\n"
             f"DIAGNÓSTICO (confiança {state.get('confianca_diagnostico', '?')}%):\n{state['diagnostico']}\n\n"
             f"PLANO (confiança solução {state.get('confianca_solucao', '?')}%):\n{state['plano']}\n\n"
+            f"EXECUTOR: {executor}\n"
             f"EXECUÇÃO (confiança execução {state.get('confianca_execucao', '?')}%):\n{state['execucao']}\n\n"
             f"VERIFICAÇÃO (confiança verificação {state.get('confianca_verificacao', '?')}%):\n{state['verificacao']}\n\n"
             f"REVERSÍVEL: {'Sim' if state.get('reversivel') else 'Não'} | IMPACTO: {state.get('impacto', 'desconhecido')}\n"
@@ -307,6 +409,9 @@ def node_relatorio(state: SolverState) -> SolverState:
 def decide_apos_plano(state: SolverState) -> str:
     if state.get("requer_aprovacao"):
         return "aguardar_aprovacao"
+    confianca = state.get("confianca_solucao", 50)
+    if confianca < 90:
+        return "escalar_claude_code"
     return "execucao"
 
 
@@ -318,6 +423,7 @@ def build_solver_graph():
     grafo.add_node("diagnostico", node_diagnostico)
     grafo.add_node("plano", node_plano)
     grafo.add_node("aguardar_aprovacao", node_aguardar_aprovacao)
+    grafo.add_node("escalar_claude_code", node_escalar_claude_code)
     grafo.add_node("execucao", node_execucao)
     grafo.add_node("verificacao", node_verificacao)
     grafo.add_node("relatorio", node_relatorio)
@@ -326,9 +432,11 @@ def build_solver_graph():
     grafo.add_edge("diagnostico", "plano")
     grafo.add_conditional_edges("plano", decide_apos_plano, {
         "aguardar_aprovacao": "aguardar_aprovacao",
+        "escalar_claude_code": "escalar_claude_code",
         "execucao": "execucao",
     })
     grafo.add_edge("aguardar_aprovacao", "relatorio")
+    grafo.add_edge("escalar_claude_code", "verificacao")
     grafo.add_edge("execucao", "verificacao")
     grafo.add_edge("verificacao", "relatorio")
     grafo.add_edge("relatorio", END)
