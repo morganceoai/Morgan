@@ -95,8 +95,8 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
 def _get_coach_tools():
     from tools import TOOLS
-    nomes_permitidos = ["pesquisar_web", "api_football_proximos_jogos",
-                        "api_football_resultados", "api_football_classificacao"]
+    nomes_permitidos = ["pesquisar_web", "proximos_jogos",
+                        "resultados_recentes", "classificacao_primeira_liga"]
     return [t for t in TOOLS if t["name"] in nomes_permitidos]
 
 def _run_tool(name: str, inp: dict) -> str:

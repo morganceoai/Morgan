@@ -1577,6 +1577,24 @@ Formato: directo, máximo 10 linhas, sem emojis. Começa com "CEO — Briefing {
     mem0_collective_add("CEO", f"Briefing {hoje}: {briefing[:200]}")
     audit("CEO_PROACTIVO", f"Briefing matinal enviado — {hoje}")
 
+    # CEO invoca Scout e Solver proativamente se briefing indicar necessidade
+    briefing_lower = briefing.lower()
+    if any(w in briefing_lower for w in ["scout", "oportunidade", "mercado", "negócio"]):
+        try:
+            scout_resposta = await ceo_convocar_scout(app.bot, f"Briefing CEO {hoje}: análise de oportunidades ativas")
+            mem0_collective_add("Scout", f"Convocado pelo CEO {hoje}: {scout_resposta[:200]}")
+            audit("CEO_CONVOCAR_SCOUT", f"Scout convocado proativamente — {hoje}")
+        except Exception as e:
+            audit("CEO_CONVOCAR_SCOUT_ERRO", str(e))
+
+    if any(w in briefing_lower for w in ["erro", "problema", "falha", "solver", "corrigir"]):
+        try:
+            solver_resposta = await ceo_convocar_solver(app.bot, f"Briefing CEO {hoje}: verificação de saúde do sistema")
+            mem0_collective_add("Solver", f"Convocado pelo CEO {hoje}: {solver_resposta[:200]}")
+            audit("CEO_CONVOCAR_SOLVER", f"Solver convocado proativamente — {hoje}")
+        except Exception as e:
+            audit("CEO_CONVOCAR_SOLVER_ERRO", str(e))
+
 
 async def run_scout_report(app):
     """Gera e envia o relatório semanal do Morgan AI Scout."""
@@ -1584,7 +1602,7 @@ async def run_scout_report(app):
 
     while True:
         response = anthropic_client.messages.create(
-            model="claude-opus-4-8",
+            model="claude-sonnet-4-6",
             max_tokens=4096,
             system=_cached_system(build_scout_system()),
             tools=TOOLS,

@@ -385,7 +385,8 @@ def activar_sub_morgan(oportunidade: str, mensagem: str) -> str:
 
     scout_data = load_scout()
     aprovadas = scout_data.get("aprovadas", [])
-    if oportunidade not in aprovadas:
+    nomes_aprovados = [a["nome"] if isinstance(a, dict) else a for a in aprovadas]
+    if oportunidade not in nomes_aprovados:
         return f"Oportunidade '{oportunidade}' não está aprovada pelo Vasco."
 
     state = _load_state()
