@@ -1672,6 +1672,15 @@ async def heartbeat_loop(app):
             except Exception as e:
                 audit("CFO_ERRO", str(e))
 
+            # Trading bot — reset PnL diário às 7h
+            if agora_lisboa().hour == 7:
+                try:
+                    from trading_bot import reset_daily_pnl
+                    reset_daily_pnl()
+                    audit("BOT_RESET_PNL", "pnl_today resetado às 7h")
+                except Exception:
+                    pass
+
             # Trading bot — ciclo a cada hora
             try:
                 from trading_bot import run_cycle, get_status

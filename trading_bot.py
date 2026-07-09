@@ -43,7 +43,7 @@ def load_state() -> dict:
         return json.loads(STATE_FILE.read_text())
     return {
         "active":       True,
-        "position":     None,     # {"side": "long", "entry": 0.0, "size": 0.0, "opened_at": ""}
+        "position":     None,     # {"side": "buy", "entry": 0.0, "size": 0.0, "opened_at": ""}
         "trades":       [],
         "pnl_total":    0.0,
         "pnl_today":    0.0,
@@ -107,11 +107,12 @@ def get_signal(closes: list[float]) -> str:
 # ── Gestão de risco ───────────────────────────────────────────────────────────
 
 def position_size(capital: float, price: float) -> float:
-    """Calcula tamanho da posição com risco fixo."""
+    """Calcula tamanho da posição com risco fixo, limitado ao capital disponível."""
     risk_amount = capital * CONFIG["risk_per_trade"]
     stop_distance = price * CONFIG["stop_loss"]
     size = risk_amount / stop_distance
-    return round(size, 6)
+    max_size = (capital * 0.95) / price  # nunca usar mais de 95% do capital
+    return round(min(size, max_size), 6)
 
 def check_exits(state: dict, current_price: float) -> str | None:
     """Verifica se deve fechar posição por SL ou TP."""
