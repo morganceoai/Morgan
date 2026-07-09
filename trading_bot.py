@@ -119,7 +119,7 @@ def check_exits(state: dict, current_price: float) -> str | None:
     if not pos:
         return None
     entry = pos["entry"]
-    if pos["side"] == "long":
+    if pos["side"] == "buy":
         if current_price <= entry * (1 - CONFIG["stop_loss"]):
             return "stop_loss"
         if current_price >= entry * (1 + CONFIG["take_profit"]):
@@ -154,11 +154,11 @@ def open_position(exchange, state: dict, price: float, side: str):
 def close_position(exchange, state: dict, price: float, reason: str):
     pos = state["position"]
     if not TESTNET:
-        side = "sell" if pos["side"] == "long" else "buy"
+        side = "sell" if pos["side"] == "buy" else "buy"
         exchange.create_order(CONFIG["symbol"], "market", side, pos["size"])
 
     pnl = (price - pos["entry"]) * pos["size"]
-    if pos["side"] == "short":
+    if pos["side"] == "sell":
         pnl = -pnl
 
     state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
@@ -241,9 +241,9 @@ def run_cycle() -> dict:
 
         # Novos sinais
         if signal == "buy" and not state.get("position"):
-            open_position(exchange, state, price, "long")
+            open_position(exchange, state, price, "buy")
 
-        elif signal == "sell" and state.get("position", {}).get("side") == "long":
+        elif signal == "sell" and state.get("position", {}).get("side") == "buy":
             pnl = close_position(exchange, state, price, "sinal_venda")
 
         save_state(state)
