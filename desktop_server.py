@@ -26,6 +26,9 @@ from memory_store import load_memory
 from scout_memory import _load as load_scout
 from conversation_store import get_context_messages, save_message as store_save
 from voice_id import enroll_voice, is_vasco, has_profile, load_profile
+from coach_agent import get_coach_reply
+from cfo_agent import get_cfo_reply
+from trading_bot import get_status as get_bot_status
 
 # Pré-carregar perfil de voz se existir
 load_profile()
@@ -35,6 +38,9 @@ ELEVENLABS_KEY = os.getenv("ELEVENLABS_API_KEY")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
 DEEPGRAM_KEY = os.getenv("DEEPGRAM_API_KEY")
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY")
+HUME_API_KEY = os.getenv("HUME_API_KEY")
+HUME_SECRET_KEY = os.getenv("HUME_SECRET_KEY")
+HUME_VOICE_ID = os.getenv("HUME_VOICE_ID")
 CONVAI_AGENT_ID = "agent_0001kwqq04nbe689bpxdtp2dkpc7"
 DESKTOP_USER_ID = "vasco"
 
@@ -160,17 +166,39 @@ async def say_sentence(text: str):
     )
 
 
-def chat_with_morgan(user_text: str) -> str:
-    conversation_history.append({"role": "user", "content": user_text})
-    store_save(DESKTOP_USER_ID, "user", user_text)
+# ─── Routing de agentes ──────────────────────────────────────────────────────
 
-    messages = conversation_history[-30:]
+def _quer_cfo(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in ["cfo", "trading bot", "trading", "pnl", "drawdown",
+                                  "capital", "lucro", "perda", "trades", "win rate",
+                                  "posição aberta", "financeiro", "finanças",
+                                  "btc", "bitcoin", "usdt", "binance", "ema",
+                                  "relatório financeiro"])
+
+def _quer_coach(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in ["coach", "treinador", "tático", "tatico",
+                                  "treino", "adversário", "adversario", "próximo jogo",
+                                  "análise tática", "pré-jogo", "pós-jogo", "plantel",
+                                  "jogador", "formação", "moreirense", "liga portugal",
+                                  "scout de jogador", "perfil tático"])
+
+def _quer_scout(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in ["scout", "oportunidade", "negócio", "negocio",
+                                  "rendimento passivo", "saas", "produto", "receita",
+                                  "empreend", "startup", "império", "dinheiro passivo"])
+
+def _chat_ceo(user_text: str) -> str:
+    """CEO — chamada direta ao Claude com ferramentas."""
+    conversation_history.append({"role": "user", "content": user_text})
     response = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=512,
         system=get_system_prompt(),
         tools=TOOLS,
-        messages=messages,
+        messages=conversation_history[-30:],
     )
     while response.stop_reason == "tool_use":
         tool_results = []
@@ -188,15 +216,111 @@ def chat_with_morgan(user_text: str) -> str:
         )
     reply = "".join(block.text for block in response.content if hasattr(block, "text"))
     conversation_history.append({"role": "assistant", "content": reply})
+    return reply
+
+# Agente ativo por sessão desktop
+_desktop_agent = {"current": "ceo"}
+
+def chat_with_morgan(user_text: str) -> str:
+    store_save(DESKTOP_USER_ID, "user", user_text)
+
+    msg_lower = user_text.lower()
+
+    # Reset explícito para CEO
+    if any(k in msg_lower for k in ["morgan ceo", "volta ao morgan", "ceo", "morgan principal"]):
+        _desktop_agent["current"] = "ceo"
+        reply = "Morgan CEO de volta. Em que posso ajudar?"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # Routing por intenção
+    if _quer_cfo(user_text):
+        _desktop_agent["current"] = "cfo"
+        try:
+            reply = "[CFO] " + get_cfo_reply(user_text)
+        except Exception as e:
+            reply = f"[CFO] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if _quer_coach(user_text):
+        _desktop_agent["current"] = "coach"
+        try:
+            reply = "[COACH] " + get_coach_reply(user_text)
+        except Exception as e:
+            reply = f"[COACH] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # Scout — CEO com contexto Scout
+    if _quer_scout(user_text):
+        _desktop_agent["current"] = "scout"
+        scout_data = load_scout()
+        ops = list(scout_data.get("oportunidades", {}).keys())[:5]
+        scout_ctx = f"\n\n[SCOUT] Oportunidades em memória: {', '.join(ops) if ops else 'nenhuma ainda.'}"
+        old_system = get_system_prompt
+        def scout_system():
+            return get_system_prompt() + scout_ctx + "\n\nResponde como Morgan Scout — analisa oportunidades de negócio com dados reais."
+        # Temporariamente override
+        reply_body = _chat_ceo_with_system(user_text, scout_system())
+        reply = "[SCOUT] " + reply_body
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # Agente persistente da sessão
+    agente = _desktop_agent.get("current", "ceo")
+    if agente == "cfo":
+        try:
+            reply = "[CFO] " + get_cfo_reply(user_text)
+        except Exception as e:
+            reply = f"[CFO] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+    if agente == "coach":
+        try:
+            reply = "[COACH] " + get_coach_reply(user_text)
+        except Exception as e:
+            reply = f"[COACH] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # CEO (default)
+    reply = _chat_ceo(user_text)
     store_save(DESKTOP_USER_ID, "assistant", reply)
     return reply
+
+
+def _chat_ceo_with_system(user_text: str, system: str) -> str:
+    """CEO com system prompt customizado (ex: Scout mode)."""
+    msgs = conversation_history[-28:] + [{"role": "user", "content": user_text}]
+    response = claude.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        system=system,
+        tools=TOOLS,
+        messages=msgs,
+    )
+    while response.stop_reason == "tool_use":
+        tool_results = []
+        assistant_content = list(response.content)
+        for block in response.content:
+            if block.type == "tool_use":
+                result = run_tool(block.name, block.input)
+                tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+        msgs.append({"role": "assistant", "content": assistant_content})
+        msgs.append({"role": "user", "content": tool_results})
+        response = claude.messages.create(
+            model="claude-sonnet-4-6", max_tokens=512,
+            system=system, tools=TOOLS, messages=msgs,
+        )
+    return "".join(block.text for block in response.content if hasattr(block, "text"))
 
 
 PWA_DIR = Path(__file__).parent / "pwa"
 
 @app.get("/")
 async def serve_interface():
-    return FileResponse(DESKTOP_DIR / "index.html")
+    return FileResponse(DESKTOP_DIR / "index_v2.html")
 
 @app.get("/v2")
 @app.get("/v2/")
@@ -585,6 +709,107 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
         await audio_queue.put(None)
 
 
+@app.websocket("/ws/hume")
+async def ws_hume(websocket: WebSocket):
+    """Hume EVI + Claude — voz com emoção em tempo real."""
+    await websocket.accept()
+
+    import base64
+    import websockets as ws_lib
+
+    memoria = load_memory()
+    agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
+    system_prompt = f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
+Data e hora atual: {agora}
+
+{memoria}
+
+Estás em modo de conversa por voz. Responde de forma natural, concisa e direta.
+Sem markdown. Fala como se estivesses ao lado do Vasco.
+Respostas curtas e naturais. Nunca digas que és uma IA."""
+
+    # Obter access token do Hume
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.post(
+                "https://api.hume.ai/oauth2-cc/token",
+                data={"grant_type": "client_credentials"},
+                auth=(HUME_API_KEY, HUME_SECRET_KEY),
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10,
+            )
+            access_token = r.json().get("access_token", "")
+    except Exception as e:
+        await websocket.send_text(json.dumps({"type": "error", "text": f"Hume auth falhou: {e}"}))
+        return
+
+    # Configuração EVI com Claude como LLM e voz personalizada
+    config = {
+        "type": "session_settings",
+        "system_prompt": system_prompt,
+        "language_model": {
+            "model_provider": "ANTHROPIC",
+            "model_resource": "claude-sonnet-4-6",
+        },
+        "voice": {"id": HUME_VOICE_ID} if HUME_VOICE_ID else {},
+        "audio": {
+            "encoding": "linear16",
+            "sample_rate": 16000,
+            "channels": 1,
+        },
+    }
+
+    hume_url = f"wss://api.hume.ai/v0/evi/chat?access_token={access_token}"
+
+    try:
+        async with ws_lib.connect(hume_url) as hume_ws:
+            await hume_ws.send(json.dumps(config))
+
+            async def hume_to_browser():
+                async for msg in hume_ws:
+                    try:
+                        if isinstance(msg, bytes):
+                            # Áudio PCM — enviar ao browser
+                            await websocket.send_bytes(msg)
+                            continue
+                        data = json.loads(msg)
+                        t = data.get("type", "")
+                        if t == "user_message":
+                            text = data.get("message", {}).get("content", "")
+                            if text:
+                                store_save(DESKTOP_USER_ID, "user", text)
+                                await websocket.send_text(json.dumps({"type": "user", "text": text}))
+                        elif t == "assistant_message":
+                            text = data.get("message", {}).get("content", "")
+                            if text:
+                                store_save(DESKTOP_USER_ID, "assistant", text)
+                                await websocket.send_text(json.dumps({"type": "agent", "text": text}))
+                        elif t == "assistant_end":
+                            await websocket.send_text(json.dumps({"type": "done"}))
+                        elif t == "error":
+                            await websocket.send_text(json.dumps({"type": "error", "text": data.get("message", "")}))
+                    except Exception:
+                        pass
+
+            async def browser_to_hume():
+                try:
+                    while True:
+                        audio = await websocket.receive_bytes()
+                        await hume_ws.send(audio)
+                except WebSocketDisconnect:
+                    pass
+                except Exception:
+                    pass
+
+            await asyncio.gather(hume_to_browser(), browser_to_hume())
+
+    except Exception as e:
+        try:
+            await websocket.send_text(json.dumps({"type": "error", "text": str(e)}))
+        except Exception:
+            pass
+
+
 @app.post("/api/enroll-voice")
 async def enroll_voice_endpoint(request: Request):
     """Recebe chunks PCM acumulados e cria o perfil de voz do Vasco."""
@@ -670,6 +895,46 @@ async def ws_transcribe(websocket: WebSocket):
             await websocket.send_text(json.dumps({"type": "error", "text": str(e)}))
         except Exception:
             pass
+
+@app.get("/api/bot")
+async def bot_status():
+    """Estado atual do trading bot (sem fazer ciclo)."""
+    try:
+        status = get_bot_status()
+        return JSONResponse(status)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/activity")
+async def get_activity(n: int = 20):
+    """Últimas N linhas do audit.log."""
+    audit_file = Path(__file__).parent / "memory" / "audit.log"
+    if not audit_file.exists():
+        return JSONResponse({"lines": []})
+    try:
+        lines = audit_file.read_text(encoding="utf-8").splitlines()
+        return JSONResponse({"lines": lines[-n:]})
+    except Exception as e:
+        return JSONResponse({"lines": [], "error": str(e)})
+
+
+@app.get("/api/agent")
+async def get_agent():
+    """Agente desktop ativo neste momento."""
+    return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
+
+
+@app.post("/api/agent")
+async def set_agent(request: Request):
+    """Define o agente ativo via canvas click."""
+    body = await request.json()
+    agent = body.get("agent", "ceo")
+    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator"}
+    if agent in valid:
+        _desktop_agent["current"] = agent
+    return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
+
 
 if __name__ == "__main__":
     import uvicorn
