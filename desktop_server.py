@@ -738,7 +738,9 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
+            print(f"[HUME AUTH] status={r.status_code} body={r.text[:200]}")
             access_token = r.json().get("access_token", "")
+            print(f"[HUME AUTH] access_token={'OK' if access_token else 'VAZIO'}")
     except Exception as e:
         await websocket.send_text(json.dumps({"type": "error", "text": f"Hume auth falhou: {e}"}))
         return
@@ -760,9 +762,11 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
     }
 
     hume_url = f"wss://api.hume.ai/v0/evi/chat?access_token={access_token}"
+    print(f"[HUME WS] a ligar a {hume_url[:80]}...")
 
     try:
         async with ws_lib.connect(hume_url) as hume_ws:
+            print("[HUME WS] ligado com sucesso")
             await hume_ws.send(json.dumps(config))
 
             async def hume_to_browser():
