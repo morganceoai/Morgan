@@ -773,9 +773,9 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
                 async for msg in hume_ws:
                     try:
                         if isinstance(msg, bytes):
-                            # Áudio PCM — enviar ao browser
                             await websocket.send_bytes(msg)
                             continue
+                        print(f"[HUME MSG] {msg[:200]}")
                         data = json.loads(msg)
                         t = data.get("type", "")
                         if t == "user_message":
@@ -796,14 +796,18 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
                         pass
 
             async def browser_to_hume():
+                import base64
                 try:
                     while True:
                         audio = await websocket.receive_bytes()
-                        await hume_ws.send(audio)
+                        await hume_ws.send(json.dumps({
+                            "type": "audio_input",
+                            "data": base64.b64encode(audio).decode("utf-8"),
+                        }))
                 except WebSocketDisconnect:
                     pass
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[HUME browser_to_hume erro] {e}")
 
             await asyncio.gather(hume_to_browser(), browser_to_hume())
 
