@@ -465,6 +465,34 @@ async def chat_endpoint(request: Request):
     return JSONResponse({"response": reply})
 
 
+@app.post("/api/chat-stream")
+async def chat_stream(request: Request):
+    """Claude com streaming — tokens aparecem à medida que chegam."""
+    body = await request.json()
+    user_text = body.get("message", "").strip()
+    if not user_text:
+        return StreamingResponse(iter([""]), media_type="text/plain")
+
+    store_save(DESKTOP_USER_ID, "user", user_text)
+    conversation_history.append({"role": "user", "content": user_text})
+
+    async def generate():
+        full_reply = ""
+        with claude.messages.stream(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=get_system_prompt(),
+            messages=conversation_history[-30:],
+        ) as stream:
+            for text in stream.text_stream:
+                full_reply += text
+                yield text
+        conversation_history.append({"role": "assistant", "content": full_reply})
+        store_save(DESKTOP_USER_ID, "assistant", full_reply)
+
+    return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
+
+
 @app.post("/api/chat-speak")
 async def chat_speak(request: Request):
     """Claude → ElevenLabs frase-a-frase → SSE para estado em tempo real."""
