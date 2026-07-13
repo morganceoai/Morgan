@@ -784,7 +784,7 @@ REGRAS OBRIGATÓRIAS:
             "model_provider": "ANTHROPIC",
             "model_resource": "claude-sonnet-4-6",
         },
-        "voice": {"name": "DACHER"},
+        "voice": {"name": "ITO"},
         "language": "pt-PT",
         "audio": {
             "encoding": "linear16",
