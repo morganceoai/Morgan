@@ -1026,8 +1026,8 @@ async function runBoot() {
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 runBoot();
 
-// Auto-start voz após boot
-setTimeout(() => { if (morganState === 'idle') startMorgan(); }, 3500);
+// Auto-start voz após boot — desativado para debug
+// setTimeout(() => { if (morganState === 'idle') startMorgan(); }, 3500);
 
 // ─── MORGAN API ───────────────────────────────────────────────────────────────
 
@@ -1069,9 +1069,12 @@ let humeWS=null, audioCtx, micStream, scriptProc, playbackCtx, playbackQueue=[],
 
 async function startMorgan() {
   const btn = document.getElementById('startBtn');
+  // Reset estado anterior
+  if (humeWS) { try { humeWS.close(); } catch(e){} humeWS = null; }
+  if (scriptProc) { stopCapture(); }
   btn.textContent = 'A ligar...';
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,sampleRate:16000},video:false});
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
     audioCtx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
     playbackCtx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
 
