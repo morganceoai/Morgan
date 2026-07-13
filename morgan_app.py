@@ -24,12 +24,14 @@ def start_server():
     python = str(venv_python) if venv_python.exists() else sys.executable
     server_script = str(BASE_DIR / "desktop_server.py")
 
+    log_path = BASE_DIR / "morgan_server.log"
+    log_file = open(log_path, "a")
+
     proc = subprocess.Popen(
         [python, server_script],
         cwd=str(BASE_DIR),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
+        stdout=log_file,
+        stderr=log_file,
     )
     return proc
 

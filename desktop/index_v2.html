@@ -1103,13 +1103,15 @@ async function startMorgan() {
       } catch(e) {}
     };
 
-    humeWS.onclose = () => {
+    humeWS.onclose = (ev) => {
       stopCapture();
       btn.textContent = 'Voz';
       setState('idle');
-      setTimeout(startMorgan, 3000);
+      if (ev.code !== 1000) {
+        console.warn('[HUME] ligação fechada, code=', ev.code, ev.reason);
+      }
     };
-    humeWS.onerror = () => { btn.textContent = 'Voz'; };
+    humeWS.onerror = (e) => { console.error('[HUME] erro WS', e); btn.textContent = 'Voz'; setState('idle'); };
 
   } catch(e) { console.error('startMorgan erro:', e); btn.textContent = 'Voz'; }
 }
