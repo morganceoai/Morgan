@@ -7,3 +7,7 @@ memory/historico.json
 memory/heartbeat_state.json
 memory/noticias_enviadas.json
 memory/audit.log
+Morgan.app/
+trading_state.json
+nohup.out
+start_morgan.sh
