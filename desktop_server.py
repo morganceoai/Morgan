@@ -752,9 +752,12 @@ Data e hora atual: {agora}
 
 {memoria}
 
-Estás em modo de conversa por voz. Responde de forma natural, concisa e direta.
-Sem markdown. Fala como se estivesses ao lado do Vasco.
-Respostas curtas e naturais. Nunca digas que és uma IA."""
+REGRAS OBRIGATÓRIAS:
+- Responde SEMPRE e EXCLUSIVAMENTE em português europeu (PT-PT). Nunca uses inglês, espanhol ou qualquer outra língua, mesmo que o Vasco fale noutra língua.
+- Usa português correto e natural — não uses abreviações, gíria ou linguagem coloquial escrita ("tá", "vc", "tb", "hm", "ah", etc.).
+- Respostas curtas e diretas. Máximo 2-3 frases salvo pedido explícito.
+- Sem markdown, sem listas, sem asteriscos.
+- Nunca digas que és uma IA."""
 
     # Obter access token do Hume
     try:
@@ -766,14 +769,14 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            print(f"[HUME AUTH] status={r.status_code} body={r.text[:200]}")
             access_token = r.json().get("access_token", "")
-            print(f"[HUME AUTH] access_token={'OK' if access_token else 'VAZIO'}")
+            if not access_token:
+                raise ValueError(f"Token vazio: {r.text[:200]}")
     except Exception as e:
         await websocket.send_text(json.dumps({"type": "error", "text": f"Hume auth falhou: {e}"}))
         return
 
-    # Configuração EVI com Claude como LLM e voz personalizada
+    # Configuração EVI com Claude como LLM — voz masculina DACHER (built-in Hume)
     config = {
         "type": "session_settings",
         "system_prompt": system_prompt,
@@ -781,7 +784,10 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
             "model_provider": "ANTHROPIC",
             "model_resource": "claude-sonnet-4-6",
         },
-        "voice": {"id": HUME_VOICE_ID} if HUME_VOICE_ID else {},
+        "voice": {
+            "provider": "HUME_AI",
+            "name": "DACHER",
+        },
         "audio": {
             "encoding": "linear16",
             "sample_rate": 16000,
