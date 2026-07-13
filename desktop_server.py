@@ -784,10 +784,8 @@ REGRAS OBRIGATÓRIAS:
             "model_provider": "ANTHROPIC",
             "model_resource": "claude-sonnet-4-6",
         },
-        "voice": {
-            "provider": "HUME_AI",
-            "name": "DACHER",
-        },
+        "voice": {"name": "DACHER"},
+        "language": "pt-PT",
         "audio": {
             "encoding": "linear16",
             "sample_rate": 16000,
