@@ -784,7 +784,6 @@ REGRAS OBRIGATÓRIAS:
             "model_provider": "ANTHROPIC",
             "model_resource": "claude-sonnet-4-6",
         },
-        "voice": {"id": HUME_VOICE_ID} if HUME_VOICE_ID else {"name": "ITO"},
         "language": "pt-PT",
         "audio": {
             "encoding": "linear16",
@@ -793,7 +792,7 @@ REGRAS OBRIGATÓRIAS:
         },
     }
 
-    hume_url = f"wss://api.hume.ai/v0/evi/chat?access_token={access_token}"
+    hume_url = f"wss://api.hume.ai/v0/evi/chat?access_token={access_token}&config_id=78fdac67-a258-481d-8f06-2a9280e76209"
     print(f"[HUME WS] a ligar a {hume_url[:80]}...")
 
     try:
