@@ -150,11 +150,12 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
 /* ── BOTTOM BAR ── */
 .bottom {
   position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 10px 16px calc(var(--safe-b) + 8px);
+  padding: 10px 16px var(--safe-b);
   display: flex; align-items: center; gap: 10px;
   z-index: 20;
-  background: linear-gradient(to top, rgba(5,12,24,0.95) 0%, transparent 100%);
+  background: rgba(5,12,24,0.97);
   pointer-events: auto;
+  min-height: calc(60px + var(--safe-b));
 }
 .inp {
   flex: 1; background: rgba(0,212,255,0.06);
@@ -416,6 +417,8 @@ async function startMorgan(){
     micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
     audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
     playbackCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+    await audioCtx.resume();
+    await playbackCtx.resume();
     const wsUrl=API.replace('https','wss').replace('http','ws')+'/ws/hume';
     humeWS=new WebSocket(wsUrl);
     humeWS.binaryType='arraybuffer';
