@@ -798,15 +798,19 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
             await hume_ws.send(json.dumps(config))
 
             async def hume_to_browser():
+                import base64
                 async for msg in hume_ws:
                     try:
                         if isinstance(msg, bytes):
                             await websocket.send_bytes(msg)
                             continue
-                        print(f"[HUME MSG] {msg[:200]}")
                         data = json.loads(msg)
                         t = data.get("type", "")
-                        if t == "user_message":
+                        if t == "audio_output":
+                            audio_b64 = data.get("data", "")
+                            if audio_b64:
+                                await websocket.send_bytes(base64.b64decode(audio_b64))
+                        elif t == "user_message":
                             text = data.get("message", {}).get("content", "")
                             if text:
                                 store_save(DESKTOP_USER_ID, "user", text)
@@ -819,9 +823,13 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
                         elif t == "assistant_end":
                             await websocket.send_text(json.dumps({"type": "done"}))
                         elif t == "error":
-                            await websocket.send_text(json.dumps({"type": "error", "text": data.get("message", "")}))
-                    except Exception:
-                        pass
+                            msg_text = data.get("message", "")
+                            print(f"[HUME ERROR] {msg_text}")
+                            await websocket.send_text(json.dumps({"type": "error", "text": msg_text}))
+                        else:
+                            print(f"[HUME MSG] type={t}")
+                    except Exception as e:
+                        print(f"[HUME hume_to_browser erro] {e}")
 
             async def browser_to_hume():
                 import base64

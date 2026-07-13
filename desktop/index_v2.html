@@ -1144,25 +1144,38 @@ function stopCapture() {
   if (scriptProc) { scriptProc.disconnect(); scriptProc = null; }
 }
 
-function queueAudio(pcmBuffer) {
-  playbackQueue.push(pcmBuffer);
+function queueAudio(buffer) {
+  playbackQueue.push(buffer);
   if (!isPlaying) playNext();
 }
 
 async function playNext() {
   if (!playbackQueue.length) { isPlaying = false; return; }
   isPlaying = true;
-  const pcm = playbackQueue.shift();
-  const int16 = new Int16Array(pcm);
-  const float32 = new Float32Array(int16.length);
-  for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
-  const buf = playbackCtx.createBuffer(1, float32.length, 16000);
-  buf.copyToChannel(float32, 0);
-  const src = playbackCtx.createBufferSource();
-  src.buffer = buf;
-  src.connect(playbackCtx.destination);
-  src.onended = playNext;
-  src.start();
+  const buf = playbackQueue.shift();
+  try {
+    // Tenta decodificar como áudio (MP3/WAV/etc via Web Audio API)
+    const decoded = await playbackCtx.decodeAudioData(buf.slice(0));
+    const src = playbackCtx.createBufferSource();
+    src.buffer = decoded;
+    src.connect(playbackCtx.destination);
+    src.onended = playNext;
+    src.start();
+  } catch(e) {
+    // Fallback: tratar como PCM 16-bit 16kHz
+    try {
+      const int16 = new Int16Array(buf);
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+      const audioBuf = playbackCtx.createBuffer(1, float32.length, 16000);
+      audioBuf.copyToChannel(float32, 0);
+      const src = playbackCtx.createBufferSource();
+      src.buffer = audioBuf;
+      src.connect(playbackCtx.destination);
+      src.onended = playNext;
+      src.start();
+    } catch(e2) { playNext(); }
+  }
 }
 </script>
 </body>
