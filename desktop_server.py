@@ -784,7 +784,7 @@ REGRAS OBRIGATÓRIAS:
             "model_provider": "ANTHROPIC",
             "model_resource": "claude-sonnet-4-6",
         },
-        "voice": {"name": "ITO"},
+        "voice": {"id": HUME_VOICE_ID} if HUME_VOICE_ID else {"name": "ITO"},
         "language": "pt-PT",
         "audio": {
             "encoding": "linear16",
