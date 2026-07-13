@@ -1026,8 +1026,7 @@ async function runBoot() {
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 runBoot();
 
-// Auto-start voz após boot
-setTimeout(() => { if (morganState === 'idle') startMorgan(); }, 3500);
+// Auto-start desativado — carrega Voz para iniciar
 
 // ─── MORGAN API ───────────────────────────────────────────────────────────────
 
@@ -1075,9 +1074,28 @@ async function sendText() {
 // ── HUME EVI ──────────────────────────────────────────────────────────────────
 let humeWS=null, audioCtx, micStream, scriptProc, playbackCtx, playbackQueue=[], isPlaying=false;
 
+function stopMorgan() {
+  if (humeWS) { try { humeWS.close(1000, 'utilizador desligou'); } catch(e){} humeWS = null; }
+  stopCapture();
+  clearInactivityTimer();
+  document.getElementById('startBtn').textContent = 'Voz';
+  setState('idle');
+}
+
+let inactivityTimer = null;
+function resetInactivityTimer() {
+  clearInactivityTimer();
+  // Desliga automaticamente após 3 minutos sem voz
+  inactivityTimer = setTimeout(() => { if (humeWS) stopMorgan(); }, 3 * 60 * 1000);
+}
+function clearInactivityTimer() {
+  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+}
+
 async function startMorgan() {
   const btn = document.getElementById('startBtn');
-  // Reset estado anterior
+  // Toggle — se já estiver ligado, desliga
+  if (humeWS && humeWS.readyState === WebSocket.OPEN) { stopMorgan(); return; }
   if (humeWS) { try { humeWS.close(); } catch(e){} humeWS = null; }
   if (scriptProc) { stopCapture(); }
   btn.textContent = 'A ligar...';
@@ -1092,8 +1110,9 @@ async function startMorgan() {
 
     humeWS.onopen = () => {
       setState('listening');
-      btn.textContent = 'A ouvir';
+      btn.textContent = 'Desligar';
       startCapture();
+      resetInactivityTimer();
     };
 
     humeWS.onmessage = ev => {
@@ -1104,20 +1123,20 @@ async function startMorgan() {
       }
       try {
         const d = JSON.parse(ev.data);
-        if (d.type === 'user')  { showTranscript(d.text, ''); setState('thinking'); }
+        if (d.type === 'user')  { showTranscript(d.text, ''); setState('thinking'); resetInactivityTimer(); }
         if (d.type === 'agent') { showTranscript('', d.text); setState('speaking'); }
-        if (d.type === 'done')  { setTimeout(() => setState('listening'), 600); }
+        if (d.type === 'done')  { setTimeout(() => setState('listening'), 600); resetInactivityTimer(); }
         if (d.type === 'error') { console.error('Hume erro:', d.text); }
       } catch(e) {}
     };
 
     humeWS.onclose = (ev) => {
       stopCapture();
+      clearInactivityTimer();
+      humeWS = null;
       btn.textContent = 'Voz';
       setState('idle');
-      if (ev.code !== 1000) {
-        console.warn('[HUME] ligação fechada, code=', ev.code, ev.reason);
-      }
+      if (ev.code !== 1000) console.warn('[HUME] ligação fechada, code=', ev.code, ev.reason);
     };
     humeWS.onerror = (e) => { console.error('[HUME] erro WS', e); btn.textContent = 'Voz'; setState('idle'); };
 
