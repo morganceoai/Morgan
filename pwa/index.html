@@ -179,6 +179,16 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
   border-color: rgba(0,255,157,0.5);
   box-shadow: 0 0 12px rgba(0,255,157,0.2);
 }
+.btn-notif {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid rgba(0,212,255,0.2);
+  background: rgba(0,212,255,0.04);
+  color: rgba(0,212,255,0.35); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+}
+.btn-notif.on  { color: rgba(0,255,157,0.8); border-color: rgba(0,255,157,0.4); }
+.btn-notif.off { color: rgba(245,166,35,0.6); border-color: rgba(245,166,35,0.3); }
 
 /* OVERLAY */
 .overlay { display: none; position: fixed; inset: 0; z-index: 14; }
@@ -262,6 +272,7 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
 <div class="bottom">
   <input class="inp" id="inp" type="text" placeholder="Escreve ao Morgan…"
     onkeydown="if(event.key==='Enter')sendText()" autocomplete="off" autocorrect="off">
+  <div class="btn-notif" id="btnNotif" onclick="activarNotificacoes()" title="Notificações">🔔</div>
   <div class="btn-voice" id="btnVoice" onclick="startMorgan()">🎙</div>
 </div>
 
@@ -504,47 +515,75 @@ async function playNext(){
 
 // ── Service Worker + Push Notifications ──────────────────────────────────────
 
-async function setupPushNotifications(reg) {
-  // Não pedir permissão sem gesto do utilizador — verificar apenas o estado
-  if (Notification.permission === 'denied') return;
+let _swReg = null;
 
-  // Já tem subscrição activa?
-  const existing = await reg.pushManager.getSubscription();
+function _vapidKeyToUint8(key) {
+  const pad = key + '==='.slice(0, (4 - key.length % 4) % 4);
+  const bin = atob(pad.replace(/-/g,'+').replace(/_/g,'/'));
+  return new Uint8Array([...bin].map(c => c.charCodeAt(0)));
+}
+
+async function _subscribeAndSend(reg) {
+  const res   = await fetch(`${API}/api/push/vapid-public-key`);
+  const {key} = await res.json();
+  const sub   = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: _vapidKeyToUint8(key)
+  });
+  await fetch(`${API}/api/push/subscribe`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(sub.toJSON())
+  });
+  return sub;
+}
+
+function _updateNotifBtn(state) {
+  // state: 'on' | 'off' | 'idle'
+  const btn = document.getElementById('btnNotif');
+  if (!btn) return;
+  btn.className = 'btn-notif' + (state === 'on' ? ' on' : state === 'off' ? ' off' : '');
+  btn.title = state === 'on' ? 'Notificações activas' : state === 'off' ? 'Notificações bloqueadas' : 'Activar notificações';
+}
+
+async function _initPush(reg) {
+  if (!('PushManager' in window)) return;
+  if (Notification.permission === 'denied') { _updateNotifBtn('off'); return; }
+
+  // Já subscrito — re-enviar ao servidor e marcar como activo
+  const existing = await reg.pushManager.getSubscription().catch(()=>null);
   if (existing) {
-    // Re-enviar ao servidor (caso o servidor tenha reiniciado)
     await fetch(`${API}/api/push/subscribe`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify(existing.toJSON())
     }).catch(()=>{});
+    _updateNotifBtn('on');
     return;
   }
 
-  // Pedir permissão e subscrever
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return;
+  // Ainda não subscrito — mostrar botão em espera
+  if (Notification.permission === 'granted') {
+    // Permissão dada mas sem subscrição (ex: reinstalou a PWA) — subscrever silenciosamente
+    await _subscribeAndSend(reg).catch(()=>{});
+    _updateNotifBtn('on');
+  }
+  // Se 'default', o botão fica no estado neutro até o utilizador carregar
+}
 
+async function activarNotificacoes() {
+  if (!_swReg) return;
+  if (Notification.permission === 'denied') {
+    alert('As notificações estão bloqueadas. Vai a Definições → morgan.bcvertex.com → Notificações e permite.');
+    return;
+  }
   try {
-    const res   = await fetch(`${API}/api/push/vapid-public-key`);
-    const {key} = await res.json();
-
-    // Converter chave VAPID de base64url para Uint8Array
-    const raw    = (key + '===').slice(0, key.length + (4 - key.length % 4) % 4);
-    const binary = atob(raw.replace(/-/g,'+').replace(/_/g,'/'));
-    const appKey = new Uint8Array([...binary].map(c => c.charCodeAt(0)));
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: appKey
-    });
-
-    await fetch(`${API}/api/push/subscribe`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(sub.toJSON())
-    });
-
-    console.log('[Morgan] Push activado.');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { _updateNotifBtn('off'); return; }
+    await _subscribeAndSend(_swReg);
+    _updateNotifBtn('on');
+    // Enviar notificação de confirmação
+    await fetch(`${API}/api/push/test`).catch(()=>{});
   } catch(e) {
     console.warn('[Morgan] Push falhou:', e);
   }
@@ -553,13 +592,13 @@ async function setupPushNotifications(reg) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/pwa/sw.js')
     .then(reg => {
-      // Aguardar SW activo antes de subscrever
+      _swReg = reg;
       const sw = reg.installing || reg.waiting || reg.active;
       if (reg.active) {
-        setupPushNotifications(reg);
-      } else {
+        _initPush(reg);
+      } else if (sw) {
         sw.addEventListener('statechange', () => {
-          if (sw.state === 'activated') setupPushNotifications(reg);
+          if (sw.state === 'activated') _initPush(reg);
         });
       }
     })
