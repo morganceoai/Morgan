@@ -11,3 +11,6 @@ Morgan.app/
 trading_state.json
 nohup.out
 start_morgan.sh
+vapid_private.pem
+memory/push_subscriptions.json
+memory/push_dedup.json

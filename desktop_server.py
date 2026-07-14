@@ -29,6 +29,7 @@ from voice_id import enroll_voice, is_vasco, has_profile, load_profile
 from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
 from trading_bot import get_status as get_bot_status
+from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 
 # Pré-carregar perfil de voz se existir
 load_profile()
@@ -987,6 +988,164 @@ async def set_agent(request: Request):
         _desktop_agent["current"] = agent
     return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
 
+
+# ── Push Notifications ────────────────────────────────────────────────────────
+
+@app.get("/api/push/vapid-public-key")
+async def get_vapid_public_key():
+    return JSONResponse({"key": VAPID_PUBLIC_KEY})
+
+
+@app.post("/api/push/subscribe")
+async def push_subscribe(request: Request):
+    sub = await request.json()
+    save_subscription(sub)
+    return JSONResponse({"ok": True})
+
+
+@app.post("/api/push/test")
+async def push_test():
+    result = send_push(
+        title="Morgan",
+        body="Notificações activas. Estás ligado.",
+        url="/pwa/"
+    )
+    return JSONResponse(result)
+
+
+# ── Heartbeat interno ─────────────────────────────────────────────────────────
+
+import time as _time
+import zoneinfo as _zi
+
+_HEARTBEAT_STATE_FILE = Path(__file__).parent / "memory" / "heartbeat_state.json"
+_DEDUP_FILE = Path(__file__).parent / "memory" / "push_dedup.json"
+_HEARTBEAT_START = _time.time()
+_LISBON = _zi.ZoneInfo("Europe/Lisbon")
+
+
+def _agora_lisboa():
+    return datetime.now(_LISBON)
+
+
+def _dedup_check(chave: str) -> bool:
+    try:
+        data = json.loads(_DEDUP_FILE.read_text()) if _DEDUP_FILE.exists() else {}
+        return chave in data
+    except Exception:
+        return False
+
+
+def _dedup_mark(chave: str):
+    try:
+        data = json.loads(_DEDUP_FILE.read_text()) if _DEDUP_FILE.exists() else {}
+        data[chave] = _agora_lisboa().isoformat()
+        # Manter só as últimas 500 entradas
+        if len(data) > 500:
+            keys = sorted(data, key=lambda k: data[k])
+            for k in keys[:-400]:
+                del data[k]
+        _DEDUP_FILE.write_text(json.dumps(data, ensure_ascii=False))
+    except Exception:
+        pass
+
+
+def _should_run_briefing() -> bool:
+    if _time.time() - _HEARTBEAT_START < 120:
+        return False
+    agora = _agora_lisboa()
+    if agora.hour not in (7, 20):
+        return False
+    return not _dedup_check(f"push_briefing_{agora.strftime('%Y-%m-%d_%H')}")
+
+
+def _should_run_scout() -> bool:
+    agora = _agora_lisboa()
+    if agora.weekday() != 6 or agora.hour != 20:
+        return False
+    return not _dedup_check(f"push_scout_{agora.strftime('%Y-%W')}")
+
+
+def _build_briefing_prompt(hora: int) -> str:
+    memoria = load_memory()
+    scout_data = load_scout()
+    ops = list(scout_data.get("oportunidades", {}).keys())[:3]
+    ops_str = ", ".join(ops) if ops else "nenhuma ainda"
+    periodo = "matinal" if hora == 7 else "noturno"
+    return f"""És o Morgan. Gera o briefing {periodo} para o Vasco. Hora: {hora}h.
+
+Memória do Vasco:
+{memoria}
+
+Oportunidades Scout activas: {ops_str}
+
+Instruções:
+- Directamente ao ponto, sem saudações longas
+- Se for 7h: foco no que fazer hoje, estado do bot de trading, alguma oportunidade prioritária
+- Se for 20h: resumo do dia, o que ficou por fazer, preparação para amanhã
+- Máximo 6 linhas. Sem emojis. Português europeu."""
+
+
+async def _run_briefing(hora: int):
+    loop = asyncio.get_event_loop()
+    prompt = _build_briefing_prompt(hora)
+    # Gera reply com Claude
+    response = await loop.run_in_executor(
+        None,
+        lambda: claude.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=300,
+            system=get_system_prompt(),
+            messages=[{"role": "user", "content": prompt}]
+        )
+    )
+    texto = response.content[0].text if response.content else "Briefing indisponível."
+    periodo = "Briefing das 7h" if hora == 7 else "Briefing das 20h"
+    # Primeira linha como título, resto como corpo
+    linhas = texto.strip().split("\n", 1)
+    titulo = f"Morgan — {periodo}"
+    corpo = texto.strip()
+    send_push(title=titulo, body=corpo[:200], url="/pwa/")
+    _dedup_mark(f"push_briefing_{_agora_lisboa().strftime('%Y-%m-%d_%H')}")
+
+
+async def _run_scout_push():
+    scout_data = load_scout()
+    ops = scout_data.get("oportunidades", {})
+    if not ops:
+        corpo = "Nenhuma oportunidade nova esta semana."
+    else:
+        top = list(ops.items())[:2]
+        corpo = " | ".join(f"{n}" for n, _ in top)
+    send_push(
+        title="Morgan Scout — Relatório Semanal",
+        body=corpo[:200],
+        url="/pwa/"
+    )
+    _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
+
+
+async def _heartbeat_loop():
+    await asyncio.sleep(30)  # deixar o servidor arrancar primeiro
+    while True:
+        try:
+            if _should_run_briefing():
+                hora = _agora_lisboa().hour
+                await _run_briefing(hora)
+            if _should_run_scout():
+                await _run_scout_push()
+        except Exception as e:
+            # Não deixar o loop morrer por erros pontuais
+            print(f"[heartbeat] erro: {e}", flush=True)
+        await asyncio.sleep(60)
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(_heartbeat_loop())
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import uvicorn
