@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n *)",
+      "Bash(grep -i *)",
+      "Bash(grep -E *)",
+      "Bash(curl -s *)",
+      "Bash(which *)",
+      "Bash(ssh -o *)",
+      "Bash(railway logs *)"
+    ]
+  }
+}

@@ -1183,6 +1183,47 @@ async def push_report_now():
     return JSONResponse({"ok": True})
 
 
+@app.post("/api/solver/run")
+async def solver_run(request: Request):
+    """Corre o Solver v2 (LangGraph) com um problema — endpoint de teste."""
+    body = await request.json()
+    problema = body.get("problema", "").strip()
+    if not problema:
+        return JSONResponse({"error": "Parâmetro 'problema' é obrigatório."}, status_code=400)
+    loop = asyncio.get_event_loop()
+    try:
+        from solver_graph import run_solver
+        resultado = await loop.run_in_executor(None, run_solver, problema)
+        return JSONResponse({"ok": True, "resultado": resultado})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/etsy/plano")
+async def etsy_plano():
+    """Devolve o último plano semanal do PlannerAtlas ou gera um novo."""
+    plano_file = Path(__file__).parent / "memory" / "planneratlas_plano_semana.md"
+    if plano_file.exists():
+        return JSONResponse({"ok": True, "plano": plano_file.read_text(encoding="utf-8")})
+    loop = asyncio.get_event_loop()
+    try:
+        from creator_agent import gerar_plano_semana_planneratlas
+        plano = await loop.run_in_executor(None, gerar_plano_semana_planneratlas)
+        return JSONResponse({"ok": True, "plano": plano, "gerado_agora": True})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/bot/multi")
+async def bot_multi_status():
+    """Estado do trading bot em modo multi-par."""
+    try:
+        from trading_bot import get_multi_status
+        return JSONResponse(get_multi_status())
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 # ── Heartbeat interno ─────────────────────────────────────────────────────────
 
 import time as _time
@@ -1240,29 +1281,90 @@ def _should_run_scout() -> bool:
     return not _dedup_check(f"push_scout_{agora.strftime('%Y-%W')}")
 
 
-def _build_briefing_prompt(hora: int) -> str:
+def _build_briefing_prompt(hora: int, extra: dict = None) -> str:
     memoria = load_memory()
     scout_data = load_scout()
     ops = list(scout_data.get("oportunidades", {}).keys())[:3]
     ops_str = ", ".join(ops) if ops else "nenhuma ainda"
+    aprovadas = scout_data.get("aprovadas", [])
+    aprovadas_str = ", ".join(aprovadas[:3]) if aprovadas else "nenhuma"
     periodo = "matinal" if hora == 7 else "noturno"
+
+    extra = extra or {}
+    meteo = extra.get("meteo", "")
+    bot_str = extra.get("bot", "")
+    proximo_jogo_str = extra.get("proximo_jogo", "")
+
+    blocos = [f"Memória do Vasco:\n{memoria}"]
+    if meteo:
+        blocos.append(f"Tempo em Moreira de Cónegos: {meteo}")
+    if bot_str:
+        blocos.append(f"Trading bot: {bot_str}")
+    if proximo_jogo_str:
+        blocos.append(f"Moreirense: {proximo_jogo_str}")
+    blocos.append(f"Scout — oportunidades activas: {ops_str}")
+    blocos.append(f"Scout — oportunidades aprovadas: {aprovadas_str}")
+
+    contexto = "\n\n".join(blocos)
+
     return f"""És o Morgan. Gera o briefing {periodo} para o Vasco. Hora: {hora}h.
 
-Memória do Vasco:
-{memoria}
-
-Oportunidades Scout activas: {ops_str}
+{contexto}
 
 Instruções:
 - Directamente ao ponto, sem saudações longas
-- Se for 7h: foco no que fazer hoje, estado do bot de trading, alguma oportunidade prioritária
-- Se for 20h: resumo do dia, o que ficou por fazer, preparação para amanhã
-- Máximo 6 linhas. Sem emojis. Português europeu."""
+- Se for 7h: foco no que fazer hoje, estado do bot de trading, próximo jogo se relevante, oportunidade mais prioritária do Scout
+- Se for 20h: resumo do que aconteceu, o que ficou por fazer, preparação para amanhã, menção ao resultado se houve jogo hoje
+- Máximo 7 linhas. Sem emojis. Português europeu."""
 
 
 async def _run_briefing(hora: int):
     loop = asyncio.get_event_loop()
-    prompt = _build_briefing_prompt(hora)
+
+    # Recolher dados em paralelo para o briefing enriquecido
+    extra = {}
+    try:
+        async with httpx.AsyncClient() as c:
+            r = await c.get("https://wttr.in/Moreira+de+Conegos?format=%t+%C", timeout=4)
+            extra["meteo"] = r.text.strip()
+    except Exception:
+        pass
+
+    try:
+        from trading_bot import get_status as _bot_status
+        b = _bot_status()
+        extra["bot"] = (
+            f"{'ATIVO' if b.get('active') else 'PARADO'} | "
+            f"PnL hoje: {b.get('pnl_today', 0):+.2f} USDT | "
+            f"PnL total: {b.get('pnl_total', 0):+.2f} USDT | "
+            f"Sinal: {b.get('signal', 'hold')}"
+        )
+    except Exception:
+        pass
+
+    try:
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        async with httpx.AsyncClient() as c:
+            r = await c.get(
+                "https://v3.football.api-sports.io/fixtures",
+                params={"team": 229, "next": 1, "season": 2026},
+                headers=headers, timeout=5
+            )
+            data = r.json()
+            if data.get("response"):
+                f = data["response"][0]
+                home = f["teams"]["home"]["name"]
+                away = f["teams"]["away"]["name"]
+                adv = away if home == "Moreirense" else home
+                data_j = f["fixture"]["date"][:10]
+                hora_j = f["fixture"]["date"][11:16]
+                loc = "casa" if home == "Moreirense" else "fora"
+                liga = f["league"]["name"]
+                extra["proximo_jogo"] = f"próximo jogo: {adv} ({loc}) — {data_j} {hora_j} | {liga}"
+    except Exception:
+        pass
+
+    prompt = _build_briefing_prompt(hora, extra)
     # Gera reply com Claude
     response = await loop.run_in_executor(
         None,
@@ -1473,6 +1575,22 @@ async def _heartbeat_loop():
             # Scout dominical às 20h
             if _should_run_scout():
                 await _run_scout_push()
+
+            # Plano semanal PlannerAtlas — segunda-feira às 8h
+            chave_etsy = f"etsy_plano_{agora.strftime('%Y-%W')}"
+            if agora.weekday() == 0 and agora.hour == 8 and not _dedup_check(chave_etsy):
+                _dedup_mark(chave_etsy)
+                loop = asyncio.get_event_loop()
+                try:
+                    from creator_agent import gerar_plano_semana_planneratlas
+                    plano = await loop.run_in_executor(None, gerar_plano_semana_planneratlas)
+                    send_push(
+                        title="Morgan Planners — Plano da semana",
+                        body=plano[:200],
+                        url="/pwa/"
+                    )
+                except Exception as e:
+                    print(f"[creator] erro plano etsy: {e}", flush=True)
 
         except Exception as e:
             print(f"[heartbeat] erro: {e}", flush=True)

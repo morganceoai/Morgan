@@ -845,6 +845,75 @@ def atualizar_estado_imperio(seccao: str, conteudo: str) -> str:
         return f"Erro ao atualizar estado: {e}"
 
 
+def listar_google_drive(pasta: str = "root", max_itens: int = 20) -> str:
+    """
+    Lista ficheiros e pastas do Google Drive do Vasco.
+    Requer GOOGLE_SERVICE_ACCOUNT_JSON ou GOOGLE_OAUTH_TOKEN no .env.
+    Sem credenciais: devolve instrução de setup.
+    """
+    import os
+    token = os.getenv("GOOGLE_OAUTH_TOKEN", "")
+    service_account = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "")
+
+    if not token and not service_account:
+        return (
+            "Google Drive não configurado. Para ativar:\n"
+            "1. Vai a https://console.cloud.google.com → APIs & Services → Enable Google Drive API\n"
+            "2. Cria OAuth 2.0 Client ID → copia o token de acesso\n"
+            "3. Adiciona GOOGLE_OAUTH_TOKEN=... ao .env do Mac Mini"
+        )
+
+    try:
+        import httpx
+        headers = {"Authorization": f"Bearer {token}"}
+        params = {
+            "q": f"'{pasta}' in parents and trashed=false" if pasta != "root" else "trashed=false",
+            "fields": "files(id,name,mimeType,modifiedTime,size)",
+            "pageSize": max_itens,
+            "orderBy": "modifiedTime desc",
+        }
+        r = httpx.get("https://www.googleapis.com/drive/v3/files", headers=headers, params=params, timeout=10)
+        if r.status_code == 401:
+            return "Google Drive: token expirado. Renova GOOGLE_OAUTH_TOKEN no .env."
+        data = r.json()
+        files = data.get("files", [])
+        if not files:
+            return "Google Drive: pasta vazia ou sem acesso."
+        linhas = [f"Google Drive — {len(files)} itens (pasta: {pasta}):"]
+        for f in files:
+            tipo = "📁" if "folder" in f.get("mimeType", "") else "📄"
+            tamanho = f" ({int(f['size'])//1024}KB)" if f.get("size") else ""
+            data_mod = f.get("modifiedTime", "")[:10]
+            linhas.append(f"  {tipo} {f['name']}{tamanho} · {data_mod}")
+        return "\n".join(linhas)
+    except Exception as e:
+        return f"Google Drive erro: {e}"
+
+
+def organizar_google_drive_sugestoes() -> str:
+    """
+    Analisa o Google Drive e sugere organização em pastas por categoria.
+    Não move ficheiros — só sugere. O Vasco decide.
+    """
+    conteudo = listar_google_drive(max_itens=50)
+    if "não configurado" in conteudo or "erro" in conteudo.lower():
+        return conteudo
+
+    import anthropic as _a, os
+    client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    r = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=400,
+        messages=[{"role": "user", "content": f"""Analisa esta listagem do Google Drive e sugere uma estrutura de pastas mais organizada:
+
+{conteudo}
+
+Propõe: máximo 6 pastas de topo com nomes claros. Para cada pasta, lista que tipo de ficheiros devem ir para lá.
+Formato direto, sem rodeios. Português europeu."""}]
+    )
+    return r.content[0].text if r.content else "Sugestão indisponível."
+
+
 # Registo de todas as tools disponíveis para o Morgan
 TOOLS = [
     {
@@ -1158,6 +1227,23 @@ TOOLS = [
             },
             "required": ["seccao", "conteudo"]
         }
+    },
+    {
+        "name": "listar_google_drive",
+        "description": "Lista ficheiros e pastas do Google Drive do Vasco. Usa quando o Vasco pedir para ver, encontrar ou organizar ficheiros na cloud.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pasta": {"type": "string", "description": "ID da pasta ou 'root' para a raiz", "default": "root"},
+                "max_itens": {"type": "integer", "description": "Máximo de itens a listar (padrão 20)", "default": 20}
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "organizar_google_drive_sugestoes",
+        "description": "Analisa o Google Drive do Vasco e sugere uma estrutura de organização em pastas. Não move ficheiros — só sugere.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
     }
 ]
 
@@ -1195,4 +1281,6 @@ TOOL_FUNCTIONS = {
     "solver_railway_logs": solver_railway_logs,
     "consultar_historico_imperio": consultar_historico_imperio,
     "atualizar_estado_imperio": atualizar_estado_imperio,
+    "listar_google_drive": listar_google_drive,
+    "organizar_google_drive_sugestoes": organizar_google_drive_sugestoes,
 }

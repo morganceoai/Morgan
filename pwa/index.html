@@ -220,7 +220,7 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
     <div class="hdr-sub">BC Industries</div>
   </div>
   <div class="hdr-right">
-    <div class="agent-badge" id="agentBadge">CEO</div>
+    <div class="agent-badge" id="agentBadge" onclick="cycleAgent()" style="cursor:pointer" title="Toca para mudar de agente">CEO</div>
     <div class="hdr-time" id="clock">--:--</div>
     <div class="status-dot"></div>
   </div>
@@ -463,6 +463,17 @@ function showTranscript(u,m) {
   const el=document.getElementById('transcript'); el.innerHTML='';
   if(u){const d=document.createElement('div');d.className='t-user';d.textContent=u;el.appendChild(d);}
   if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
+}
+const AGENTS = ['ceo','cfo','coach','scout'];
+const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT'};
+let _currentAgent = 'ceo';
+async function cycleAgent() {
+  const idx = AGENTS.indexOf(_currentAgent);
+  _currentAgent = AGENTS[(idx + 1) % AGENTS.length];
+  document.getElementById('agentBadge').textContent = AGENT_LABELS[_currentAgent];
+  try {
+    await fetch(API+'/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent:_currentAgent})});
+  } catch(e) {}
 }
 async function sendText() {
   const inp=document.getElementById('inp');

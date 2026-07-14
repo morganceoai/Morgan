@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TutoresIT.pt — Encontra o teu explicador de Informática</title>
+  <meta name="description" content="Explicadores verificados de Informática, Programação e Matemática. Aulas online ou presenciais. Marca já.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f4ff; --white: #fff; --text: #1a1a2e; --text-2: #4a5068; --text-3: #8a90a8;
+      --border: #dde3f5; --blue: #2563eb; --blue-light: #eff6ff; --blue-mid: #60a5fa;
+      --radius: 10px; --font: -apple-system,'Helvetica Neue',sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+    nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 10; }
+    .nav-logo { font-size: 17px; font-weight: 700; color: var(--blue); text-decoration: none; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { font-size: 14px; color: var(--text-2); text-decoration: none; }
+    .nav-links a:hover { color: var(--blue); }
+    .hero { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%); color: #fff; padding: 5rem 2rem 4rem; text-align: center; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; }
+    .hero p { font-size: 1.1rem; opacity: .85; max-width: 540px; margin: 0 auto 2rem; }
+    .search-box { background: #fff; border-radius: var(--radius); padding: 1rem 1.5rem; display: flex; gap: .75rem; max-width: 580px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: var(--text); }
+    .search-box input::placeholder { color: var(--text-3); }
+    .btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: .65rem 1.5rem; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #1e3a8a; }
+    .stats { display: flex; justify-content: center; gap: 3rem; padding: 2.5rem 2rem; background: var(--white); border-bottom: 1px solid var(--border); }
+    .stat { text-align: center; }
+    .stat-n { font-size: 2rem; font-weight: 700; color: var(--blue); }
+    .stat-l { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+    .section { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+    .section-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--blue-light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+    .card-name { font-weight: 600; font-size: 15px; }
+    .card-spec { font-size: 13px; color: var(--text-2); }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--blue-light); color: var(--blue); font-weight: 600; margin-top: 4px; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: .75rem 0; }
+    .tag { font-size: 12px; background: var(--bg); color: var(--text-2); padding: 3px 10px; border-radius: 6px; }
+    .stars { color: #f59e0b; font-size: 13px; margin: 4px 0; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: .75rem; }
+    .price { font-size: 13px; color: var(--text-2); }
+    .btn-sm { font-size: 13px; padding: .45rem 1rem; background: var(--blue); color: #fff; border: none; border-radius: 7px; cursor: pointer; }
+    .subjects { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+    .sub-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; cursor: pointer; transition: border-color .2s; }
+    .sub-card:hover { border-color: var(--blue-mid); }
+    .sub-icon { font-size: 1.8rem; margin-bottom: .5rem; }
+    .sub-name { font-size: 13px; font-weight: 600; }
+    .how { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2rem; }
+    .how-step { text-align: center; }
+    .how-num { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 1rem; }
+    .how-title { font-weight: 600; margin-bottom: .4rem; }
+    .how-desc { font-size: 13px; color: var(--text-2); }
+    .cta { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; text-align: center; padding: 4rem 2rem; }
+    .cta h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; }
+    .cta p { opacity: .85; margin-bottom: 1.5rem; }
+    .btn-outline { border: 2px solid rgba(255,255,255,.7); background: transparent; color: #fff; border-radius: 8px; padding: .75rem 2rem; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+    footer { text-align: center; font-size: 13px; color: var(--text-3); padding: 2rem; border-top: 1px solid var(--border); background: var(--white); }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">TutoresIT.pt</a>
+  <div class="nav-links">
+    <a href="#">Encontrar tutor</a>
+    <a href="#">Disciplinas</a>
+    <a href="#">Como funciona</a>
+    <a href="#" style="color:var(--blue);font-weight:600">Sou tutor</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Aprende Programação e Informática com os melhores tutores</h1>
+  <p>Tutores verificados para Python, JavaScript, Matemática, Física e mais. Online ou presencial. Começa hoje.</p>
+  <div class="search-box">
+    <input type="text" placeholder="Disciplina, linguagem ou nome do tutor…">
+    <button class="btn">Pesquisar</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-n">350+</div><div class="stat-l">Tutores verificados</div></div>
+  <div class="stat"><div class="stat-n">25+</div><div class="stat-l">Disciplinas disponíveis</div></div>
+  <div class="stat"><div class="stat-n">4.9★</div><div class="stat-l">Avaliação média</div></div>
+  <div class="stat"><div class="stat-n">€15</div><div class="stat-l">A partir de €15/hora</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Tutores em destaque</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">JM</div>
+        <div>
+          <div class="card-name">João Monteiro</div>
+          <div class="card-spec">Eng. Informático · Lisboa</div>
+          <span class="badge">Top tutor 2026</span>
+        </div>
+      </div>
+      <div class="stars">★★★★★ (48 avaliações)</div>
+      <div class="card-tags">
+        <span class="tag">Python</span><span class="tag">Django</span><span class="tag">Machine Learning</span><span class="tag">SQL</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€25/hora · online</span>
+        <button class="btn-sm">Marcar aula</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">SR</div>
+        <div>
+          <div class="card-name">Sofia Rodrigues</div>
+          <div class="card-spec">Professora de Matemática · Porto</div>
+          <span class="badge">Responde rapidamente</span>
+        </div>
+      </div>
+      <div class="stars">★★★★★ (31 avaliações)</div>
+      <div class="card-tags">
+        <span class="tag">Matemática</span><span class="tag">Cálculo</span><span class="tag">Álgebra</span><span class="tag">12º ano</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€20/hora · presencial e online</span>
+        <button class="btn-sm">Marcar aula</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">PC</div>
+        <div>
+          <div class="card-name">Pedro Costa</div>
+          <div class="card-spec">Dev Web Full-Stack · Remoto</div>
+          <span class="badge">Disponível hoje</span>
+        </div>
+      </div>
+      <div class="stars">★★★★☆ (22 avaliações)</div>
+      <div class="card-tags">
+        <span class="tag">JavaScript</span><span class="tag">React</span><span class="tag">Node.js</span><span class="tag">Git</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€30/hora · online</span>
+        <button class="btn-sm">Marcar aula</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="background:var(--white);padding:3rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="section" style="padding-top:0;padding-bottom:0">
+    <div class="section-title">Pesquisar por disciplina</div>
+    <div class="subjects">
+      <div class="sub-card"><div class="sub-icon">🐍</div><div class="sub-name">Python</div></div>
+      <div class="sub-card"><div class="sub-icon">🌐</div><div class="sub-name">JavaScript</div></div>
+      <div class="sub-card"><div class="sub-icon">📐</div><div class="sub-name">Matemática</div></div>
+      <div class="sub-card"><div class="sub-icon">⚡</div><div class="sub-name">Física</div></div>
+      <div class="sub-card"><div class="sub-icon">🗄️</div><div class="sub-name">Bases de Dados</div></div>
+      <div class="sub-card"><div class="sub-icon">☁️</div><div class="sub-name">Cloud / AWS</div></div>
+      <div class="sub-card"><div class="sub-icon">🤖</div><div class="sub-name">IA / ML</div></div>
+      <div class="sub-card"><div class="sub-icon">🔒</div><div class="sub-name">Cibersegurança</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Como funciona</div>
+  <div class="how">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <div class="how-title">Pesquisa</div>
+      <div class="how-desc">Usa filtros por disciplina, preço e disponibilidade para encontrar o tutor certo.</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <div class="how-title">Contacta</div>
+      <div class="how-desc">Envia mensagem diretamente ao tutor e combina horário e formato (online ou presencial).</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <div class="how-title">Aprende</div>
+      <div class="how-desc">Marca a primeira aula. Sem compromisso — cancela a qualquer momento.</div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>És tutor? Começa a receber alunos já esta semana</h2>
+  <p>Perfil gratuito nos primeiros 3 meses. Depois €25/mês. Sem comissões por aula.</p>
+  <button class="btn-outline">Criar perfil de tutor</button>
+</div>
+
+<footer>
+  © 2026 TutoresIT.pt · <a href="#" style="color:inherit">Privacidade</a> · <a href="#" style="color:inherit">Termos</a>
+</footer>
+</body>
+</html>

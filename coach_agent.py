@@ -52,15 +52,56 @@ def _mem0_coach_add(texto: str):
 
 # ── System Prompt ─────────────────────────────────────────────────────────────
 
+def _fetch_moreirense_fixtures() -> str:
+    """Busca próximos jogos e último resultado do Moreirense via API Football."""
+    try:
+        import httpx
+        api_key = os.getenv("API_FOOTBALL_KEY", "")
+        if not api_key:
+            return ""
+        headers = {"x-apisports-key": api_key}
+        with httpx.Client(timeout=5) as c:
+            r_next = c.get("https://v3.football.api-sports.io/fixtures",
+                           params={"team": 229, "next": 3, "season": 2026}, headers=headers)
+            r_last = c.get("https://v3.football.api-sports.io/fixtures",
+                           params={"team": 229, "last": 1, "season": 2026}, headers=headers)
+        linhas = ["Próximos jogos Moreirense:"]
+        for f in (r_next.json().get("response") or [])[:3]:
+            home = f["teams"]["home"]["name"]
+            away = f["teams"]["away"]["name"]
+            data = f["fixture"]["date"][:10]
+            hora = f["fixture"]["date"][11:16]
+            liga = f["league"]["name"]
+            loc = "casa" if home == "Moreirense" else "fora"
+            adv = away if home == "Moreirense" else home
+            linhas.append(f"  {data} {hora} — {adv} ({loc}) | {liga}")
+        last_resp = r_last.json().get("response")
+        if last_resp:
+            f = last_resp[0]
+            home = f["teams"]["home"]["name"]
+            away = f["teams"]["away"]["name"]
+            gh, ga = f["goals"]["home"], f["goals"]["away"]
+            adv = away if home == "Moreirense" else home
+            if home == "Moreirense":
+                res_str = f"{gh}-{ga}"
+            else:
+                res_str = f"{ga}-{gh}"
+            linhas.append(f"Último resultado: {adv} {res_str}")
+        return "\n".join(linhas)
+    except Exception:
+        return ""
+
+
 def build_coach_system(contexto: str = "") -> str:
     from datetime import datetime
     hoje = datetime.now().strftime("%d de %B de %Y")
-    moreirense_info = """
-Moreirense FC — Liga Portugal Betclic (Primeira Liga)
+    fixtures_str = _fetch_moreirense_fixtures()
+    moreirense_info = f"""Moreirense FC — Liga Portugal Betclic (Primeira Liga)
 Vasco Botelho da Costa é o treinador principal.
 Contrato até final da época 2026/27. Cláusula de rescisão: 1,5M€.
 Moreira de Cónegos, Guimarães, Portugal.
-"""
+
+{fixtures_str}"""
     memoria = _mem0_coach_get(contexto) if contexto else ""
     mem_bloco = f"\n## Memória relevante:\n{memoria}" if memoria else ""
 

@@ -33,6 +33,17 @@ CONFIG = {
     "max_drawdown_total": 0.15,   # para se perder >15% do capital total
 }
 
+# Multi-par: cada par opera com uma fatia do capital total
+MULTI_PAIR_CONFIG = [
+    {"symbol": "BTC/USDT", "capital_pct": 0.60},  # 60% → $60
+    {"symbol": "ETH/USDT", "capital_pct": 0.40},  # 40% → $40
+]
+
+# Ficheiros de estado por par
+def _state_file_for(symbol: str) -> Path:
+    safe = symbol.replace("/", "_")
+    return STATE_FILE.parent / f"trading_state_{safe}.json"
+
 STATE_FILE = Path("memory/trading_state.json")
 
 
@@ -296,8 +307,123 @@ def reset_daily_pnl():
     save_state(state)
 
 
+def run_multi_pair_cycle() -> list[dict]:
+    """Corre um ciclo para todos os pares configurados em MULTI_PAIR_CONFIG."""
+    capital_total = CONFIG["capital"]
+    results = []
+    for pair_cfg in MULTI_PAIR_CONFIG:
+        symbol = pair_cfg["symbol"]
+        capital = round(capital_total * pair_cfg["capital_pct"], 2)
+        state_file = _state_file_for(symbol)
+
+        # Carregar estado específico do par
+        try:
+            state = json.loads(state_file.read_text()) if state_file.exists() else {
+                "active": True, "position": None, "trades": [],
+                "pnl_total": 0.0, "pnl_today": 0.0, "last_check": "", "last_signal": "",
+            }
+        except Exception:
+            state = {"active": True, "position": None, "trades": [], "pnl_total": 0.0,
+                     "pnl_today": 0.0, "last_check": "", "last_signal": ""}
+
+        if not state.get("active", True):
+            results.append({"symbol": symbol, "status": "pausado"})
+            continue
+
+        # Verificar drawdown com capital alocado ao par
+        loss_today = state.get("pnl_today", 0)
+        loss_total = state.get("pnl_total", 0)
+        if loss_today <= -(capital * CONFIG["max_drawdown_day"]):
+            state["active"] = False
+            state_file.write_text(json.dumps(state, indent=2))
+            results.append({"symbol": symbol, "status": "drawdown_diario"})
+            continue
+        if loss_total <= -(capital * CONFIG["max_drawdown_total"]):
+            state["active"] = False
+            state_file.write_text(json.dumps(state, indent=2))
+            results.append({"symbol": symbol, "status": "drawdown_total"})
+            continue
+
+        try:
+            exchange = get_exchange()
+            ohlcv = exchange.fetch_ohlcv(symbol, CONFIG["timeframe"], limit=50)
+            closes = [c[4] for c in ohlcv]
+            price = closes[-1]
+            signal = get_signal(closes)
+
+            state["last_check"] = datetime.now(timezone.utc).isoformat()
+            state["last_signal"] = signal
+
+            exit_reason = check_exits(state, price)
+            if exit_reason:
+                pos = state["position"]
+                pnl = (price - pos["entry"]) * pos["size"]
+                if pos["side"] == "sell":
+                    pnl = -pnl
+                state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
+                state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
+                state["trades"].append({
+                    "symbol": symbol, "side": pos["side"], "entry": pos["entry"],
+                    "exit": price, "size": pos["size"], "pnl": round(pnl, 4),
+                    "reason": exit_reason, "closed_at": datetime.now(timezone.utc).isoformat(),
+                })
+                state["position"] = None
+                results.append({"symbol": symbol, "status": "trade_fechado", "pnl": pnl, "reason": exit_reason})
+            elif signal == "buy" and not state.get("position"):
+                size = position_size(capital, price)
+                state["position"] = {"side": "buy", "entry": price, "size": size,
+                                     "opened_at": datetime.now(timezone.utc).isoformat()}
+                results.append({"symbol": symbol, "status": "compra", "price": price, "size": size})
+            elif signal == "sell" and state.get("position", {}).get("side") == "buy":
+                pos = state["position"]
+                pnl = (price - pos["entry"]) * pos["size"]
+                state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
+                state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
+                state["trades"].append({
+                    "symbol": symbol, "side": "buy", "entry": pos["entry"],
+                    "exit": price, "size": pos["size"], "pnl": round(pnl, 4),
+                    "reason": "sinal_venda", "closed_at": datetime.now(timezone.utc).isoformat(),
+                })
+                state["position"] = None
+                results.append({"symbol": symbol, "status": "venda", "price": price, "pnl": pnl})
+            else:
+                results.append({"symbol": symbol, "status": "hold", "signal": signal, "price": price})
+
+            state_file.write_text(json.dumps(state, indent=2))
+
+        except Exception as e:
+            results.append({"symbol": symbol, "status": "erro", "message": str(e)})
+
+    return results
+
+
+def get_multi_status() -> list[dict]:
+    """Estado de todos os pares."""
+    capital_total = CONFIG["capital"]
+    statuses = []
+    for pair_cfg in MULTI_PAIR_CONFIG:
+        symbol = pair_cfg["symbol"]
+        capital = round(capital_total * pair_cfg["capital_pct"], 2)
+        state_file = _state_file_for(symbol)
+        try:
+            state = json.loads(state_file.read_text()) if state_file.exists() else {}
+        except Exception:
+            state = {}
+        statuses.append({
+            "symbol": symbol,
+            "capital_alocado": capital,
+            "active": state.get("active", True),
+            "position": state.get("position"),
+            "pnl_total": state.get("pnl_total", 0),
+            "pnl_today": state.get("pnl_today", 0),
+            "trades": len(state.get("trades", [])),
+            "last_signal": state.get("last_signal", ""),
+        })
+    return statuses
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    print("[BOT] A correr ciclo manual...")
-    result = run_cycle()
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    print("[BOT] A correr ciclo multi-par...")
+    results = run_multi_pair_cycle()
+    print(json.dumps(results, indent=2, ensure_ascii=False))

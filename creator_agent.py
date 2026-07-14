@@ -588,6 +588,93 @@ def get_domain_knowledge(oportunidade: str) -> str:
     return "\n".join(lines)
 
 
+def gerar_plano_semana_planneratlas() -> str:
+    """
+    Gera automaticamente o plano de produtos para a semana no PlannerAtlas (Etsy).
+    Corre toda a segunda-feira de manhã (integrado no heartbeat).
+    Retorna texto com ideias de produtos + keywords Etsy.
+    """
+    import anthropic as _a
+    from tools import pesquisar_web
+
+    # Pesquisar tendências actuais Etsy para planners
+    tendencias = ""
+    try:
+        tendencias = pesquisar_web("Etsy digital planner bestseller trending German Spanish 2026 GoodNotes")
+    except Exception:
+        pass
+
+    prompt = f"""Hoje é {datetime.now().strftime('%A, %d de %B de %Y')}.
+
+Você é o Morgan Planners — gestor autónomo da loja PlannerAtlas no Etsy.
+A loja tem 8 anúncios activos em PT/ES/DE e tem de crescer para 50+ produtos.
+
+TENDÊNCIAS DETECTADAS:
+{tendencias[:500] if tendencias else 'indisponível'}
+
+CONTEXTO:
+- 5 categorias activas: planner anual/semanal/diário, objectivos/hábitos, académico, negócios/freelancer, saúde/fitness
+- Mercados prioritários: Alemão (DE/AT/CH), Espanhol (ES/LATAM)
+- Preço alvo: €3-15 por template
+- Plataforma: Etsy (SEO por keywords) + Pinterest (visual)
+
+Gera o plano para esta semana:
+1. 3 novos produtos a criar (idioma, categoria, título Etsy em alemão ou espanhol)
+2. Keywords SEO para cada produto (5 keywords por produto, no idioma do mercado)
+3. Sugestão de imagem de capa (descreve o estilo visual)
+4. Estratégia de Pinterest: 1 pin por produto (descrição curta, 5 hashtags)
+
+Formato directo, sem rodeios. Português europeu."""
+
+    client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    r = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=800,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    plano = r.content[0].text if r.content else "Plano indisponível."
+
+    # Guardar plano no ficheiro de memória do Creator
+    plano_file = Path(__file__).parent / "memory" / "planneratlas_plano_semana.md"
+    plano_file.parent.mkdir(exist_ok=True)
+    plano_file.write_text(
+        f"# Plano PlannerAtlas — {datetime.now().strftime('%d/%m/%Y')}\n\n{plano}",
+        encoding="utf-8"
+    )
+    return plano
+
+
+def gerar_conteudo_social_planneratlas(produto: str, idioma: str = "de") -> str:
+    """
+    Gera conteúdo para Pinterest/Instagram para um produto PlannerAtlas.
+    idioma: 'de' (Alemão), 'es' (Espanhol), 'pt' (Português)
+    """
+    import anthropic as _a
+    idiomas_map = {"de": "alemão", "es": "espanhol", "pt": "português europeu"}
+    lang_name = idiomas_map.get(idioma, idioma)
+
+    prompt = f"""Gera conteúdo de marketing para redes sociais para o seguinte produto Etsy:
+
+Produto: {produto}
+Idioma de saída: {lang_name}
+Loja: PlannerAtlas (planners digitais GoodNotes/Notability no Etsy)
+
+Cria:
+1. **Pinterest** (2 descrições de pin — uma curta ~50 palavras, uma longa ~150 palavras)
+2. **Instagram** (caption com emoji, máximo 150 palavras + 20 hashtags relevantes em {lang_name})
+3. **TikTok** (hook inicial de 3 segundos + texto do vídeo ~100 palavras)
+
+Tom: inspiracional, produtivo, minimalista. Público-alvo: estudantes e profissionais 18-35 anos."""
+
+    client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    r = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=600,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return r.content[0].text if r.content else "Conteúdo indisponível."
+
+
 if __name__ == "__main__":
     # Teste rápido
     resultado = criar_sub_morgan("Directório de nicho PT/BR monetizado")

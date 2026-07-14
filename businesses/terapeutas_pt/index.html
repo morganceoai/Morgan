@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terapeutas.pt — Encontra o teu psicólogo</title>
+  <meta name="description" content="Encontra psicólogos e psicoterapeutas perto de ti. Perfis verificados, avaliações reais, marca consulta online.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f6f3; --white: #fff; --text: #1a1a1a; --text-2: #555; --text-3: #888;
+      --border: #e0ddd8; --green: #2d6a4f; --green-light: #e8f5ee; --green-mid: #52b788;
+      --radius: 10px; --font: -apple-system,'Helvetica Neue',sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+    nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 10; }
+    .nav-logo { font-size: 17px; font-weight: 600; color: var(--green); text-decoration: none; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { font-size: 14px; color: var(--text-2); text-decoration: none; }
+    .nav-links a:hover { color: var(--green); }
+    .hero { background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%); color: #fff; padding: 5rem 2rem 4rem; text-align: center; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; margin-bottom: 1rem; letter-spacing: -1px; }
+    .hero p { font-size: 1.1rem; opacity: 0.85; max-width: 520px; margin: 0 auto 2rem; }
+    .search-box { background: #fff; border-radius: var(--radius); padding: 1rem 1.5rem; display: flex; gap: 0.75rem; max-width: 560px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    .search-box input { flex: 1; border: none; outline: none; font-size: 15px; color: var(--text); }
+    .search-box input::placeholder { color: var(--text-3); }
+    .btn { background: var(--green); color: #fff; border: none; border-radius: 8px; padding: 0.65rem 1.5rem; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #1b4332; }
+    .stats { display: flex; justify-content: center; gap: 3rem; padding: 2.5rem 2rem; background: var(--white); border-bottom: 1px solid var(--border); }
+    .stat { text-align: center; }
+    .stat-n { font-size: 2rem; font-weight: 700; color: var(--green); }
+    .stat-l { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+    .section { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+    .section-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: var(--green); flex-shrink: 0; }
+    .card-name { font-weight: 600; font-size: 15px; }
+    .card-spec { font-size: 13px; color: var(--text-2); }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--green-light); color: var(--green); font-weight: 600; margin-top: 4px; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.75rem 0; }
+    .tag { font-size: 12px; background: var(--bg); color: var(--text-2); padding: 3px 10px; border-radius: 6px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.75rem; }
+    .price { font-size: 13px; color: var(--text-2); }
+    .btn-sm { font-size: 13px; padding: 0.45rem 1rem; background: var(--green); color: #fff; border: none; border-radius: 7px; cursor: pointer; }
+    .specialties { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+    .sp-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1rem; text-align: center; cursor: pointer; transition: border-color .2s; }
+    .sp-card:hover { border-color: var(--green-mid); }
+    .sp-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .sp-name { font-size: 13px; font-weight: 600; }
+    .cta { background: linear-gradient(135deg, #2d6a4f, #40916c); color: #fff; text-align: center; padding: 4rem 2rem; }
+    .cta h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 1rem; }
+    .cta p { opacity: .85; margin-bottom: 1.5rem; }
+    .btn-outline { border: 2px solid rgba(255,255,255,.7); background: transparent; color: #fff; border-radius: 8px; padding: .75rem 2rem; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+    footer { text-align: center; font-size: 13px; color: var(--text-3); padding: 2rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">Terapeutas.pt</a>
+  <div class="nav-links">
+    <a href="#">Encontrar terapeuta</a>
+    <a href="#">Especialidades</a>
+    <a href="#">Como funciona</a>
+    <a href="#" style="color:var(--green);font-weight:600">Sou terapeuta</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Encontra o terapeuta certo para ti</h1>
+  <p>Mais de 500 psicólogos e psicoterapeutas verificados em Portugal. Marca consulta em 60 segundos.</p>
+  <div class="search-box">
+    <input type="text" placeholder="Especialidade, cidade ou nome…">
+    <button class="btn">Pesquisar</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-n">500+</div><div class="stat-l">Terapeutas verificados</div></div>
+  <div class="stat"><div class="stat-n">18</div><div class="stat-l">Distritos cobertos</div></div>
+  <div class="stat"><div class="stat-n">4.8★</div><div class="stat-l">Avaliação média</div></div>
+  <div class="stat"><div class="stat-n">Online</div><div class="stat-l">Consultas disponíveis</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Terapeutas em destaque</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">AC</div>
+        <div>
+          <div class="card-name">Ana Carvalho</div>
+          <div class="card-spec">Psicóloga Clínica · Lisboa</div>
+          <span class="badge">Responde em 24h</span>
+        </div>
+      </div>
+      <div class="card-tags">
+        <span class="tag">Ansiedade</span><span class="tag">Depressão</span><span class="tag">TCC</span><span class="tag">Adultos</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€60–80 / sessão</span>
+        <button class="btn-sm">Ver perfil</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">RS</div>
+        <div>
+          <div class="card-name">Rui Santos</div>
+          <div class="card-spec">Psicoterapeuta · Porto</div>
+          <span class="badge">Consultas online</span>
+        </div>
+      </div>
+      <div class="card-tags">
+        <span class="tag">Casal</span><span class="tag">Família</span><span class="tag">EMDR</span><span class="tag">Trauma</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€70–90 / sessão</span>
+        <button class="btn-sm">Ver perfil</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="avatar">MF</div>
+        <div>
+          <div class="card-name">Marta Ferreira</div>
+          <div class="card-spec">Psicóloga · Braga</div>
+          <span class="badge">Disponível esta semana</span>
+        </div>
+      </div>
+      <div class="card-tags">
+        <span class="tag">Burnout</span><span class="tag">Autoestima</span><span class="tag">ACT</span><span class="tag">Mindfulness</span>
+      </div>
+      <div class="card-footer">
+        <span class="price">€50–65 / sessão</span>
+        <button class="btn-sm">Ver perfil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background:var(--white);max-width:100%;padding:3rem 0">
+  <div style="max-width:1100px;margin:0 auto;padding:0 2rem">
+    <div class="section-title">Pesquisar por especialidade</div>
+    <div class="specialties">
+      <div class="sp-card"><div class="sp-icon">😰</div><div class="sp-name">Ansiedade</div></div>
+      <div class="sp-card"><div class="sp-icon">😔</div><div class="sp-name">Depressão</div></div>
+      <div class="sp-card"><div class="sp-icon">💔</div><div class="sp-name">Casal</div></div>
+      <div class="sp-card"><div class="sp-icon">😴</div><div class="sp-name">Sono</div></div>
+      <div class="sp-card"><div class="sp-icon">🔥</div><div class="sp-name">Burnout</div></div>
+      <div class="sp-card"><div class="sp-icon">🧒</div><div class="sp-name">Infantil</div></div>
+      <div class="sp-card"><div class="sp-icon">💭</div><div class="sp-name">Trauma / PTSD</div></div>
+      <div class="sp-card"><div class="sp-icon">🍽️</div><div class="sp-name">Alimentação</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>És terapeuta? Lista-te gratuitamente</h2>
+  <p>Primeiros 3 meses gratuitos. Depois €50/mês. Cancela quando quiseres.</p>
+  <button class="btn-outline">Criar perfil gratuito</button>
+</div>
+
+<footer>
+  © 2026 Terapeutas.pt · <a href="#" style="color:inherit">Privacidade</a> · <a href="#" style="color:inherit">Termos</a>
+</footer>
+</body>
+</html>
