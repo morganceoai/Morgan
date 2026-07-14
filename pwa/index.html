@@ -295,11 +295,6 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
 <script>
 const API = window.location.origin;
 
-// Debug — mostra erros no ecrã
-window.onerror = function(msg, src, line) {
-  const d = document.getElementById('transcript');
-  if(d) d.textContent = 'ERRO JS linha '+line+': '+msg;
-};
 window.onunhandledrejection = function(e) {
   const d = document.getElementById('transcript');
   if(d) d.textContent = 'ERRO Promise: '+(e.reason?.message||e.reason);
