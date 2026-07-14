@@ -321,6 +321,9 @@ for (let i = 0; i < 800; i++) {
   });
 }
 
+// Estado do Morgan — declarado antes do draw loop
+let morganState = 'idle';
+
 // Cor da esfera por estado
 const STATE_COLORS = {
   idle:      '0,212,255',
@@ -378,7 +381,6 @@ function draw() {
 draw();
 
 // ── STATE ──
-let morganState = 'idle';
 function setState(s) {
   morganState = s;
   document.body.className = s;
