@@ -1125,17 +1125,63 @@ async def _run_scout_push():
     _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
 
 
+async def _run_trading_cycle():
+    """Corre um ciclo do trading bot e envia push se houver trade fechado ou drawdown."""
+    loop = asyncio.get_event_loop()
+    try:
+        from trading_bot import run_cycle
+        result = await loop.run_in_executor(None, run_cycle)
+    except ImportError:
+        return
+    except Exception as e:
+        print(f"[trading_bot] erro no ciclo: {e}", flush=True)
+        return
+
+    status = result.get("status")
+    if status == "trade_fechado":
+        pnl = result.get("pnl", 0)
+        sinal = "+" if pnl >= 0 else ""
+        msg = (
+            f"Trade fechado — {result.get('symbol','')}\n"
+            f"Motivo: {result.get('reason','')}\n"
+            f"PnL: {sinal}{pnl:.4f} USDT | Total: {result.get('pnl_total',0):+.4f} USDT"
+        )
+        send_push(title="Trading Bot", body=msg, url="/pwa/")
+    elif status in ("drawdown_diario", "drawdown_total"):
+        send_push(title="Trading Bot — ALERTA", body=result.get("message", status), url="/pwa/")
+
+
 async def _heartbeat_loop():
     await asyncio.sleep(30)  # deixar o servidor arrancar primeiro
     while True:
         try:
+            agora = _agora_lisboa()
+
+            # Reset PnL diário às 7h (uma vez por dia)
+            chave_pnl = f"reset_pnl_{agora.strftime('%Y-%m-%d')}"
+            if agora.hour == 7 and not _dedup_check(chave_pnl):
+                _dedup_mark(chave_pnl)
+                try:
+                    from trading_bot import reset_daily_pnl
+                    asyncio.get_event_loop().run_in_executor(None, reset_daily_pnl)
+                except Exception:
+                    pass
+
+            # Ciclo do trading bot — a cada hora
+            chave_ciclo = f"trading_ciclo_{agora.strftime('%Y-%m-%d_%H')}"
+            if not _dedup_check(chave_ciclo):
+                _dedup_mark(chave_ciclo)
+                await _run_trading_cycle()
+
+            # Briefings automáticos 7h e 20h
             if _should_run_briefing():
-                hora = _agora_lisboa().hour
-                await _run_briefing(hora)
+                await _run_briefing(agora.hour)
+
+            # Scout dominical às 20h
             if _should_run_scout():
                 await _run_scout_push()
+
         except Exception as e:
-            # Não deixar o loop morrer por erros pontuais
             print(f"[heartbeat] erro: {e}", flush=True)
         await asyncio.sleep(60)
 
