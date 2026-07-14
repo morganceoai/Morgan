@@ -1091,6 +1091,13 @@ async def push_test():
     return JSONResponse(result)
 
 
+@app.post("/api/push/report")
+async def push_report_now():
+    """Força o relatório diário agora — para teste sem esperar as 22h."""
+    await _run_daily_report()
+    return JSONResponse({"ok": True})
+
+
 # ── Heartbeat interno ─────────────────────────────────────────────────────────
 
 import time as _time
@@ -1203,6 +1210,103 @@ async def _run_scout_push():
     _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
 
 
+def _should_run_report() -> bool:
+    if _time.time() - _HEARTBEAT_START < 120:
+        return False
+    agora = _agora_lisboa()
+    if agora.hour != 22:
+        return False
+    return not _dedup_check(f"push_report_{agora.strftime('%Y-%m-%d')}")
+
+
+async def _run_daily_report():
+    """Relatório diário às 22h — resume tudo o que aconteceu hoje."""
+    loop = asyncio.get_event_loop()
+    agora = _agora_lisboa()
+    hoje = agora.strftime("%Y-%m-%d")
+
+    # Conversas de hoje (filtrar por data)
+    try:
+        from conversation_store import load_history
+        todas = load_history(DESKTOP_USER_ID)
+        msgs_hoje = [
+            m for m in todas
+            if str(m.get("created_at", m.get("timestamp", ""))).startswith(hoje)
+        ]
+        n_trocas = len([m for m in msgs_hoje if m.get("role") == "user"])
+        resumo_conv = "\n".join(
+            f"  {m['role']}: {str(m.get('content',''))[:120]}"
+            for m in msgs_hoje[-20:]
+        ) if msgs_hoje else "  Nenhuma conversa registada hoje."
+    except Exception:
+        n_trocas = 0
+        resumo_conv = "  (erro ao carregar conversas)"
+
+    # Estado do trading bot
+    try:
+        from trading_bot import get_status
+        bot = get_status()
+        bot_str = (
+            f"PnL hoje: {bot.get('pnl_today', 0):+.4f} USDT | "
+            f"PnL total: {bot.get('pnl_total', 0):+.4f} USDT | "
+            f"Trades: {bot.get('trades', 0)} | "
+            f"Sinal: {bot.get('signal', 'hold')}"
+        )
+    except Exception:
+        bot_str = "indisponível"
+
+    # Scout — oportunidades aprovadas
+    try:
+        scout_data = load_scout()
+        aprovadas = scout_data.get("aprovadas", [])
+        ops_str = ", ".join(aprovadas[:3]) if aprovadas else "nenhuma aprovada"
+    except Exception:
+        ops_str = "indisponível"
+
+    prompt = f"""És o Morgan. Gera o relatório de fim de dia para o Vasco.
+Data: {agora.strftime('%d/%m/%Y')}
+
+CONVERSAS DE HOJE ({n_trocas} trocas):
+{resumo_conv}
+
+TRADING BOT:
+{bot_str}
+
+SCOUT — OPORTUNIDADES APROVADAS:
+{ops_str}
+
+Instruções:
+- Resume em linguagem humana o que aconteceu hoje
+- O que foi feito, o que ficou por fazer, decisões tomadas
+- Estado do bot de trading e se houve algo relevante
+- O que o Vasco deve ter em mente amanhã
+- Tom direto, sem rodeios. Máximo 8 linhas. Sem emojis. Português europeu."""
+
+    response = await loop.run_in_executor(
+        None,
+        lambda: claude.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=400,
+            system=get_system_prompt(),
+            messages=[{"role": "user", "content": prompt}]
+        )
+    )
+    texto = response.content[0].text if response.content else "Relatório indisponível."
+
+    # Push — título curto, corpo truncado (push tem limite de ~200 chars visíveis)
+    send_push(
+        title=f"Morgan — Relatório {agora.strftime('%d/%m')}",
+        body=texto[:200],
+        url="/pwa/"
+    )
+
+    # Guardar relatório completo em ficheiro para consulta posterior
+    report_file = Path(__file__).parent / "memory" / f"report_{hoje}.txt"
+    report_file.write_text(texto, encoding="utf-8")
+
+    _dedup_mark(f"push_report_{hoje}")
+
+
 async def _run_trading_cycle():
     """Corre um ciclo do trading bot e envia push se houver trade fechado ou drawdown."""
     loop = asyncio.get_event_loop()
@@ -1254,6 +1358,10 @@ async def _heartbeat_loop():
             # Briefings automáticos 7h e 20h
             if _should_run_briefing():
                 await _run_briefing(agora.hour)
+
+            # Relatório diário às 22h
+            if _should_run_report():
+                await _run_daily_report()
 
             # Scout dominical às 20h
             if _should_run_scout():
