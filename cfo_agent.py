@@ -232,7 +232,12 @@ Estado: {'ATIVO' if r['active'] else 'PARADO'} | Risco: {r['nivel_risco'].upper(
 - Drawdown dia >5%: alerta imediato ao Vasco
 - Drawdown total >15%: recomendar paragem do bot
 - Win rate <40% por 2 semanas consecutivas: revisão de estratégia
-- Nunca executar trades — apenas supervisionar e reportar"""
+- Nunca executar trades — apenas supervisionar e reportar
+
+## Regra de confiança (obrigatória):
+- Indica sempre a tua confiança (0-100%) quando fazes uma avaliação ou recomendação.
+- Se confiança ≥ 90%: age e reporta. Se < 90%: escala ao Vasco com explicação clara.
+- Formato: "Confiança X% — [análise]" nas respostas que envolvam decisão."""
 
 
 def get_cfo_reply(user_message: str) -> str:

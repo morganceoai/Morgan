@@ -76,7 +76,14 @@ Data e hora atual: {agora}
 
 Estás na interface desktop do Morgan — modo de conversa por voz.
 Responde de forma natural, concisa e direta. Sem markdown — fala como se estivesses ao lado do Vasco.
-Respostas curtas sempre que possível."""
+Respostas curtas sempre que possível.
+
+REGRA DE CONFIANÇA (obrigatória):
+- Antes de qualquer ação consequente (executar ferramenta, tomar decisão, recomendar algo com impacto real), avalia internamente a tua confiança de 0 a 100%.
+- Se confiança ≥ 90%: age e informa o resultado de forma direta.
+- Se confiança < 90%: NÃO ages. Dizes ao Vasco: "Confiança [X]% — preciso da tua confirmação antes de avançar" e explicas o que está em dúvida.
+- Nunca fingires certeza que não tens. Incerteza explícita é preferível a erro silencioso.
+- Em situação de dúvida sobre dados factuais: diz "não tenho a certeza" em vez de inventar."""
 
 
 def run_tool(tool_name: str, tool_input: dict) -> str:
@@ -87,6 +94,42 @@ def run_tool(tool_name: str, tool_input: dict) -> str:
         return str(fn(**tool_input))
     except Exception as e:
         return f"Erro em {tool_name}: {e}"
+
+
+# ── Escalada de confiança ─────────────────────────────────────────────────────
+
+def escalada_push(agente: str, situacao: str, confianca: int, opcoes: list[str] = None):
+    """Envia push ao Vasco quando um agente tem confiança < 90% e precisa de decisão."""
+    opcoes_str = ""
+    if opcoes:
+        opcoes_str = " | Opções: " + " / ".join(opcoes)
+    corpo = f"[{agente}] Confiança {confianca}% — {situacao}{opcoes_str}"
+    send_push(
+        title=f"Morgan precisa de ti — {agente}",
+        body=corpo[:200],
+        url="/pwa/"
+    )
+    # Registar no audit log
+    audit_file = Path(__file__).parent / "memory" / "audit.log"
+    try:
+        with open(audit_file, "a", encoding="utf-8") as f:
+            from datetime import datetime as _dt
+            f.write(f"[{_dt.now().isoformat()}] ESCALADA {agente} conf={confianca}%: {situacao}\n")
+    except Exception:
+        pass
+
+
+@app.post("/api/escalada")
+async def api_escalada(request: Request):
+    """Endpoint interno para agentes enviarem escaladas ao Vasco via push."""
+    body = await request.json()
+    escalada_push(
+        agente=body.get("agente", "CEO"),
+        situacao=body.get("situacao", ""),
+        confianca=body.get("confianca", 0),
+        opcoes=body.get("opcoes", []),
+    )
+    return JSONResponse({"ok": True})
 
 
 # ─── BARGE-IN — processo de áudio atual ──────────────
@@ -1329,8 +1372,22 @@ async def _run_trading_cycle():
             f"PnL: {sinal}{pnl:.4f} USDT | Total: {result.get('pnl_total',0):+.4f} USDT"
         )
         send_push(title="Trading Bot", body=msg, url="/pwa/")
-    elif status in ("drawdown_diario", "drawdown_total"):
-        send_push(title="Trading Bot — ALERTA", body=result.get("message", status), url="/pwa/")
+    elif status == "drawdown_diario":
+        # CFO confiança baixa — escala ao Vasco
+        escalada_push(
+            agente="CFO",
+            situacao=result.get("message", "Drawdown diário atingido — bot pode precisar de ser parado"),
+            confianca=40,
+            opcoes=["Parar bot", "Continuar com monitorização reforçada"]
+        )
+    elif status == "drawdown_total":
+        # Drawdown total — urgente, escalada imediata
+        escalada_push(
+            agente="CFO",
+            situacao=result.get("message", "Drawdown total atingiu limite — bot parado automaticamente"),
+            confianca=20,
+            opcoes=["Confirmar paragem", "Rever estratégia"]
+        )
 
 
 async def _heartbeat_loop():
