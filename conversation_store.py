@@ -10,7 +10,7 @@ from datetime import datetime
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://nzewcorujofapxymupzr.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
-MAX_MESSAGES = 100
+MAX_MESSAGES = 2000  # sem teto artificial — Supabase aguenta
 
 # Fallback local (usado se SUPABASE_KEY não estiver definido)
 HISTORY_FILE = os.path.join(os.path.dirname(__file__), "memory", "historico.json")
@@ -108,6 +108,9 @@ def save_message(user_id: str, role: str, content: str):
         _file_save(user_id, role, content)
 
 
-def get_context_messages(user_id: str) -> list:
+def get_context_messages(user_id: str, limit: int = 100) -> list:
+    """Devolve as últimas `limit` mensagens em formato Claude (role/content).
+    Supabase guarda tudo — limit controla quantas injetamos no contexto."""
     history = load_history(user_id)
-    return [{"role": m["role"], "content": m["content"]} for m in history]
+    recent = history[-limit:] if len(history) > limit else history
+    return [{"role": m["role"], "content": m["content"]} for m in recent]

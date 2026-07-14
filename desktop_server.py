@@ -30,6 +30,7 @@ from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
+from mem0_service import mem0_get, mem0_add, mem0_collective_get
 
 # Pré-carregar perfil de voz se existir
 load_profile()
@@ -53,13 +54,25 @@ DESKTOP_DIR = Path(__file__).parent / "desktop"
 conversation_history: list[dict] = get_context_messages(DESKTOP_USER_ID)
 
 
-def get_system_prompt() -> str:
+def get_system_prompt(query: str = "") -> str:
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
+
+    # Mem0: memórias de longo prazo relevantes para esta query
+    mem0_vasco = mem0_get("vasco", query or "Morgan BC Industries negócios trading Moreirense", limit=10)
+    mem0_col = mem0_collective_get(query or "decisões importantes", limit=5)
+
+    blocos = [memoria]
+    if mem0_vasco:
+        blocos.append(f"=== MEMÓRIA DE LONGO PRAZO (Mem0) ===\n{mem0_vasco}")
+    if mem0_col:
+        blocos.append(f"=== MEMÓRIA COLECTIVA DOS AGENTES ===\n{mem0_col}")
+    contexto = "\n\n".join(blocos)
+
     return f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
 Data e hora atual: {agora}
 
-{memoria}
+{contexto}
 
 Estás na interface desktop do Morgan — modo de conversa por voz.
 Responde de forma natural, concisa e direta. Sem markdown — fala como se estivesses ao lado do Vasco.
@@ -197,9 +210,9 @@ def _chat_ceo(user_text: str) -> str:
     response = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=512,
-        system=get_system_prompt(),
+        system=get_system_prompt(user_text),
         tools=TOOLS,
-        messages=conversation_history[-30:],
+        messages=conversation_history[-50:],
     )
     while response.stop_reason == "tool_use":
         tool_results = []
@@ -212,11 +225,21 @@ def _chat_ceo(user_text: str) -> str:
         conversation_history.append({"role": "user", "content": tool_results})
         response = claude.messages.create(
             model="claude-sonnet-4-6", max_tokens=512,
-            system=get_system_prompt(), tools=TOOLS,
-            messages=conversation_history[-30:],
+            system=get_system_prompt(user_text), tools=TOOLS,
+            messages=conversation_history[-50:],
         )
     reply = "".join(block.text for block in response.content if hasattr(block, "text"))
     conversation_history.append({"role": "assistant", "content": reply})
+    # Guardar no Mem0 em background (não bloqueia a resposta)
+    try:
+        import threading
+        threading.Thread(
+            target=mem0_add,
+            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": reply}]),
+            daemon=True
+        ).start()
+    except Exception:
+        pass
     return reply
 
 # Agente ativo por sessão desktop
@@ -487,14 +510,21 @@ async def chat_stream(request: Request):
         with claude.messages.stream(
             model="claude-sonnet-4-6",
             max_tokens=512,
-            system=get_system_prompt(),
-            messages=conversation_history[-30:],
+            system=get_system_prompt(user_text),
+            messages=conversation_history[-50:],
         ) as stream:
             for text in stream.text_stream:
                 full_reply += text
                 yield text
         conversation_history.append({"role": "assistant", "content": full_reply})
         store_save(DESKTOP_USER_ID, "assistant", full_reply)
+        # Guardar no Mem0 em background
+        import threading
+        threading.Thread(
+            target=mem0_add,
+            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": full_reply}]),
+            daemon=True
+        ).start()
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
@@ -743,21 +773,38 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
         await audio_queue.put(None)
 
 
-def _historico_recente(n: int = 30) -> str:
-    """Formata as últimas N mensagens do Supabase para injetar no system prompt do Hume."""
+def _contexto_para_hume() -> str:
+    """Constrói contexto completo para o Hume:
+    - Mem0: memórias de longo prazo (factos extraídos de TODAS as conversas)
+    - Supabase: últimas 100 mensagens raw (continuidade recente)
+    """
+    partes = []
+
+    # Camada 1 — Mem0: memória semântica de longo prazo
     try:
-        msgs = get_context_messages(DESKTOP_USER_ID)
-        if not msgs:
-            return ""
-        recent = msgs[-n:]
-        lines = []
-        for m in recent:
-            role = "Vasco" if m["role"] == "user" else "Morgan"
-            content = str(m.get("content", ""))[:300].replace("\n", " ")
-            lines.append(f"{role}: {content}")
-        return "\n".join(lines)
+        mem_vasco = mem0_get("vasco", "Morgan BC Industries negócios trading Moreirense Vasco", limit=15)
+        mem_col = mem0_collective_get("decisões importantes negócios agentes", limit=5)
+        if mem_vasco:
+            partes.append(f"=== MEMÓRIA DE LONGO PRAZO (tudo o que o Morgan sabe sobre o Vasco) ===\n{mem_vasco}")
+        if mem_col:
+            partes.append(f"=== MEMÓRIA COLECTIVA DOS AGENTES ===\n{mem_col}")
     except Exception:
-        return ""
+        pass
+
+    # Camada 2 — Supabase: últimas 100 mensagens raw para continuidade
+    try:
+        msgs = get_context_messages(DESKTOP_USER_ID, limit=100)
+        if msgs:
+            lines = []
+            for m in msgs:
+                role = "Vasco" if m["role"] == "user" else "Morgan"
+                content = str(m.get("content", ""))[:250].replace("\n", " ")
+                lines.append(f"{role}: {content}")
+            partes.append(f"=== CONVERSA RECENTE (últimas 100 mensagens) ===\n" + "\n".join(lines))
+    except Exception:
+        pass
+
+    return "\n\n".join(partes)
 
 
 @app.websocket("/ws/hume")
@@ -770,13 +817,13 @@ async def ws_hume(websocket: WebSocket):
 
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
-    historico = _historico_recente(30)
-    historico_bloco = f"\n\n=== HISTÓRICO RECENTE DE CONVERSA ===\n{historico}\n=== FIM DO HISTÓRICO ===" if historico else ""
+    contexto_memoria = _contexto_para_hume()
+    contexto_bloco = f"\n\n{contexto_memoria}" if contexto_memoria else ""
 
     system_prompt = f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
 Data e hora atual: {agora}
 
-{memoria}{historico_bloco}
+{memoria}{contexto_bloco}
 
 REGRAS OBRIGATÓRIAS:
 - Responde SEMPRE e EXCLUSIVAMENTE em português europeu (PT-PT). Nunca uses inglês, espanhol ou qualquer outra língua, mesmo que o Vasco fale noutra língua.
@@ -844,12 +891,22 @@ REGRAS OBRIGATÓRIAS:
                             text = data.get("message", {}).get("content", "")
                             if text:
                                 store_save(DESKTOP_USER_ID, "user", text)
+                                ws_hume._last_user_text = text
                                 await websocket.send_text(json.dumps({"type": "user", "text": text}))
                         elif t == "assistant_message":
                             text = data.get("message", {}).get("content", "")
                             if text:
                                 store_save(DESKTOP_USER_ID, "assistant", text)
                                 await websocket.send_text(json.dumps({"type": "agent", "text": text}))
+                                # Guardar troca voz no Mem0 (em background)
+                                _last_user = getattr(ws_hume, "_last_user_text", "")
+                                if _last_user:
+                                    import threading
+                                    threading.Thread(
+                                        target=mem0_add,
+                                        args=("vasco", [{"role": "user", "content": _last_user}, {"role": "assistant", "content": text}]),
+                                        daemon=True
+                                    ).start()
                         elif t == "assistant_end":
                             await websocket.send_text(json.dumps({"type": "done"}))
                         elif t == "error":
