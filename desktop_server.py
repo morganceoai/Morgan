@@ -31,6 +31,7 @@ from cfo_agent import get_cfo_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from mem0_service import mem0_get, mem0_add, mem0_collective_get
+from config_service import is_pausado, pausar, retomar, hora_silencio, modelo as cfg_modelo, confianca_limiar
 
 # Pré-carregar perfil de voz se existir
 load_profile()
@@ -118,6 +119,28 @@ def escalada_push(agente: str, situacao: str, confianca: int, opcoes: list[str] 
     except Exception:
         pass
 
+
+@app.post("/api/control/pause")
+async def api_pause():
+    pausar()
+    return JSONResponse({"ok": True, "pausado": True})
+
+@app.post("/api/control/resume")
+async def api_resume():
+    retomar()
+    return JSONResponse({"ok": True, "pausado": False})
+
+@app.get("/api/control/status")
+async def api_control_status():
+    from config_service import load_config
+    c = load_config()
+    return JSONResponse({
+        "pausado": c.get("pausado", False),
+        "modelo": c.get("modelo", "claude-sonnet-4-6"),
+        "silencio_inicio": c.get("silencio_inicio", 23),
+        "silencio_fim": c.get("silencio_fim", 7),
+        "confianca_limiar": c.get("confianca_limiar", 90),
+    })
 
 @app.post("/api/escalada")
 async def api_escalada(request: Request):
@@ -292,6 +315,25 @@ def chat_with_morgan(user_text: str) -> str:
     store_save(DESKTOP_USER_ID, "user", user_text)
 
     msg_lower = user_text.lower()
+
+    # Kill switch — pausa/retoma
+    if any(k in msg_lower for k in ["pausa morgan", "morgan pausa", "pausar morgan", "morgan pausar"]):
+        pausar()
+        reply = "Morgan pausado. Não enviarei notificações nem agirei autonomamente até retomares. Diz 'retoma Morgan' para reativar."
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if any(k in msg_lower for k in ["retoma morgan", "morgan retoma", "reativa morgan", "unpause"]):
+        retomar()
+        reply = "Morgan reativado. Briefings, heartbeat e agentes voltam ao normal."
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # Bloquear respostas autónomas se pausado (mas responde ao Vasco na conversa)
+    if is_pausado() and not any(k in msg_lower for k in ["status", "estado", "pausado"]):
+        reply = "Estou pausado — respondo mas não ajo autonomamente. Diz 'retoma Morgan' para reativar."
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
 
     # Reset explícito para CEO
     if any(k in msg_lower for k in ["morgan ceo", "volta ao morgan", "ceo", "morgan principal"]):
@@ -1181,8 +1223,12 @@ def _dedup_mark(chave: str):
 def _should_run_briefing() -> bool:
     if _time.time() - _HEARTBEAT_START < 120:
         return False
+    if is_pausado():
+        return False
     agora = _agora_lisboa()
-    if agora.hour not in (7, 20):
+    from config_service import load_config
+    horas = load_config().get("briefing_horas", [7, 20])
+    if agora.hour not in horas:
         return False
     return not _dedup_check(f"push_briefing_{agora.strftime('%Y-%m-%d_%H')}")
 
@@ -1256,8 +1302,12 @@ async def _run_scout_push():
 def _should_run_report() -> bool:
     if _time.time() - _HEARTBEAT_START < 120:
         return False
+    if is_pausado():
+        return False
     agora = _agora_lisboa()
-    if agora.hour != 22:
+    from config_service import load_config
+    report_hora = load_config().get("report_hora", 22)
+    if agora.hour != report_hora:
         return False
     return not _dedup_check(f"push_report_{agora.strftime('%Y-%m-%d')}")
 

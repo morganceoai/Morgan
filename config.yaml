@@ -1,15 +1,26 @@
-confirmacao_obrigatoria:
-- enviar mensagem
-- apagar ficheiro
-- criar ficheiro
-- editar ficheiro
-- gastar dinheiro
-intervalos:
-  mencoes_vasco: 90
-  moreirense_noticias: 60
-  novidades_ia: 360
-  primeira_liga_noticias: 120
-modelo: claude-sonnet-4-6
 pausado: false
-silencio_fim: 7
+
+modelo: claude-sonnet-4-6
+modelo_pesado: claude-opus-4-8
+max_tokens: 512
+context_window: 50
+
 silencio_inicio: 23
+silencio_fim: 7
+
+briefing_horas: [7, 20]
+report_hora: 22
+scout_weekday: 6
+
+trading:
+  capital_base: 100.0
+  drawdown_dia_limite: 0.05
+  drawdown_total_limite: 0.15
+  win_rate_minimo: 0.40
+
+confianca_limiar: 90
+
+confirmacao_obrigatoria:
+  - enviar mensagem
+  - apagar ficheiro
+  - gastar dinheiro
