@@ -743,6 +743,23 @@ Respostas curtas e naturais. Nunca digas que és uma IA."""
         await audio_queue.put(None)
 
 
+def _historico_recente(n: int = 30) -> str:
+    """Formata as últimas N mensagens do Supabase para injetar no system prompt do Hume."""
+    try:
+        msgs = get_context_messages(DESKTOP_USER_ID)
+        if not msgs:
+            return ""
+        recent = msgs[-n:]
+        lines = []
+        for m in recent:
+            role = "Vasco" if m["role"] == "user" else "Morgan"
+            content = str(m.get("content", ""))[:300].replace("\n", " ")
+            lines.append(f"{role}: {content}")
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
 @app.websocket("/ws/hume")
 async def ws_hume(websocket: WebSocket):
     """Hume EVI + Claude — voz com emoção em tempo real."""
@@ -753,17 +770,21 @@ async def ws_hume(websocket: WebSocket):
 
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
+    historico = _historico_recente(30)
+    historico_bloco = f"\n\n=== HISTÓRICO RECENTE DE CONVERSA ===\n{historico}\n=== FIM DO HISTÓRICO ===" if historico else ""
+
     system_prompt = f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
 Data e hora atual: {agora}
 
-{memoria}
+{memoria}{historico_bloco}
 
 REGRAS OBRIGATÓRIAS:
 - Responde SEMPRE e EXCLUSIVAMENTE em português europeu (PT-PT). Nunca uses inglês, espanhol ou qualquer outra língua, mesmo que o Vasco fale noutra língua.
 - Usa português correto e natural — não uses abreviações, gíria ou linguagem coloquial escrita ("tá", "vc", "tb", "hm", "ah", etc.).
 - Respostas curtas e diretas. Máximo 2-3 frases salvo pedido explícito.
 - Sem markdown, sem listas, sem asteriscos.
-- Nunca digas que és uma IA."""
+- Nunca digas que és uma IA.
+- Mesmo que a transcrição da voz apareça em inglês, o Vasco fala sempre português — responde sempre em PT-PT."""
 
     # Obter access token do Hume
     try:
