@@ -267,6 +267,10 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
             <div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div>
             <div class="hier-name" style="color:var(--amber)">CFO</div>
           </div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('marketeer')" id="abtn-marketeer">
+            <div class="hier-dot" style="background:#b388ff;box-shadow:0 0 4px #b388ff"></div>
+            <div class="hier-name" style="color:#b388ff">Marketeer</div>
+          </div>
         </div>
       </div>
     </div>
@@ -587,8 +591,8 @@ function showTranscript(u,m) {
   if(u){const d=document.createElement('div');d.className='t-user';d.textContent=u;el.appendChild(d);}
   if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
 }
-const AGENTS = ['ceo','cfo','coach','scout'];
-const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT'};
+const AGENTS = ['ceo','cfo','coach','scout','marketeer'];
+const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT',marketeer:'MARKETEER'};
 let _currentAgent = 'ceo';
 
 function _refreshAgentUI(agent){
@@ -688,7 +692,7 @@ async function startCapture(){
   if(scriptProc)return;
   const nativeRate=audioCtx.sampleRate; // 44100 ou 48000 no iOS
   const src=audioCtx.createMediaStreamSource(micStream);
-  const CHUNK=4096;
+  const CHUNK=1024;
   try{
     // AudioWorklet — envia amostras nativas, JS principal faz resample
     const code=`class P extends AudioWorkletProcessor{process(i){const c=i[0]?.[0];if(c)this.port.postMessage(c.slice());return true;}};registerProcessor('p',P);`;

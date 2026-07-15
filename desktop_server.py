@@ -28,6 +28,7 @@ from conversation_store import get_context_messages, save_message as store_save
 from voice_id import enroll_voice, is_vasco, has_profile, load_profile
 from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
+from marketeer_agent import get_marketeer_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from mem0_service import mem0_get, mem0_add, mem0_collective_get
@@ -263,6 +264,13 @@ def _quer_scout(msg: str) -> bool:
                                   "rendimento passivo", "saas", "produto", "receita",
                                   "empreend", "startup", "império", "dinheiro passivo"])
 
+def _quer_marketeer(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in ["marketeer", "marketing", "outreach", "lead", "campanha",
+                                  "aquisição", "cliente", "anúncio", "etsy", "descrição produto",
+                                  "copywriting", "copy", "mensagem de venda", "crescimento",
+                                  "canal de vendas", "conversão", "funil"])
+
 def _chat_ceo(user_text: str) -> str:
     """CEO — chamada direta ao Claude com ferramentas."""
     conversation_history.append({"role": "user", "content": user_text})
@@ -354,6 +362,15 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
+    if _quer_marketeer(user_text):
+        _desktop_agent["current"] = "marketeer"
+        try:
+            reply = "[MARKETEER] " + get_marketeer_reply(user_text)
+        except Exception as e:
+            reply = f"[MARKETEER] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
     # Scout — CEO com contexto Scout
     if _quer_scout(user_text):
         _desktop_agent["current"] = "scout"
@@ -383,6 +400,14 @@ def chat_with_morgan(user_text: str) -> str:
             reply = "[COACH] " + get_coach_reply(user_text)
         except Exception as e:
             reply = f"[COACH] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if agente == "marketeer":
+        try:
+            reply = "[MARKETEER] " + get_marketeer_reply(user_text)
+        except Exception as e:
+            reply = f"[MARKETEER] Erro: {e}"
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
