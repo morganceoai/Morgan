@@ -1586,44 +1586,60 @@ Instruções:
     _dedup_mark(f"push_report_{hoje}")
 
 
-async def _run_trading_cycle():
-    """Corre um ciclo do trading bot e envia push se houver trade fechado ou drawdown."""
-    loop = asyncio.get_event_loop()
-    try:
-        from trading_bot import run_cycle
-        result = await loop.run_in_executor(None, run_cycle)
-    except ImportError:
-        return
-    except Exception as e:
-        print(f"[trading_bot] erro no ciclo: {e}", flush=True)
-        return
-
+def _handle_trading_result(result: dict, label: str):
+    """Processa resultado de um ciclo de trading e envia push se necessário."""
     status = result.get("status")
     if status == "trade_fechado":
         pnl = result.get("pnl", 0)
         sinal = "+" if pnl >= 0 else ""
+        action = result.get("action", "")
+        symbol = result.get("symbol", result.get("bot", ""))
         msg = (
-            f"Trade fechado — {result.get('symbol','')}\n"
-            f"Motivo: {result.get('reason','')}\n"
-            f"PnL: {sinal}{pnl:.4f} USDT | Total: {result.get('pnl_total',0):+.4f} USDT"
+            f"{label} — {symbol}"
+            + (f" ({action})" if action else "") + "\n"
+            f"Motivo: {result.get('reason', action or 'venda')}\n"
+            f"PnL: {sinal}{pnl:.4f} USDT | Total: {result.get('pnl_total', 0):+.4f} USDT"
         )
         send_push(title="Trading Bot", body=msg, url="/pwa/")
+    elif status == "compra":
+        bot = result.get("bot", result.get("symbol", label))
+        price = result.get("price", 0)
+        send_push(title="Trading Bot — Compra", body=f"{bot} @ {price:.2f} USDT", url="/pwa/")
     elif status == "drawdown_diario":
-        # CFO confiança baixa — escala ao Vasco
         escalada_push(
             agente="CFO",
-            situacao=result.get("message", "Drawdown diário atingido — bot pode precisar de ser parado"),
+            situacao=result.get("message", "Drawdown diário atingido"),
             confianca=40,
             opcoes=["Parar bot", "Continuar com monitorização reforçada"]
         )
     elif status == "drawdown_total":
-        # Drawdown total — urgente, escalada imediata
         escalada_push(
             agente="CFO",
-            situacao=result.get("message", "Drawdown total atingiu limite — bot parado automaticamente"),
+            situacao=result.get("message", "Drawdown total atingiu limite — bot parado"),
             confianca=20,
             opcoes=["Confirmar paragem", "Rever estratégia"]
         )
+
+
+async def _run_trading_cycle():
+    """Corre ciclo do Supertrend BTC + DCA SOL e envia push se necessário."""
+    loop = asyncio.get_event_loop()
+
+    # Supertrend BTC/USDT
+    try:
+        from trading_bot import run_cycle
+        result = await loop.run_in_executor(None, run_cycle)
+        _handle_trading_result(result, "Supertrend BTC")
+    except Exception as e:
+        print(f"[trading_bot] erro: {e}", flush=True)
+
+    # DCA SOL/USDT
+    try:
+        from dca_bot import run_dca_cycle
+        result_dca = await loop.run_in_executor(None, run_dca_cycle)
+        _handle_trading_result(result_dca, "DCA SOL")
+    except Exception as e:
+        print(f"[dca_bot] erro: {e}", flush=True)
 
 
 async def _heartbeat_loop():
@@ -1639,6 +1655,11 @@ async def _heartbeat_loop():
                 try:
                     from trading_bot import reset_daily_pnl
                     asyncio.get_event_loop().run_in_executor(None, reset_daily_pnl)
+                except Exception:
+                    pass
+                try:
+                    from dca_bot import reset_dca_daily_pnl
+                    asyncio.get_event_loop().run_in_executor(None, reset_dca_daily_pnl)
                 except Exception:
                     pass
 

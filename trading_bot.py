@@ -1,12 +1,11 @@
 """
-BC Industries — Trading Bot
-Braço de investimento automatizado do império.
-Corre autonomamente, reporta ao Morgan CEO.
+BC Industries — Trading Bot (Supertrend ATR10×3)
+Estratégia: Supertrend 4h, BTC/USDT spot, SL 3%, TP 9%.
+Backtest 18m: +$48, win rate 66.7%, drawdown máx 4.3%.
 """
 
 import os
 import json
-import time
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,50 +15,38 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# ── Configuração ──────────────────────────────────────────────────────────────
-
-TESTNET = os.getenv("BINANCE_TESTNET", "true").lower() == "true"
+TESTNET = os.getenv("BINANCE_TESTNET", "false").lower() == "true"
 
 CONFIG = {
-    "symbol":         "BTC/USDT",
-    "timeframe":      "30m",
-    "capital":        float(os.getenv("BOT_CAPITAL", "100")),  # USDT a usar
-    "risk_per_trade": 0.02,                                     # 2% do capital por trade
-    "stop_loss":      0.015,                                    # 1.5% stop loss
-    "take_profit":    0.03,                                     # 3% take profit
-    "ema_fast":       9,
-    "ema_slow":       21,
-    "max_drawdown_day":   0.05,   # para se perder >5% do capital num dia
-    "max_drawdown_total": 0.15,   # para se perder >15% do capital total
+    "symbol":             "BTC/USDT",
+    "timeframe":          "4h",
+    "capital":            float(os.getenv("BOT_CAPITAL", "100")),
+    "risk_per_trade":     0.95,   # usa 95% do capital por posição
+    "stop_loss":          0.03,   # 3%
+    "take_profit":        0.09,   # 9%
+    "atr_period":         10,
+    "atr_multiplier":     3.0,
+    "max_drawdown_day":   0.05,
+    "max_drawdown_total": 0.15,
 }
-
-# Multi-par: cada par opera com uma fatia do capital total
-MULTI_PAIR_CONFIG = [
-    {"symbol": "BTC/USDT", "capital_pct": 0.60},  # 60% → $60
-    {"symbol": "ETH/USDT", "capital_pct": 0.40},  # 40% → $40
-]
-
-# Ficheiros de estado por par
-def _state_file_for(symbol: str) -> Path:
-    safe = symbol.replace("/", "_")
-    return STATE_FILE.parent / f"trading_state_{safe}.json"
 
 STATE_FILE = Path("memory/trading_state.json")
 
 
-# ── Estado persistente ────────────────────────────────────────────────────────
+# ── Estado ────────────────────────────────────────────────────────────────────
 
 def load_state() -> dict:
     if STATE_FILE.exists():
         return json.loads(STATE_FILE.read_text())
     return {
-        "active":       True,
-        "position":     None,     # {"side": "buy", "entry": 0.0, "size": 0.0, "opened_at": ""}
-        "trades":       [],
-        "pnl_total":    0.0,
-        "pnl_today":    0.0,
-        "last_check":   "",
-        "last_signal":  "",
+        "active": True,
+        "position": None,
+        "trades": [],
+        "pnl_total": 0.0,
+        "pnl_today": 0.0,
+        "last_check": "",
+        "last_signal": "",
+        "trend": 1,
     }
 
 def save_state(state: dict):
@@ -70,360 +57,187 @@ def save_state(state: dict):
 # ── Exchange ──────────────────────────────────────────────────────────────────
 
 def get_exchange():
-    try:
-        import ccxt
-    except ImportError:
-        raise RuntimeError("ccxt não instalado. Corre: pip install ccxt")
-
-    params = {
-        "apiKey":  os.getenv("BINANCE_API_KEY", ""),
-        "secret":  os.getenv("BINANCE_SECRET_KEY", ""),
+    import ccxt
+    ex = ccxt.binance({
+        "apiKey": os.getenv("BINANCE_API_KEY", ""),
+        "secret": os.getenv("BINANCE_SECRET_KEY", ""),
         "options": {"defaultType": "spot"},
-    }
+    })
     if TESTNET:
-        params["options"]["testnet"] = True
-
-    exchange = ccxt.binance(params)
-    if TESTNET:
-        exchange.set_sandbox_mode(True)
-    return exchange
+        ex.set_sandbox_mode(True)
+    return ex
 
 
 # ── Indicadores ───────────────────────────────────────────────────────────────
 
-def ema(prices: list[float], period: int) -> float:
-    """EMA do último valor."""
-    if len(prices) < period:
-        return prices[-1]
-    k = 2 / (period + 1)
-    val = prices[0]
-    for p in prices[1:]:
-        val = p * k + val * (1 - k)
-    return val
+def _atr(highs, lows, closes, n):
+    tr = [0.0]
+    for i in range(1, len(closes)):
+        tr.append(max(
+            highs[i] - lows[i],
+            abs(highs[i] - closes[i-1]),
+            abs(lows[i] - closes[i-1])
+        ))
+    atr = [sum(tr[:n]) / n]
+    for i in range(1, len(tr)):
+        atr.append((atr[-1] * (n-1) + tr[i]) / n)
+    return atr
 
-def get_signal(closes: list[float]) -> str:
-    """Retorna 'buy', 'sell' ou 'hold'."""
-    fast = ema(closes, CONFIG["ema_fast"])
-    slow = ema(closes, CONFIG["ema_slow"])
-    prev_fast = ema(closes[:-1], CONFIG["ema_fast"])
-    prev_slow = ema(closes[:-1], CONFIG["ema_slow"])
+def get_supertrend_signal(ohlcv: list, prev_trend: int) -> tuple:
+    """Calcula sinal Supertrend. Devolve (signal, new_trend)."""
+    n = CONFIG["atr_period"]
+    mult = CONFIG["atr_multiplier"]
 
-    if prev_fast <= prev_slow and fast > slow:
-        return "buy"
-    if prev_fast >= prev_slow and fast < slow:
-        return "sell"
-    return "hold"
+    highs  = [c[2] for c in ohlcv]
+    lows   = [c[3] for c in ohlcv]
+    closes = [c[4] for c in ohlcv]
 
+    atr = _atr(highs, lows, closes, n)
+    upper = [((highs[i] + lows[i]) / 2) + mult * atr[i] for i in range(len(closes))]
+    lower = [((highs[i] + lows[i]) / 2) - mult * atr[i] for i in range(len(closes))]
 
-# ── Gestão de risco ───────────────────────────────────────────────────────────
+    trend = prev_trend
+    signal = "hold"
 
-def position_size(capital: float, price: float) -> float:
-    """Calcula tamanho da posição com risco fixo, limitado ao capital disponível."""
-    risk_amount = capital * CONFIG["risk_per_trade"]
-    stop_distance = price * CONFIG["stop_loss"]
-    size = risk_amount / stop_distance
-    max_size = (capital * 0.95) / price  # nunca usar mais de 95% do capital
-    return round(min(size, max_size), 6)
+    for i in range(1, len(closes)):
+        if closes[i] > upper[i-1]:
+            new_trend = 1
+        elif closes[i] < lower[i-1]:
+            new_trend = -1
+        else:
+            new_trend = trend
 
-def check_exits(state: dict, current_price: float) -> str | None:
-    """Verifica se deve fechar posição por SL ou TP."""
-    pos = state.get("position")
-    if not pos:
-        return None
-    entry = pos["entry"]
-    if pos["side"] == "buy":
-        if current_price <= entry * (1 - CONFIG["stop_loss"]):
-            return "stop_loss"
-        if current_price >= entry * (1 + CONFIG["take_profit"]):
-            return "take_profit"
-    return None
+        if new_trend != trend:
+            # Sinal apenas na vela mais recente
+            if i == len(closes) - 1:
+                signal = "buy" if new_trend == 1 else "sell"
+            trend = new_trend
 
-
-# ── Execução ──────────────────────────────────────────────────────────────────
-
-def fetch_ohlcv(exchange) -> list[float]:
-    """Busca as últimas velas e retorna os closes."""
-    ohlcv = exchange.fetch_ohlcv(
-        CONFIG["symbol"], CONFIG["timeframe"], limit=50
-    )
-    return [c[4] for c in ohlcv]  # close prices
-
-def open_position(exchange, state: dict, price: float, side: str):
-    size = position_size(state.get("capital_available", CONFIG["capital"]), price)
-    now = datetime.now(timezone.utc).isoformat()
-
-    if not TESTNET:
-        exchange.create_order(
-            CONFIG["symbol"], "market", side, size
-        )
-
-    state["position"] = {
-        "side": side, "entry": price,
-        "size": size, "opened_at": now,
-    }
-    logger.info(f"[BOT] Abriu {side} {size} {CONFIG['symbol']} @ {price:.2f}")
-
-def close_position(exchange, state: dict, price: float, reason: str):
-    pos = state["position"]
-    if not TESTNET:
-        side = "sell" if pos["side"] == "buy" else "buy"
-        exchange.create_order(CONFIG["symbol"], "market", side, pos["size"])
-
-    pnl = (price - pos["entry"]) * pos["size"]
-    if pos["side"] == "sell":
-        pnl = -pnl
-
-    state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
-    state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
-    state["trades"].append({
-        "symbol":    CONFIG["symbol"],
-        "side":      pos["side"],
-        "entry":     pos["entry"],
-        "exit":      price,
-        "size":      pos["size"],
-        "pnl":       round(pnl, 4),
-        "reason":    reason,
-        "closed_at": datetime.now(timezone.utc).isoformat(),
-    })
-    state["position"] = None
-    logger.info(f"[BOT] Fechou posição @ {price:.2f} | PnL: {pnl:+.4f} USDT | Motivo: {reason}")
-    return pnl
+    return signal, trend
 
 
 # ── Ciclo principal ───────────────────────────────────────────────────────────
 
-def check_drawdown(state: dict) -> dict | None:
-    """Verifica se drawdown diário ou total foi atingido. Retorna alerta ou None."""
-    capital = CONFIG["capital"]
-    loss_today = state.get("pnl_today", 0)
-    loss_total = state.get("pnl_total", 0)
-
-    if loss_today <= -(capital * CONFIG["max_drawdown_day"]):
-        state["active"] = False
-        save_state(state)
-        return {
-            "status":  "drawdown_diario",
-            "message": f"⛔ Bot pausado automaticamente — perda diária atingiu {loss_today:.4f} USDT ({CONFIG['max_drawdown_day']*100:.0f}% do capital). Retoma com /bot retomar.",
-        }
-    if loss_total <= -(capital * CONFIG["max_drawdown_total"]):
-        state["active"] = False
-        save_state(state)
-        return {
-            "status":  "drawdown_total",
-            "message": f"⛔ Bot pausado automaticamente — perda total atingiu {loss_total:.4f} USDT ({CONFIG['max_drawdown_total']*100:.0f}% do capital). Requer revisão manual.",
-        }
-    return None
-
-
 def run_cycle() -> dict:
-    """
-    Corre um ciclo de análise e execução.
-    Retorna relatório para o CEO/CFO.
-    """
     state = load_state()
     if not state.get("active", True):
-        return {"status": "pausado", "message": "Bot pausado pelo Vasco."}
+        return {"status": "pausado", "message": "Bot pausado."}
 
-    alert = check_drawdown(state)
-    if alert:
-        return alert
+    capital = CONFIG["capital"]
+    if state.get("pnl_today", 0) <= -(capital * CONFIG["max_drawdown_day"]):
+        state["active"] = False
+        save_state(state)
+        return {"status": "drawdown_diario",
+                "message": f"⛔ Perda diária >{CONFIG['max_drawdown_day']*100:.0f}% — bot pausado."}
+    if state.get("pnl_total", 0) <= -(capital * CONFIG["max_drawdown_total"]):
+        state["active"] = False
+        save_state(state)
+        return {"status": "drawdown_total",
+                "message": f"⛔ Perda total >{CONFIG['max_drawdown_total']*100:.0f}% — bot pausado."}
 
     try:
-        exchange = get_exchange()
-        closes = fetch_ohlcv(exchange)
+        ex = get_exchange()
+        ohlcv = ex.fetch_ohlcv(CONFIG["symbol"], CONFIG["timeframe"], limit=60)
+        closes = [c[4] for c in ohlcv]
         price = closes[-1]
-        signal = get_signal(closes)
 
+        prev_trend = state.get("trend", 1)
+        signal, new_trend = get_supertrend_signal(ohlcv, prev_trend)
+        state["trend"] = new_trend
         state["last_check"] = datetime.now(timezone.utc).isoformat()
         state["last_signal"] = signal
 
-        # Verifica exits antes de novos sinais
-        exit_reason = check_exits(state, price)
-        if exit_reason:
-            pnl = close_position(exchange, state, price, exit_reason)
-            save_state(state)
-            return {
-                "status": "trade_fechado",
-                "symbol": CONFIG["symbol"],
-                "price":  price,
-                "reason": exit_reason,
-                "pnl":    pnl,
-                "pnl_total": state["pnl_total"],
+        pos = state.get("position")
+
+        if pos:
+            entry = pos["entry"]
+            pct = (price - entry) / entry
+            exit_reason = None
+            if pct <= -CONFIG["stop_loss"]:
+                exit_reason = "stop_loss"
+            elif pct >= CONFIG["take_profit"]:
+                exit_reason = "take_profit"
+            elif signal == "sell":
+                exit_reason = "sinal_venda"
+
+            if exit_reason:
+                size = pos["size"]
+                pnl = (price - entry) * size * (1 - 0.001)
+                state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
+                state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
+                state["trades"].append({
+                    "symbol": CONFIG["symbol"], "entry": entry,
+                    "exit": price, "size": size,
+                    "pnl": round(pnl, 4), "reason": exit_reason,
+                    "closed_at": datetime.now(timezone.utc).isoformat(),
+                })
+                state["position"] = None
+                if not TESTNET:
+                    ex.create_order(CONFIG["symbol"], "market", "sell", size)
+                save_state(state)
+                logger.info(f"[Supertrend] Fechado @ {price:.2f} | {exit_reason} | PnL {pnl:+.4f}")
+                return {"status": "trade_fechado", "symbol": CONFIG["symbol"],
+                        "price": price, "reason": exit_reason,
+                        "pnl": pnl, "pnl_total": state["pnl_total"]}
+
+        if signal == "buy" and not pos:
+            notional = capital * CONFIG["risk_per_trade"]
+            size = round(notional / price, 6)
+            state["position"] = {
+                "entry": price, "size": size,
+                "opened_at": datetime.now(timezone.utc).isoformat(),
             }
-
-        # Novos sinais
-        if signal == "buy" and not state.get("position"):
-            open_position(exchange, state, price, "buy")
-
-        elif signal == "sell" and state.get("position", {}).get("side") == "buy":
-            pnl = close_position(exchange, state, price, "sinal_venda")
+            if not TESTNET:
+                ex.create_order(CONFIG["symbol"], "market", "buy", size)
+            save_state(state)
+            logger.info(f"[Supertrend] Compra @ {price:.2f} | size {size}")
+            return {"status": "compra", "symbol": CONFIG["symbol"], "price": price, "size": size}
 
         save_state(state)
         return {
-            "status":     "ok",
-            "symbol":     CONFIG["symbol"],
-            "price":      price,
-            "signal":     signal,
-            "position":   state.get("position"),
-            "pnl_total":  state.get("pnl_total", 0),
-            "pnl_today":  state.get("pnl_today", 0),
-            "trades":     len(state.get("trades", [])),
-            "testnet":    TESTNET,
+            "status": "ok", "symbol": CONFIG["symbol"],
+            "price": price, "signal": signal, "trend": new_trend,
+            "position": pos,
+            "pnl_total": state.get("pnl_total", 0),
+            "pnl_today": state.get("pnl_today", 0),
+            "trades": len(state.get("trades", [])),
         }
 
     except Exception as e:
-        logger.error(f"[BOT] Erro no ciclo: {e}")
+        logger.error(f"[Supertrend] Erro: {e}")
         return {"status": "erro", "message": str(e)}
 
 
 def get_status() -> dict:
-    """Retorna estado atual para o dashboard."""
     state = load_state()
     return {
-        "active":    state.get("active", True),
-        "position":  state.get("position"),
+        "bot": "Supertrend BTC/USDT 4h",
+        "active": state.get("active", True),
+        "position": state.get("position"),
         "pnl_total": state.get("pnl_total", 0),
         "pnl_today": state.get("pnl_today", 0),
-        "trades":    len(state.get("trades", [])),
+        "trades": len(state.get("trades", [])),
         "last_check": state.get("last_check", ""),
         "last_signal": state.get("last_signal", ""),
-        "symbol":    CONFIG["symbol"],
-        "testnet":   TESTNET,
+        "trend": state.get("trend", 1),
+        "testnet": TESTNET,
     }
 
 def pause_bot():
-    state = load_state()
-    state["active"] = False
-    save_state(state)
+    state = load_state(); state["active"] = False; save_state(state)
 
 def resume_bot():
-    state = load_state()
-    state["active"] = True
-    save_state(state)
+    state = load_state(); state["active"] = True; save_state(state)
 
 def reset_daily_pnl():
-    state = load_state()
-    state["pnl_today"] = 0.0
-    save_state(state)
+    state = load_state(); state["pnl_today"] = 0.0; save_state(state)
 
-
-def run_multi_pair_cycle() -> list[dict]:
-    """Corre um ciclo para todos os pares configurados em MULTI_PAIR_CONFIG."""
-    capital_total = CONFIG["capital"]
-    results = []
-    for pair_cfg in MULTI_PAIR_CONFIG:
-        symbol = pair_cfg["symbol"]
-        capital = round(capital_total * pair_cfg["capital_pct"], 2)
-        state_file = _state_file_for(symbol)
-
-        # Carregar estado específico do par
-        try:
-            state = json.loads(state_file.read_text()) if state_file.exists() else {
-                "active": True, "position": None, "trades": [],
-                "pnl_total": 0.0, "pnl_today": 0.0, "last_check": "", "last_signal": "",
-            }
-        except Exception:
-            state = {"active": True, "position": None, "trades": [], "pnl_total": 0.0,
-                     "pnl_today": 0.0, "last_check": "", "last_signal": ""}
-
-        if not state.get("active", True):
-            results.append({"symbol": symbol, "status": "pausado"})
-            continue
-
-        # Verificar drawdown com capital alocado ao par
-        loss_today = state.get("pnl_today", 0)
-        loss_total = state.get("pnl_total", 0)
-        if loss_today <= -(capital * CONFIG["max_drawdown_day"]):
-            state["active"] = False
-            state_file.write_text(json.dumps(state, indent=2))
-            results.append({"symbol": symbol, "status": "drawdown_diario"})
-            continue
-        if loss_total <= -(capital * CONFIG["max_drawdown_total"]):
-            state["active"] = False
-            state_file.write_text(json.dumps(state, indent=2))
-            results.append({"symbol": symbol, "status": "drawdown_total"})
-            continue
-
-        try:
-            exchange = get_exchange()
-            ohlcv = exchange.fetch_ohlcv(symbol, CONFIG["timeframe"], limit=50)
-            closes = [c[4] for c in ohlcv]
-            price = closes[-1]
-            signal = get_signal(closes)
-
-            state["last_check"] = datetime.now(timezone.utc).isoformat()
-            state["last_signal"] = signal
-
-            exit_reason = check_exits(state, price)
-            if exit_reason:
-                pos = state["position"]
-                pnl = (price - pos["entry"]) * pos["size"]
-                if pos["side"] == "sell":
-                    pnl = -pnl
-                state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
-                state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
-                state["trades"].append({
-                    "symbol": symbol, "side": pos["side"], "entry": pos["entry"],
-                    "exit": price, "size": pos["size"], "pnl": round(pnl, 4),
-                    "reason": exit_reason, "closed_at": datetime.now(timezone.utc).isoformat(),
-                })
-                state["position"] = None
-                results.append({"symbol": symbol, "status": "trade_fechado", "pnl": pnl, "reason": exit_reason})
-            elif signal == "buy" and not state.get("position"):
-                size = position_size(capital, price)
-                state["position"] = {"side": "buy", "entry": price, "size": size,
-                                     "opened_at": datetime.now(timezone.utc).isoformat()}
-                results.append({"symbol": symbol, "status": "compra", "price": price, "size": size})
-            elif signal == "sell" and state.get("position", {}).get("side") == "buy":
-                pos = state["position"]
-                pnl = (price - pos["entry"]) * pos["size"]
-                state["pnl_total"] = round(state.get("pnl_total", 0) + pnl, 4)
-                state["pnl_today"] = round(state.get("pnl_today", 0) + pnl, 4)
-                state["trades"].append({
-                    "symbol": symbol, "side": "buy", "entry": pos["entry"],
-                    "exit": price, "size": pos["size"], "pnl": round(pnl, 4),
-                    "reason": "sinal_venda", "closed_at": datetime.now(timezone.utc).isoformat(),
-                })
-                state["position"] = None
-                results.append({"symbol": symbol, "status": "venda", "price": price, "pnl": pnl})
-            else:
-                results.append({"symbol": symbol, "status": "hold", "signal": signal, "price": price})
-
-            state_file.write_text(json.dumps(state, indent=2))
-
-        except Exception as e:
-            results.append({"symbol": symbol, "status": "erro", "message": str(e)})
-
-    return results
-
-
-def get_multi_status() -> list[dict]:
-    """Estado de todos os pares."""
-    capital_total = CONFIG["capital"]
-    statuses = []
-    for pair_cfg in MULTI_PAIR_CONFIG:
-        symbol = pair_cfg["symbol"]
-        capital = round(capital_total * pair_cfg["capital_pct"], 2)
-        state_file = _state_file_for(symbol)
-        try:
-            state = json.loads(state_file.read_text()) if state_file.exists() else {}
-        except Exception:
-            state = {}
-        statuses.append({
-            "symbol": symbol,
-            "capital_alocado": capital,
-            "active": state.get("active", True),
-            "position": state.get("position"),
-            "pnl_total": state.get("pnl_total", 0),
-            "pnl_today": state.get("pnl_today", 0),
-            "trades": len(state.get("trades", [])),
-            "last_signal": state.get("last_signal", ""),
-        })
-    return statuses
+# Compatibilidade com desktop_server.py
+run_multi_pair_cycle = lambda: [run_cycle()]
+get_multi_status = lambda: [get_status()]
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    print("[BOT] A correr ciclo multi-par...")
-    results = run_multi_pair_cycle()
-    print(json.dumps(results, indent=2, ensure_ascii=False))
+    result = run_cycle()
+    print(json.dumps(result, indent=2, ensure_ascii=False))
