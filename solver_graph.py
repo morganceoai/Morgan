@@ -448,6 +448,12 @@ def build_solver_graph():
 
 _graph = None
 
+def run_solver(problema: str, aprovado: bool = False) -> str:
+    """Alias público para o endpoint /api/solver/run."""
+    resultado = solver_diagnosticar(problema, aprovado)
+    return resultado.get("relatorio", "Solver sem relatório.")
+
+
 def solver_diagnosticar(problema: str, aprovado: bool = False) -> dict:
     global _graph
     if _graph is None:

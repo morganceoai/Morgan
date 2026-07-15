@@ -206,47 +206,32 @@ def reddit_trending() -> str:
 
 
 def google_trends(termos: list) -> str:
-    """Verifica se um conjunto de termos está a crescer ou a decrescer no Google Trends."""
+    """Analisa tendências de interesse via Tavily (pytrends arquivado em Abril 2025)."""
     try:
-        from pytrends.request import TrendReq
-        pytrends = TrendReq(hl="pt-PT", tz=0, timeout=(10, 25))
-
-        # Máximo 5 termos por chamada
+        client = TavilyClient(api_key=TAVILY_API_KEY)
         termos = termos[:5]
-        pytrends.build_payload(termos, timeframe="today 3-m", geo="")
+        linhas = ["**Tendências de mercado — análise via web:**\n"]
 
-        df = pytrends.interest_over_time()
-        if df.empty:
-            return "Não foi possível obter dados do Google Trends para estes termos."
-
-        linhas = ["**Google Trends — últimos 3 meses:**\n"]
         for termo in termos:
-            if termo not in df.columns:
-                continue
-            serie = df[termo]
-            valor_atual = int(serie.iloc[-1])
-            valor_inicio = int(serie.iloc[0])
-            maximo = int(serie.max())
-            if valor_atual > valor_inicio * 1.2:
-                tendencia = "↑ Em crescimento"
-            elif valor_atual < valor_inicio * 0.8:
-                tendencia = "↓ Em declínio"
-            else:
-                tendencia = "→ Estável"
-            linhas.append(
-                f"• **{termo}**\n"
-                f"  {tendencia} | Agora: {valor_atual}/100 | Pico: {maximo}/100"
-            )
+            queries = [
+                f"{termo} trending growing 2026",
+                f"{termo} site:reddit.com OR site:producthunt.com interest 2026",
+            ]
+            resumos = []
+            for q in queries:
+                try:
+                    r = client.search(query=q, search_depth="basic", max_results=3)
+                    for item in r.get("results", []):
+                        conteudo = item.get("content", "")[:180]
+                        if conteudo:
+                            resumos.append(conteudo)
+                except Exception:
+                    continue
 
-        # Regiões com mais interesse
-        try:
-            by_region = pytrends.interest_by_region(resolution="COUNTRY", inc_low_vol=False)
-            if not by_region.empty:
-                top = by_region[termos[0]].nlargest(5)
-                paises = ", ".join([f"{p} ({v})" for p, v in top.items()])
-                linhas.append(f"\nPaíses com mais interesse em **{termos[0]}**: {paises}")
-        except Exception:
-            pass
+            if resumos:
+                linhas.append(f"• **{termo}**\n  " + resumos[0])
+            else:
+                linhas.append(f"• **{termo}** — sem dados de tendência disponíveis.")
 
         return "\n\n".join(linhas)
     except Exception as e:

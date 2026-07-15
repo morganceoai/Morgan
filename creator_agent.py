@@ -860,15 +860,44 @@ def _quer_{nome}(msg: str) -> bool:
 
 def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
     """
-    Faz deploy completo do agente:
-    1. git add + commit + push no MacBook
-    2. SSH no Mac Mini: git pull + kill + restart do server
+    Deploy seguro com rollback automático:
+    1. Validação de sintaxe antes do commit
+    2. git add + commit + push
+    3. SSH no Mac Mini: git pull + kill + restart
+    4. Health check — reverte se o servidor não responder em 30s
     """
+    import sys
+    import time
+    import urllib.request
+
     ficheiro = f"{nome}_agent.py"
     if not mensagem_commit:
         mensagem_commit = f"feat: {nome}_agent — criado pelo Creator"
 
     resultados = {}
+
+    # 0. Validação de sintaxe antes de qualquer commit
+    ficheiro_path = MORGAN_DIR / ficheiro
+    if ficheiro_path.exists():
+        check = subprocess.run(
+            [sys.executable, "-m", "py_compile", str(ficheiro_path)],
+            capture_output=True, text=True
+        )
+        if check.returncode != 0:
+            return {"status": "erro", "fase": "sintaxe", "detalhes": check.stderr[:500]}
+    desktop_path = MORGAN_DIR / "desktop_server.py"
+    check_desktop = subprocess.run(
+        [sys.executable, "-m", "py_compile", str(desktop_path)],
+        capture_output=True, text=True
+    )
+    if check_desktop.returncode != 0:
+        return {"status": "erro", "fase": "sintaxe_desktop", "detalhes": check_desktop.stderr[:500]}
+
+    # Guardar commit anterior para rollback
+    prev_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=MORGAN_DIR, capture_output=True, text=True
+    ).stdout.strip()
 
     # 1. git add + commit + push
     try:
@@ -881,13 +910,13 @@ def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
     except subprocess.CalledProcessError as e:
         resultados["git"] = f"erro: {e.stderr.decode()[:200] if e.stderr else str(e)}"
 
-    # 2. SSH: pull + restart
+    # 2. SSH: pull + kill porta 8765 + restart com venv
     restart_cmd = (
         f"cd {MAC_MINI_MORGAN_DIR} && "
         "git pull && "
-        "pkill -f desktop_server.py; "
-        "sleep 2; "
-        f"nohup python3 {MAC_MINI_MORGAN_DIR}/desktop_server.py "
+        "lsof -ti:8765 | xargs kill -9 2>/dev/null; "
+        "sleep 3; "
+        f"nohup {MAC_MINI_MORGAN_DIR}/venv/bin/python3 {MAC_MINI_MORGAN_DIR}/desktop_server.py "
         f"> {MAC_MINI_MORGAN_DIR}/morgan_server.log 2>&1 &"
     )
     try:
@@ -899,6 +928,47 @@ def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
         resultados["deploy"] = "ok" if ssh.returncode == 0 else f"erro: {ssh.stderr[:200]}"
     except Exception as e:
         resultados["deploy"] = f"erro: {e}"
+        return resultados
+
+    # 3. Health check — polling por 30s
+    health_ok = False
+    for _ in range(6):
+        time.sleep(5)
+        try:
+            resp = urllib.request.urlopen(
+                f"http://{MAC_MINI_HOST.split('@')[1]}:8765/health", timeout=3
+            )
+            if resp.status == 200:
+                health_ok = True
+                break
+        except Exception:
+            pass
+
+    if health_ok:
+        resultados["health"] = "ok"
+        return resultados
+
+    # 4. Rollback automático — servidor não respondeu
+    resultados["health"] = "timeout — a reverter"
+    rollback_cmd = (
+        f"cd {MAC_MINI_MORGAN_DIR} && "
+        f"git checkout {prev_commit} && "
+        "lsof -ti:8765 | xargs kill -9 2>/dev/null; "
+        "sleep 2; "
+        f"nohup {MAC_MINI_MORGAN_DIR}/venv/bin/python3 {MAC_MINI_MORGAN_DIR}/desktop_server.py "
+        f"> {MAC_MINI_MORGAN_DIR}/morgan_server.log 2>&1 &"
+    )
+    try:
+        subprocess.run(
+            ["ssh", "-o", "ConnectTimeout=15", MAC_MINI_HOST, rollback_cmd],
+            capture_output=True, text=True, timeout=30
+        )
+        # Reverter também o commit local
+        subprocess.run(["git", "revert", "HEAD", "--no-edit"], cwd=MORGAN_DIR, capture_output=True)
+        subprocess.run(["git", "push"], cwd=MORGAN_DIR, capture_output=True)
+        resultados["rollback"] = f"revertido para {prev_commit[:8]}"
+    except Exception as e:
+        resultados["rollback_erro"] = str(e)
 
     return resultados
 

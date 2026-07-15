@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>com.bcvertex.morgan</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/bcvertex/Morgan/venv/bin/python3</string>
+    <string>/Users/bcvertex/Morgan/desktop_server.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/bcvertex/Morgan</string>
+
+  <!-- Reinicia apenas se o processo terminar com erro (não no Ctrl+C / shutdown normal) -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <!-- Espera 10s entre restarts — elimina race condition na porta 8765 -->
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/bcvertex/Morgan/morgan_server.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/bcvertex/Morgan/morgan_error.log</string>
+
+  <!-- Variáveis de ambiente — carregadas do ficheiro .env pelo próprio servidor -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/bcvertex</string>
+    <key>PATH</key>
+    <string>/Users/bcvertex/Morgan/venv/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+</dict>
+</plist>

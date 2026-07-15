@@ -857,6 +857,18 @@ if ('serviceWorker' in navigator) {
   });
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 
+  // Re-subscribe automático quando o SW actualiza
+  navigator.serviceWorker.addEventListener('message', async (event) => {
+    if (event.data && event.data.type === 'SW_UPDATED') {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription().catch(() => null);
+      if (!sub && Notification.permission === 'granted') {
+        await _subscribeAndSend(reg).catch(() => {});
+        _updateNotifBtn('on');
+      }
+    }
+  });
+
   navigator.serviceWorker.register('/app/sw2.js')
     .then(reg => {
       _swReg = reg;

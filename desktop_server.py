@@ -115,6 +115,19 @@ def escalada_push(agente: str, situacao: str, confianca: int, opcoes: list[str] 
         pass
 
 
+@app.get("/health")
+async def health():
+    """Health check — usado pelo Creator para verificar deploys e pelo launchd para monitorizar."""
+    import time as _t
+    return JSONResponse({
+        "status": "ok",
+        "uptime_s": int(_t.time() - _HEARTBEAT_START),
+        "agents": list(_desktop_agent.keys()),
+        "pausado": is_pausado(),
+        "modelo": cfg_modelo(),
+    })
+
+
 @app.post("/api/control/pause")
 async def api_pause():
     pausar()
@@ -282,7 +295,7 @@ def _chat_ceo(user_text: str) -> str:
     conversation_history.append({"role": "user", "content": user_text})
     response = claude.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=512,
+        max_tokens=2048,
         system=get_system_prompt(user_text),
         tools=TOOLS,
         messages=conversation_history[-50:],
@@ -297,7 +310,7 @@ def _chat_ceo(user_text: str) -> str:
         conversation_history.append({"role": "assistant", "content": assistant_content})
         conversation_history.append({"role": "user", "content": tool_results})
         response = claude.messages.create(
-            model="claude-sonnet-4-6", max_tokens=512,
+            model="claude-sonnet-4-6", max_tokens=2048,
             system=get_system_prompt(user_text), tools=TOOLS,
             messages=conversation_history[-50:],
         )
@@ -438,7 +451,7 @@ def _chat_ceo_with_system(user_text: str, system: str) -> str:
     msgs = conversation_history[-28:] + [{"role": "user", "content": user_text}]
     response = claude.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=512,
+        max_tokens=2048,
         system=system,
         tools=TOOLS,
         messages=msgs,
@@ -453,7 +466,7 @@ def _chat_ceo_with_system(user_text: str, system: str) -> str:
         msgs.append({"role": "assistant", "content": assistant_content})
         msgs.append({"role": "user", "content": tool_results})
         response = claude.messages.create(
-            model="claude-sonnet-4-6", max_tokens=512,
+            model="claude-sonnet-4-6", max_tokens=2048,
             system=system, tools=TOOLS, messages=msgs,
         )
     return "".join(block.text for block in response.content if hasattr(block, "text"))
