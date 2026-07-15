@@ -157,10 +157,22 @@ def _add_alert(state: dict, alert: dict):
     state["alerts_history"] = state["alerts_history"][-200:]
 
 
+def _etsy_dados_reais() -> str:
+    """Integra dados reais da Etsy API se configurada; fallback para estado local."""
+    try:
+        from etsy_service import estado_para_operador
+        return estado_para_operador()
+    except Exception:
+        return ""
+
+
 def _build_context(state: dict) -> str:
     businesses = state.get("businesses", {})
     last_report = state.get("last_weekly_report", "nunca")
     last_check = state.get("last_check", "nunca")
+
+    # Injectar dados reais da Etsy se disponíveis
+    etsy_real = _etsy_dados_reais()
 
     lines = [
         f"Data actual: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
@@ -169,6 +181,8 @@ def _build_context(state: dict) -> str:
         "",
         "ESTADO ACTUAL DOS NEGÓCIOS:",
     ]
+    if etsy_real:
+        lines.append(f"\n[DADOS REAIS ETSY API]\n{etsy_real}\n")
 
     for key, biz in businesses.items():
         lines.append(f"\n--- {biz['name']} ---")

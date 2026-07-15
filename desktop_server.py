@@ -34,6 +34,11 @@ from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from mem0_service import mem0_get, mem0_add, mem0_collective_get
 from config_service import is_pausado, pausar, retomar, hora_silencio, modelo as cfg_modelo, confianca_limiar
+from morgan_logging import configure as _configure_logging, get_logger as _get_logger
+
+# Logging estruturado + Sentry (se SENTRY_DSN definido)
+_configure_logging()
+_log = _get_logger("desktop_server")
 
 # Pré-carregar perfil de voz se existir
 load_profile()

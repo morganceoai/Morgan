@@ -54,3 +54,8 @@ langsmith
 qdrant-client
 langgraph
 ccxt==4.4.82
+etsyv3
+structlog>=24.0.0
+sentry-sdk[fastapi]>=2.0.0
+pytest>=8.0.0
+pytest-asyncio>=0.24.0

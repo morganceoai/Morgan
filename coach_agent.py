@@ -116,6 +116,44 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
 # ── Ferramentas disponíveis ───────────────────────────────────────────────────
 
+_API_CACHE: dict = {}
+
+def _api_football_cached(endpoint: str, params: dict, ttl: int = 14400) -> dict:
+    """Cache de 4h para chamadas à API Football — poupa quota."""
+    import time, requests
+    key = f"{endpoint}:{sorted(params.items())}"
+    if key in _API_CACHE:
+        age = time.time() - _API_CACHE[key]["ts"]
+        if age < ttl:
+            return _API_CACHE[key]["data"]
+    headers = {"x-apisports-key": os.getenv("API_FOOTBALL_KEY", "")}
+    try:
+        r = requests.get(
+            f"https://v3.football.api-sports.io/{endpoint}",
+            headers=headers, params=params, timeout=8
+        )
+        data = r.json()
+        _API_CACHE[key] = {"data": data, "ts": time.time()}
+        return data
+    except Exception:
+        return {}
+
+
+def _sofascore_jogo(home: str, away: str) -> str:
+    """Stats de jogo via Tavily (proxy Sofascore sem API key)."""
+    try:
+        from tavily import TavilyClient
+        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
+        r = client.search(
+            f"site:sofascore.com {home} {away} statistics ratings",
+            search_depth="basic", max_results=3
+        )
+        snippets = [item.get("content", "")[:300] for item in r.get("results", [])[:3] if item.get("content")]
+        return "Sofascore stats:\n" + "\n---\n".join(snippets) if snippets else ""
+    except Exception:
+        return ""
+
+
 def _get_coach_tools():
     from tools import TOOLS
     nomes_permitidos = ["pesquisar_web", "proximos_jogos",
@@ -196,8 +234,33 @@ def get_coach_reply(user_message: str) -> str:
 # ── Funções de análise estruturada ───────────────────────────────────────────
 
 def analisar_adversario(clube: str, competicao: str = "") -> str:
-    """Análise completa de um adversário."""
+    """Análise completa de um adversário com dados Sofascore + API Football (cached)."""
+    # Dados extra: últimos jogos do adversário via API Football (cached 4h)
+    dados_api = ""
+    try:
+        data = _api_football_cached("teams", {"name": clube, "league": 94, "season": 2026})
+        if data.get("response"):
+            team_id = data["response"][0]["team"]["id"]
+            fixtures = _api_football_cached("fixtures", {"team": team_id, "last": 5, "season": 2026})
+            if fixtures.get("response"):
+                linhas = []
+                for f in fixtures["response"]:
+                    h = f["teams"]["home"]["name"]
+                    a = f["teams"]["away"]["name"]
+                    gh = f["goals"]["home"]
+                    ga = f["goals"]["away"]
+                    linhas.append(f"{h} {gh}-{ga} {a}")
+                dados_api = "Últimos 5 jogos (API Football):\n" + "\n".join(linhas)
+    except Exception:
+        pass
+
+    sofascore = _sofascore_jogo(clube, "Moreirense") or ""
+    dados_extra = "\n\n".join(filter(None, [dados_api, sofascore]))
+
     prompt = f"""Faz uma análise tática completa do {clube} para me preparar para o próximo jogo.
+{('DADOS RECOLHIDOS:\n' + dados_extra) if dados_extra else ''}
+
+Pesquisa em inglês em fontes como WhoScored, FBref, Transfermarkt, Soccerway, ESPN FC.
 
 Pesquisa em inglês em fontes como WhoScored, FBref, Transfermarkt, Soccerway, ESPN FC.
 Inclui:
