@@ -259,41 +259,55 @@ async def say_sentence(text: str):
     )
 
 
-# ─── Routing de agentes ──────────────────────────────────────────────────────
+# ─── Routing de agentes — Haiku mini-classifier ──────────────────────────────
 
-def _quer_cfo(msg: str) -> bool:
+_ROUTER_SYSTEM = """És um classificador de intenções para o assistente Morgan.
+Analisa a mensagem e responde APENAS com um destes labels (sem mais texto):
+  cfo        — finanças, trading, BTC, capital, PnL, drawdown, Binance
+  coach      — futebol, táticas, treino, Moreirense, adversário, plantel, jogadores
+  marketeer  — marketing, outreach, leads, campanhas, Etsy, copywriting, Pinterest, email frio, crescimento
+  operator   — estado das lojas, operações diárias, receita total, PlannerAtlas, directórios
+  scout      — oportunidades de negócio, SaaS, rendimento passivo, startups, nicho, mercado
+  ceo        — tudo o resto (conversa geral, tarefas, perguntas pessoais, status)
+Responde apenas com o label. Nenhuma outra palavra."""
+
+_haiku_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+
+def _classificar_agente(msg: str) -> str:
+    """Usa Claude Haiku para classificar para qual agente encaminhar a mensagem."""
+    # Atalhos rápidos para comandos explícitos (zero latência)
     m = msg.lower()
-    return any(k in m for k in ["cfo", "trading bot", "trading", "pnl", "drawdown",
-                                  "capital", "lucro", "perda", "trades", "win rate",
-                                  "posição aberta", "financeiro", "finanças",
-                                  "btc", "bitcoin", "usdt", "binance", "ema",
-                                  "relatório financeiro"])
+    if any(k in m for k in ["morgan ceo", "volta ao morgan", "morgan principal"]):
+        return "ceo"
+    for agente in ("cfo", "coach", "marketeer", "operator", "scout"):
+        if m.strip().startswith(agente) or f"[{agente}]" in m:
+            return agente
 
-def _quer_coach(msg: str) -> bool:
-    m = msg.lower()
-    return any(k in m for k in ["coach", "treinador", "tático", "tatico",
-                                  "treino", "adversário", "adversario", "próximo jogo",
-                                  "análise tática", "pré-jogo", "pós-jogo", "plantel",
-                                  "jogador", "formação", "moreirense", "liga portugal",
-                                  "scout de jogador", "perfil tático"])
+    try:
+        r = _haiku_client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=10,
+            system=_ROUTER_SYSTEM,
+            messages=[{"role": "user", "content": msg[:400]}],
+        )
+        label = r.content[0].text.strip().lower().split()[0]
+        if label in ("cfo", "coach", "marketeer", "operator", "scout", "ceo"):
+            return label
+    except Exception:
+        pass
 
-def _quer_scout(msg: str) -> bool:
-    m = msg.lower()
-    return any(k in m for k in ["scout", "oportunidade", "negócio", "negocio",
-                                  "rendimento passivo", "saas", "produto", "receita",
-                                  "empreend", "startup", "império", "dinheiro passivo"])
-
-def _quer_marketeer(msg: str) -> bool:
-    m = msg.lower()
-    return any(k in m for k in ["marketeer", "marketing", "outreach", "lead", "campanha",
-                                  "aquisição", "cliente", "anúncio", "etsy", "descrição produto",
-                                  "copywriting", "copy", "mensagem de venda", "crescimento",
-                                  "canal de vendas", "conversão", "funil"])
-
-
-def _quer_operator(msg: str) -> bool:
-    m = msg.lower()
-    return any(k in m for k in ["operator", "operações", "lojas", "etsy vendas", "directório estado", "negócios estado", "receita total", "planneratlas"])
+    # Fallback keyword simples se Haiku falhar
+    if any(k in m for k in ["btc", "trading", "pnl", "financeiro", "capital"]):
+        return "cfo"
+    if any(k in m for k in ["moreirense", "treino", "tático", "adversário"]):
+        return "coach"
+    if any(k in m for k in ["etsy", "lead", "campanha", "marketing"]):
+        return "marketeer"
+    if any(k in m for k in ["operações", "planneratlas", "receita total"]):
+        return "operator"
+    if any(k in m for k in ["oportunidade", "rendimento passivo", "startup"]):
+        return "scout"
+    return "ceo"
 
 def _chat_ceo(user_text: str) -> str:
     """CEO — chamada direta ao Claude com ferramentas."""
@@ -367,9 +381,11 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-    # Routing por intenção
-    if _quer_cfo(user_text):
-        _desktop_agent["current"] = "cfo"
+    # Routing por intenção — Haiku mini-classifier
+    agente_alvo = _classificar_agente(user_text)
+    _desktop_agent["current"] = agente_alvo
+
+    if agente_alvo == "cfo":
         try:
             reply = "[CFO] " + get_cfo_reply(user_text)
         except Exception as e:
@@ -377,8 +393,7 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-    if _quer_coach(user_text):
-        _desktop_agent["current"] = "coach"
+    if agente_alvo == "coach":
         try:
             reply = "[COACH] " + get_coach_reply(user_text)
         except Exception as e:
@@ -386,8 +401,7 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-    if _quer_marketeer(user_text):
-        _desktop_agent["current"] = "marketeer"
+    if agente_alvo == "marketeer":
         try:
             reply = "[MARKETEER] " + get_marketeer_reply(user_text)
         except Exception as e:
@@ -395,9 +409,7 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-
-    if _quer_operator(user_text):
-        _desktop_agent["current"] = "operator"
+    if agente_alvo == "operator":
         try:
             reply = "[OPERATOR] " + get_operator_reply(user_text)
         except Exception as e:
@@ -406,7 +418,7 @@ def chat_with_morgan(user_text: str) -> str:
         return reply
 
     # Scout — CEO com contexto Scout
-    if _quer_scout(user_text):
+    if agente_alvo == "scout":
         _desktop_agent["current"] = "scout"
         scout_data = load_scout()
         ops = list(scout_data.get("oportunidades", {}).keys())[:5]

@@ -5,8 +5,12 @@ Reporta ao Morgan CEO. A última decisão é sempre do Vasco.
 """
 import os
 import json
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
 import anthropic
 
 MEMORY_DIR = Path(__file__).parent / "memory"
@@ -23,6 +27,8 @@ O teu papel:
 - Analisar canais: Etsy, LinkedIn, Reddit, fóruns PT/BR/ES
 - Monitorizar desempenho de anúncios e sugerir melhorias
 - Criar conteúdo de marketing (descrições de produtos Etsy, posts, emails)
+- Analisar tendências no Pinterest e sugerir pins/nichos com tráfego
+- Enviar emails de outreach personalizados (máx 50/dia) — SEMPRE pedir confirmação ao Vasco antes de enviar
 
 Negócios actuais do Vasco:
 - PlannerAtlas (Etsy): planners digitais em PT/ES/DE — foco em nichos de produtividade, organização, bullet journal
@@ -103,6 +109,84 @@ def redigir_mensagem_outreach(contexto: str, destinatario: str, produto: str) ->
         return f"Erro ao redigir: {e}"
 
 
+def pesquisar_pinterest(nicho: str) -> str:
+    """Analisa presença e tendências de um nicho no Pinterest via Tavily."""
+    try:
+        from tavily import TavilyClient
+        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
+        queries = [
+            f"site:pinterest.com {nicho} planner digital download most saved 2026",
+            f"pinterest {nicho} trending pins viral digital product",
+        ]
+        snippets = []
+        for q in queries:
+            r = c.search(q, max_results=3, search_depth="basic")
+            for res in (r.get("results") or []):
+                c_text = res.get("content", "")[:250]
+                if c_text:
+                    snippets.append(f"• {res.get('url','')}\n  {c_text}")
+        if snippets:
+            return f"**Pinterest — {nicho}:**\n" + "\n".join(snippets[:5])
+        return f"Sem dados Pinterest para '{nicho}'."
+    except Exception as e:
+        return f"Erro Pinterest: {e}"
+
+
+# Limite diário de emails de outreach (GDPR / anti-spam)
+_OUTREACH_CAP = 50
+
+def _outreach_hoje() -> int:
+    """Retorna quantos emails de outreach já foram enviados hoje."""
+    state = _load_state()
+    hoje = str(date.today())
+    return state.get("outreach_diario", {}).get(hoje, 0)
+
+def _registar_outreach_enviado():
+    state = _load_state()
+    hoje = str(date.today())
+    d = state.setdefault("outreach_diario", {})
+    d[hoje] = d.get(hoje, 0) + 1
+    _save_state(state)
+
+
+def enviar_outreach_email(destinatario_email: str, assunto: str, corpo: str, nome_destinatario: str = "") -> str:
+    """
+    Envia email de outreach via Gmail SMTP (App Password).
+    Requer GMAIL_OUTREACH_USER e GMAIL_OUTREACH_PASS nas variáveis de ambiente.
+    Limite diário: 50 emails.
+    """
+    enviados = _outreach_hoje()
+    if enviados >= _OUTREACH_CAP:
+        return f"Limite diário de {_OUTREACH_CAP} emails atingido. Retoma amanhã."
+
+    gmail_user = os.getenv("GMAIL_OUTREACH_USER", "")
+    gmail_pass = os.getenv("GMAIL_OUTREACH_PASS", "")
+    if not gmail_user or not gmail_pass:
+        return "Variáveis GMAIL_OUTREACH_USER / GMAIL_OUTREACH_PASS não configuradas. Adiciona ao .env e Railway."
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = assunto
+        msg["From"] = gmail_user
+        msg["To"] = destinatario_email
+        if nome_destinatario:
+            msg["To"] = f"{nome_destinatario} <{destinatario_email}>"
+        msg.attach(MIMEText(corpo, "plain", "utf-8"))
+
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as server:
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, destinatario_email, msg.as_string())
+
+        _registar_outreach_enviado()
+        enviados_agora = _outreach_hoje()
+        return f"Email enviado para {destinatario_email}. Total hoje: {enviados_agora}/{_OUTREACH_CAP}."
+    except smtplib.SMTPAuthenticationError:
+        return "Erro de autenticação Gmail. Verifica o App Password em Google Account → Segurança → Palavras-passe de app."
+    except Exception as e:
+        return f"Erro ao enviar email: {e}"
+
+
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
     """Regista uma nova campanha de marketing."""
     state = _load_state()
@@ -164,10 +248,35 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "nome": {"type": "string"},
-                "canal": {"type": "string", "description": "Canal: etsy, linkedin, reddit, email, etc."},
+                "canal": {"type": "string", "description": "Canal: etsy, linkedin, reddit, email, pinterest, etc."},
                 "objetivo": {"type": "string"}
             },
             "required": ["nome", "canal", "objetivo"]
+        }
+    },
+    {
+        "name": "pesquisar_pinterest",
+        "description": "Analisa tendências e presença de um nicho no Pinterest via web search.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nicho": {"type": "string", "description": "Nicho a analisar no Pinterest (ex: 'planners digitais', 'bullet journal')"}
+            },
+            "required": ["nicho"]
+        }
+    },
+    {
+        "name": "enviar_outreach_email",
+        "description": "Envia um email de outreach personalizado via Gmail. Limite: 50 emails/dia. Requer confirmação do Vasco antes de enviar.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "destinatario_email": {"type": "string", "description": "Email do destinatário"},
+                "assunto": {"type": "string", "description": "Assunto do email"},
+                "corpo": {"type": "string", "description": "Corpo do email em texto simples"},
+                "nome_destinatario": {"type": "string", "description": "Nome do destinatário (opcional)"}
+            },
+            "required": ["destinatario_email", "assunto", "corpo"]
         }
     },
 ]
@@ -177,6 +286,8 @@ TOOL_MAP = {
     "analisar_etsy_nicho": lambda a: analisar_etsy_nicho(**a),
     "redigir_mensagem_outreach": lambda a: redigir_mensagem_outreach(**a),
     "registar_campanha": lambda a: registar_campanha(**a),
+    "pesquisar_pinterest": lambda a: pesquisar_pinterest(**a),
+    "enviar_outreach_email": lambda a: enviar_outreach_email(**a),
 }
 
 
