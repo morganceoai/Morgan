@@ -104,8 +104,11 @@ body {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 0;
 }
-.hier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.hier-name { font-size: 10px; color: rgba(0,212,255,0.6); }
+.hier-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.hier-name { font-size: 11px; letter-spacing: .5px; }
+.hier-line[data-active="1"] { background: rgba(0,212,255,.08); border-radius: 6px; padding-left: 6px; margin-left: -6px; }
+.hier-line[data-active="1"] .hier-dot { transform: scale(1.5); }
+.hier-line[data-active="1"] .hier-name { font-weight: 700; }
 
 .op-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,212,255,0.06); }
 .op-row:last-child { border: none; }
@@ -241,12 +244,30 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
       <div class="p-sub" id="pWeather">--</div>
     </div>
     <div class="p-block">
-      <div class="p-label">Agente activo</div>
-      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-        <button onclick="selectAgent('ceo')"  id="abtn-ceo"   style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">CEO</button>
-        <button onclick="selectAgent('cfo')"  id="abtn-cfo"   style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">CFO</button>
-        <button onclick="selectAgent('coach')" id="abtn-coach" style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">COACH</button>
-        <button onclick="selectAgent('scout')" id="abtn-scout" style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">SCOUT</button>
+      <div class="p-label">Hierarquia</div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        <div class="hier-line">
+          <div class="hier-dot" style="background:#fff;box-shadow:0 0 5px #fff"></div>
+          <div class="hier-name" style="color:rgba(255,255,255,.7)">Vasco Botelho da Costa</div>
+        </div>
+        <div class="hier-line" style="padding-left:16px;cursor:pointer" onclick="selectAgent('ceo')" id="abtn-ceo">
+          <div class="hier-dot" style="background:var(--cyan);box-shadow:0 0 5px var(--cyan)"></div>
+          <div class="hier-name" style="color:var(--cyan)">Morgan CEO</div>
+        </div>
+        <div style="padding-left:32px;display:flex;flex-direction:column;gap:5px">
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('scout')" id="abtn-scout">
+            <div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div>
+            <div class="hier-name" style="color:var(--amber)">Scout</div>
+          </div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('coach')" id="abtn-coach">
+            <div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div>
+            <div class="hier-name" style="color:var(--amber)">Coach</div>
+          </div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('cfo')" id="abtn-cfo">
+            <div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div>
+            <div class="hier-name" style="color:var(--amber)">CFO</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="p-block">
@@ -333,7 +354,6 @@ tick(); setInterval(tick, 1000);
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let W, H, cx, cy, t = 0;
-const particles = [];
 
 function resize() {
   W = canvas.width = window.innerWidth;
@@ -342,90 +362,97 @@ function resize() {
 }
 resize(); window.addEventListener('resize', resize);
 
-const R = Math.min(window.innerWidth, window.innerHeight) * 0.28;
-for (let i = 0; i < 1400; i++) {
-  particles.push({
-    theta: Math.random() * Math.PI * 2,
-    phi:   Math.acos(2 * Math.random() - 1),
-    speed: (Math.random() - .5) * .0025,
-    size:  Math.random() * 1.8 + .4,
-    alpha: Math.random() * .7 + .3,
-  });
-}
-
-// Estado do Morgan — declarado antes do draw loop
+// Estado do Morgan
 let morganState = 'idle';
+const STATE_RGB = { idle:[0,212,255], listening:[0,255,157], thinking:[245,166,35], speaking:[0,255,157] };
+let curRGB = [0,212,255];
 
-// Cor da esfera por estado
-const STATE_COLORS = {
-  idle:      '0,212,255',
-  listening: '0,255,157',
-  thinking:  '245,166,35',
-  speaking:  '0,255,157',
-};
-let currentColor = '0,212,255';
-let targetColor  = [0,212,255];
+function lerpRGB(a,b,f){ return a.map((v,i)=>v+(b[i]-v)*f); }
+function rgb(c,a){ return `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`; }
 
-function hexToRgb(s) {
-  const m = s.match(/(\d+),(\d+),(\d+)/);
-  return m ? [+m[1],+m[2],+m[3]] : [0,212,255];
+// Partículas — menos, maiores, mais nítidas
+const R0 = Math.min(window.innerWidth, window.innerHeight) * 0.26;
+const PARTS = [];
+for(let i=0;i<600;i++){
+  PARTS.push({
+    theta: Math.random()*Math.PI*2,
+    phi:   Math.acos(2*Math.random()-1),
+    speed: (Math.random()-.5)*.003,
+    size:  Math.random()*2.2+0.8,
+    alpha: Math.random()*.6+.5,
+    bright: Math.random()<.08  // 8% são "estrelas" brilhantes
+  });
 }
-function lerpColor(a,b,f) {
-  return a.map((v,i)=>Math.round(v+(b[i]-v)*f)).join(',');
-}
 
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-  t += .008;
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  t+=.009;
+  const R = R0;
 
-  // Transição suave de cor
-  const tc = hexToRgb(STATE_COLORS[morganState]||'0,212,255');
-  const cc = hexToRgb(currentColor);
-  const nc = lerpColor(cc, tc, 0.05);
-  currentColor = nc;
+  // Transição de cor
+  curRGB = lerpRGB(curRGB, STATE_RGB[morganState]||STATE_RGB.idle, .04);
+  const c = curRGB;
 
-  // Glow exterior — 3 camadas para profundidade
-  const g1 = ctx.createRadialGradient(cx,cy,R*.2,cx,cy,R*2.2);
-  g1.addColorStop(0,`rgba(${nc},0.18)`); g1.addColorStop(.5,`rgba(${nc},0.06)`); g1.addColorStop(1,'transparent');
-  ctx.fillStyle=g1; ctx.beginPath(); ctx.arc(cx,cy,R*2.2,0,Math.PI*2); ctx.fill();
+  // Pulso base
+  const pulse = morganState==='listening' ? .5+.5*Math.sin(t*5)
+              : morganState==='thinking'  ? .5+.5*Math.sin(t*9)
+              : .5+.5*Math.sin(t*2);
 
-  const g2 = ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.1);
-  g2.addColorStop(0,`rgba(${nc},0.22)`); g2.addColorStop(1,'transparent');
-  ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(cx,cy,R*1.1,0,Math.PI*2); ctx.fill();
+  // ── GLOW exterior difuso (1 camada, menos blur)
+  const g1 = ctx.createRadialGradient(cx,cy,R*.3,cx,cy,R*1.8);
+  g1.addColorStop(0,rgb(c,.12+.06*pulse));
+  g1.addColorStop(.6,rgb(c,.04));
+  g1.addColorStop(1,'transparent');
+  ctx.fillStyle=g1;
+  ctx.beginPath(); ctx.arc(cx,cy,R*1.8,0,Math.PI*2); ctx.fill();
 
-  // Anéis orbitais
-  [.55,.78,1].forEach((r,i) => {
+  // ── ANÉIS — mais visíveis e nítidos
+  const ringDefs = [
+    {r:.40, lw:2,   a:.55+.25*pulse},
+    {r:.65, lw:1.2, a:.28+.12*pulse},
+    {r:.88, lw:.8,  a:.15+.07*pulse},
+    {r:1.0, lw:.5,  a:.08},
+  ];
+  ringDefs.forEach(({r,lw,a})=>{
     ctx.beginPath(); ctx.arc(cx,cy,R*r,0,Math.PI*2);
-    const a = [.18,.10,.06][i] + .06*Math.sin(t*(1+i*.3));
-    ctx.strokeStyle=`rgba(${nc},${a})`; ctx.lineWidth=[1.5,1,.5][i]; ctx.stroke();
+    ctx.strokeStyle=rgb(c,a); ctx.lineWidth=lw; ctx.stroke();
   });
 
-  // Partículas
-  for (const p of particles) {
-    p.theta += p.speed + .0015*Math.sin(t*.5);
-    const x = cx + R*Math.sin(p.phi)*Math.cos(p.theta+t*.12);
-    const y = cy + R*Math.sin(p.phi)*Math.sin(p.theta+t*.12)*.45;
-    const z = Math.cos(p.phi);
-    const depth = (.4+.6*(z+1)/2);
-    const a = p.alpha * depth;
-    const sz = p.size * depth;
-    ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2);
-    ctx.fillStyle=`rgba(${nc},${a})`; ctx.fill();
-    // Brilho nas partículas maiores
-    if (sz > 1.2) {
-      ctx.beginPath(); ctx.arc(x,y,sz*2.5,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${nc},${a*.15})`; ctx.fill();
+  // ── PARTÍCULAS
+  for(const p of PARTS){
+    p.theta += p.speed + .001*Math.sin(t*.4);
+    const x = cx + R*Math.sin(p.phi)*Math.cos(p.theta+t*.1);
+    const y = cy + R*Math.sin(p.phi)*Math.sin(p.theta+t*.1)*.44;
+    const z = (Math.cos(p.phi)+1)/2;  // 0→back, 1→front
+    const depth = .3+.7*z;
+    const a = p.alpha*depth;
+    const sz = p.size*depth;
+
+    if(p.bright){
+      // estrela nítida com halo pequeno
+      ctx.beginPath(); ctx.arc(x,y,sz*3,0,Math.PI*2);
+      ctx.fillStyle=rgb(c,a*.2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2);
+      ctx.fillStyle=rgb(c,Math.min(1,a*1.4)); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2);
+      ctx.fillStyle=rgb(c,a); ctx.fill();
     }
   }
 
-  // Núcleo pulsante
-  const pulse = morganState==='listening' ? .5+.5*Math.sin(t*5) : morganState==='thinking' ? .5+.5*Math.sin(t*8) : .5+.5*Math.sin(t*2.5);
-  const pR = R*(.07+.04*pulse);
-  const pg = ctx.createRadialGradient(cx,cy,0,cx,cy,pR*3);
-  pg.addColorStop(0,`rgba(${nc},${.9+.1*pulse})`);
-  pg.addColorStop(.3,`rgba(${nc},${.5+.2*pulse})`);
-  pg.addColorStop(1,'transparent');
-  ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(cx,cy,pR*3,0,Math.PI*2); ctx.fill();
+  // ── NÚCLEO — mais sólido e brilhante
+  const cR = R*(.06+.03*pulse);
+  // halo interno
+  const cg = ctx.createRadialGradient(cx,cy,0,cx,cy,cR*4);
+  cg.addColorStop(0,rgb(c,1));
+  cg.addColorStop(.25,rgb(c,.8));
+  cg.addColorStop(.6,rgb(c,.25+.15*pulse));
+  cg.addColorStop(1,'transparent');
+  ctx.fillStyle=cg;
+  ctx.beginPath(); ctx.arc(cx,cy,cR*4,0,Math.PI*2); ctx.fill();
+  // ponto sólido central
+  ctx.beginPath(); ctx.arc(cx,cy,cR,0,Math.PI*2);
+  ctx.fillStyle=rgb([255,255,255],.9+.1*pulse); ctx.fill();
 
   requestAnimationFrame(draw);
 }
@@ -566,9 +593,7 @@ function _refreshAgentUI(agent){
   AGENTS.forEach(a=>{
     const btn=document.getElementById('abtn-'+a);
     if(!btn)return;
-    btn.style.background  = a===agent ? 'rgba(0,212,255,.18)' : 'transparent';
-    btn.style.borderColor = a===agent ? 'var(--cyan)' : 'rgba(0,212,255,.3)';
-    btn.style.fontWeight  = a===agent ? '700' : '400';
+    btn.dataset.active = a===agent ? '1' : '0';
   });
 }
 
