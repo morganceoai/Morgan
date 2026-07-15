@@ -1474,13 +1474,12 @@ def _should_run_scout() -> bool:
 
 
 async def _run_briefing(hora: int):
-    """Briefing matinal às 7h — gerado pelo Coach com dados de futebol + sistema."""
+    """Briefing matinal às 7h — CEO orquestra, Coach fornece secção de futebol, CFO o trading."""
     loop = asyncio.get_event_loop()
     agora = _agora_lisboa()
 
-    # Dados em paralelo
+    # Meteo
     meteo = ""
-    bot_str = ""
     try:
         async with httpx.AsyncClient() as c:
             r = await c.get("https://wttr.in/Moreira+de+Conegos?format=%t+%C", timeout=4)
@@ -1488,6 +1487,8 @@ async def _run_briefing(hora: int):
     except Exception:
         pass
 
+    # CFO — trading (não pertence ao Coach)
+    bot_str = ""
     try:
         from trading_bot import get_status as _bot_status
         b = _bot_status()
@@ -1499,42 +1500,54 @@ async def _run_briefing(hora: int):
     except Exception:
         pass
 
-    from sistema_service import resumo_sistema
-    from scout_memory import load as load_scout_mem
+    # Coach — secção de futebol (próximo jogo, Moreirense, Liga Portugal)
+    coach_str = ""
+    try:
+        from coach_agent import get_coach_reply
+        coach_str = await loop.run_in_executor(
+            None,
+            lambda: get_coach_reply("Resume em 2 linhas: próximo jogo do Moreirense e posição na tabela. Só futebol, sem mais nada.")
+        )
+        # Remover prefixo [COACH] se vier
+        coach_str = coach_str.replace("[COACH]", "").strip()
+    except Exception:
+        pass
 
-    scout_data = load_scout_mem() if callable(getattr(__import__("scout_memory"), "load", None)) else load_scout()
+    # Scout
+    scout_data = load_scout()
     aprovadas = scout_data.get("aprovadas", [])
-    oport_top = list(scout_data.get("oportunidades", {}).keys())[:2]
+    oport_top = list(scout_data.get("oportunidades", {}).keys())[:1]
 
-    prompt = f"""És o Coach do Morgan — assistente pessoal do Vasco Botelho da Costa, treinador do Moreirense FC.
-Gera o briefing matinal das 7h. Data: {agora.strftime('%d/%m/%Y')}.
+    prompt = f"""És o Morgan CEO. Gera o briefing matinal das 7h para o Vasco Botelho da Costa.
+Data: {agora.strftime('%d/%m/%Y')}.
+{f'Tempo: {meteo}' if meteo else ''}
 
-DADOS DO DIA:
-{f'Tempo em Moreira de Cónegos: {meteo}' if meteo else ''}
-{f'Trading bot: {bot_str}' if bot_str else ''}
-Scout — oportunidades aprovadas: {', '.join(aprovadas[:2]) if aprovadas else 'nenhuma'}
-Scout — top oportunidades activas: {', '.join(oport_top) if oport_top else 'nenhuma nova'}
+FUTEBOL (Coach):
+{coach_str if coach_str else 'Dados de futebol indisponíveis.'}
 
-SISTEMA:
-{resumo_sistema()}
+CFO — TRADING:
+{bot_str if bot_str else 'Bot indisponível.'}
+
+SCOUT:
+{f'Oportunidade prioritária: {oport_top[0]}' if oport_top else 'Sem oportunidades novas.'}
+{f'Aprovadas em curso: {", ".join(aprovadas[:2])}' if aprovadas else ''}
 
 MEMÓRIA DO VASCO:
 {load_memory()}
 
 Instruções:
-- Começa com o que é mais urgente para hoje (futebol, negócios, sistema)
-- Se houver jogo hoje ou amanhã, é o primeiro ponto
-- Estado do trading bot (1 linha)
-- Oportunidade mais prioritária (1 linha)
-- Tom direto, como um braço direito fala ao chefe de manhã
-- Máximo 6 linhas. Sem emojis. Português europeu."""
+- Primeira linha: futebol (jogo ou situação na tabela)
+- Segunda linha: trading (CFO — 1 linha, factual)
+- Terceira linha: oportunidade prioritária ou negócio em curso
+- Tom de braço direito a falar ao chefe de manhã
+- Máximo 5 linhas. Sem emojis. Português europeu."""
 
     response = await loop.run_in_executor(
         None,
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=300,
-            system="És o Coach do Morgan, assistente pessoal do Vasco. Briefings directos, sem rodeios.",
+            system=get_system_prompt(),
             messages=[{"role": "user", "content": prompt}]
         )
     )
