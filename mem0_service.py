@@ -1,102 +1,142 @@
 """
 Serviço centralizado de memória de longo prazo via Mem0.
-Usado por desktop_server.py e todos os agentes.
+Suporta dois modos:
+  1. Cloud  — MEM0_API_KEY definido → MemoryClient (API paga)
+  2. Local  — QDRANT_URL + QDRANT_API_KEY definidos → Memory local com Qdrant Cloud
 
-Mem0 extrai automaticamente factos importantes de cada conversa
-e devolve os mais relevantes por query semântica — memória infinita
-em formato compacto.
+Sem nenhuma variável definida: modo degradado (sem memória persistente, log de aviso).
 """
 import os
+import logging
 
-_client = None
+_log = logging.getLogger("mem0_service")
+
+# ── Clientes singleton ─────────────────────────────────────────────────────────
+_cloud_client = None   # MemoryClient (cloud)
+_local_client = None   # Memory (local + Qdrant)
+_mode: str = "none"    # "cloud" | "local" | "none"
 
 
-def _get_client():
-    global _client
-    if _client is None:
+def _init():
+    global _cloud_client, _local_client, _mode
+    if _mode != "none":
+        return  # já inicializado
+
+    mem0_key = os.getenv("MEM0_API_KEY", "")
+    qdrant_url = os.getenv("QDRANT_URL", "")
+    qdrant_key = os.getenv("QDRANT_API_KEY", "")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+
+    # Modo 1: cloud MemoryClient
+    if mem0_key:
         try:
             from mem0 import MemoryClient
-            key = os.getenv("MEM0_API_KEY", "")
-            if key:
-                _client = MemoryClient(api_key=key)
+            _cloud_client = MemoryClient(api_key=mem0_key)
+            _mode = "cloud"
+            _log.info("[Mem0] modo cloud ativo")
+            return
         except Exception as e:
-            print(f"[Mem0] erro ao inicializar: {e}")
-    return _client
+            _log.warning(f"[Mem0] falha cloud: {e}")
 
+    # Modo 2: local Memory + Qdrant Cloud + Anthropic embeddings
+    if qdrant_url and qdrant_key and anthropic_key:
+        try:
+            from mem0 import Memory
+            config = {
+                "vector_store": {
+                    "provider": "qdrant",
+                    "config": {
+                        "url": qdrant_url,
+                        "api_key": qdrant_key,
+                        "collection_name": "morgan_memory",
+                        "embedding_model_dims": 1536,
+                    },
+                },
+                "embedder": {
+                    "provider": "openai",  # mem0 usa openai-compatible; funciona com Anthropic se OPENAI_API_KEY mockado
+                    "config": {"model": "text-embedding-3-small"},
+                },
+                "llm": {
+                    "provider": "anthropic",
+                    "config": {
+                        "model": "claude-haiku-4-5-20251001",
+                        "api_key": anthropic_key,
+                    },
+                },
+            }
+            _local_client = Memory.from_config(config)
+            _mode = "local"
+            _log.info("[Mem0] modo local (Qdrant Cloud) ativo")
+            return
+        except Exception as e:
+            _log.warning(f"[Mem0] falha local/Qdrant: {e}")
+
+    _log.warning("[Mem0] sem MEM0_API_KEY nem QDRANT_URL — memória desativada")
+    _mode = "degraded"
+
+
+# ── API pública ────────────────────────────────────────────────────────────────
 
 def mem0_get(user_id: str, query: str, limit: int = 10) -> str:
-    """Recupera memórias relevantes para a query. Devolve string formatada ou ''."""
+    _init()
     try:
-        client = _get_client()
-        if not client or not query:
+        if _mode == "cloud" and _cloud_client:
+            results = _cloud_client.search(query=query, filters={"user_id": user_id}, limit=limit)
+        elif _mode == "local" and _local_client:
+            results = _local_client.search(query=query, user_id=user_id, limit=limit)
+        else:
             return ""
-        results = client.search(query=query, filters={"user_id": user_id}, limit=limit)
         memorias = []
-        for r in results:
+        for r in (results or []):
             m = r.get("memory", "") if isinstance(r, dict) else str(r)
             if m:
                 memorias.append(m)
         return "\n".join(f"- {m}" for m in memorias)
     except Exception as e:
-        print(f"[Mem0] get erro: {e}")
+        _log.error(f"[Mem0] get erro: {e}")
         return ""
 
 
 def mem0_add(user_id: str, messages: list):
-    """Guarda uma lista de mensagens [{role, content}] no Mem0.
-    Mem0 extrai automaticamente os factos relevantes."""
+    _init()
     try:
-        client = _get_client()
-        if client and messages:
-            client.add(messages, user_id=user_id)
+        if _mode == "cloud" and _cloud_client:
+            _cloud_client.add(messages, user_id=user_id)
+        elif _mode == "local" and _local_client:
+            _local_client.add(messages, user_id=user_id)
     except Exception as e:
-        print(f"[Mem0] add erro: {e}")
+        _log.error(f"[Mem0] add erro: {e}")
 
 
 def mem0_get_all(user_id: str, limit: int = 50) -> str:
-    """Lista todas as memórias guardadas para um user_id (sem query semântica)."""
+    _init()
     try:
-        client = _get_client()
-        if not client:
+        if _mode == "cloud" and _cloud_client:
+            results = _cloud_client.get_all(filters={"user_id": user_id}, limit=limit)
+        elif _mode == "local" and _local_client:
+            results = _local_client.get_all(user_id=user_id, limit=limit)
+        else:
             return ""
-        results = client.get_all(filters={"user_id": user_id}, limit=limit)
         memorias = []
-        for r in results:
+        for r in (results or []):
             m = r.get("memory", "") if isinstance(r, dict) else str(r)
             if m:
                 memorias.append(m)
         return "\n".join(f"- {m}" for m in memorias)
     except Exception as e:
-        print(f"[Mem0] get_all erro: {e}")
+        _log.error(f"[Mem0] get_all erro: {e}")
         return ""
 
 
 def mem0_collective_add(agent: str, content: str):
-    """Guarda facto/insight na memória colectiva partilhada por todos os agentes."""
-    try:
-        client = _get_client()
-        if client:
-            client.add(
-                [{"role": "assistant", "content": f"[{agent}] {content}"}],
-                user_id="collective"
-            )
-    except Exception as e:
-        print(f"[Mem0] collective_add erro: {e}")
+    mem0_add("collective", [{"role": "assistant", "content": f"[{agent}] {content}"}])
 
 
 def mem0_collective_get(query: str, limit: int = 5) -> str:
-    """Recupera memórias colectivas relevantes para qualquer agente."""
-    try:
-        client = _get_client()
-        if not client or not query:
-            return ""
-        results = client.search(query=query, filters={"user_id": "collective"}, limit=limit)
-        memorias = []
-        for r in results:
-            m = r.get("memory", "") if isinstance(r, dict) else str(r)
-            if m:
-                memorias.append(m)
-        return "\n".join(f"- {m}" for m in memorias)
-    except Exception as e:
-        print(f"[Mem0] collective_get erro: {e}")
-        return ""
+    return mem0_get("collective", query, limit)
+
+
+def mem0_mode() -> str:
+    """Devolve o modo atual: 'cloud', 'local', 'degraded' ou 'none'."""
+    _init()
+    return _mode

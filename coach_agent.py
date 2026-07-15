@@ -105,6 +105,7 @@ Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 4. **Planeamento de treinos** — sessões baseadas no adversário seguinte e no estado físico da equipa
 5. **Mercado de jogadores** — monitorização de jogadores em ligas PT/ES/BR/FR por perfil tático
 6. **Tendências táticas globais** — análise de tendências na Premier League, La Liga, Bundesliga aplicáveis ao Moreirense
+7. **Dados StatsBomb** — análise de eventos reais (remates, passes, pressões) de jogos em open data
 
 ## Regras:
 - Pesquisas SEMPRE em inglês primeiro (fontes globais têm muito mais dados), traduz e adapta no final em PT-PT.
@@ -152,6 +153,73 @@ def _sofascore_jogo(home: str, away: str) -> str:
         return "Sofascore stats:\n" + "\n---\n".join(snippets) if snippets else ""
     except Exception:
         return ""
+
+
+def statsbomb_dados_abertos(adversario: str = "", competicao: str = "") -> str:
+    """
+    Dados táticos StatsBomb open data (gratuito).
+    Analisa eventos de jogos disponíveis para extrair padrões táticos.
+    """
+    try:
+        from statsbombpy import sb
+        comps = sb.competitions()
+        if comps is None or comps.empty:
+            return "StatsBomb: sem competições disponíveis."
+
+        # Filtrar por competição pedida ou usar La Liga (rica em dados táticos)
+        filtro = competicao.lower() if competicao else "la liga"
+        comp_filtrado = comps[comps["competition_name"].str.lower().str.contains(filtro, na=False)]
+        if comp_filtrado.empty:
+            comp_filtrado = comps[comps["competition_name"].str.lower().str.contains("la liga", na=False)]
+        if comp_filtrado.empty:
+            comp_filtrado = comps.head(1)
+
+        row = comp_filtrado.iloc[0]
+        cid, sid = int(row["competition_id"]), int(row["season_id"])
+        cname = row["competition_name"]
+
+        matches = sb.matches(competition_id=cid, season_id=sid)
+        if matches is None or matches.empty:
+            return f"StatsBomb ({cname}): sem jogos disponíveis."
+
+        # Se adversário especificado, filtrar jogos desse adversário
+        if adversario:
+            adv_lower = adversario.lower()
+            mask = (
+                matches["home_team"].str.lower().str.contains(adv_lower, na=False) |
+                matches["away_team"].str.lower().str.contains(adv_lower, na=False)
+            )
+            jogos_adv = matches[mask].head(3)
+        else:
+            jogos_adv = matches.head(3)
+
+        if jogos_adv.empty:
+            return f"StatsBomb ({cname}): sem jogos encontrados para '{adversario}'."
+
+        linhas = [f"**StatsBomb — {cname}**"]
+        for _, jogo in jogos_adv.iterrows():
+            mid = int(jogo["match_id"])
+            home = jogo.get("home_team", "")
+            away = jogo.get("away_team", "")
+            score_h = jogo.get("home_score", "?")
+            score_a = jogo.get("away_score", "?")
+            linhas.append(f"\n{home} {score_h}–{score_a} {away} (match_id={mid})")
+            try:
+                events = sb.events(match_id=mid)
+                if events is not None and not events.empty:
+                    shots = len(events[events["type"] == "Shot"])
+                    passes = len(events[events["type"] == "Pass"])
+                    pressures = len(events[events["type"] == "Pressure"])
+                    linhas.append(f"  Remates: {shots} | Passes: {passes} | Pressões: {pressures}")
+            except Exception:
+                linhas.append("  (eventos não disponíveis)")
+
+        return "\n".join(linhas)
+
+    except ImportError:
+        return "statsbombpy não instalado. Corre: pip install statsbombpy"
+    except Exception as e:
+        return f"StatsBomb erro: {e}"
 
 
 def _get_coach_tools():
@@ -257,10 +325,10 @@ def analisar_adversario(clube: str, competicao: str = "") -> str:
     sofascore = _sofascore_jogo(clube, "Moreirense") or ""
     dados_extra = "\n\n".join(filter(None, [dados_api, sofascore]))
 
+    dados_bloco = ("DADOS RECOLHIDOS:\n" + dados_extra) if dados_extra else ""
+    competicao_label = competicao if competicao else "Liga Portugal Betclic"
     prompt = f"""Faz uma análise tática completa do {clube} para me preparar para o próximo jogo.
-{('DADOS RECOLHIDOS:\n' + dados_extra) if dados_extra else ''}
-
-Pesquisa em inglês em fontes como WhoScored, FBref, Transfermarkt, Soccerway, ESPN FC.
+{dados_bloco}
 
 Pesquisa em inglês em fontes como WhoScored, FBref, Transfermarkt, Soccerway, ESPN FC.
 Inclui:
@@ -271,7 +339,7 @@ Inclui:
 5. Resultados recentes (últimos 5 jogos) e tendência de forma
 6. Como o Moreirense deve abordar este jogo — proposta tática concreta
 
-Competição: {competicao if competicao else 'Liga Portugal Betclic'}
+Competição: {competicao_label}
 Termina com: ALERTA PRINCIPAL: [o aspeto mais importante a considerar]"""
 
     reply = get_coach_reply(prompt)

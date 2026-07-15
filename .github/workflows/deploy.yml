@@ -1,17 +1,62 @@
-name: Deploy to Railway
+name: CI + Deploy Mac Mini
 
 on:
   push:
+    branches: ["**"]
+  pull_request:
     branches: [main]
 
 jobs:
-  deploy:
+  # ── Testes ──────────────────────────────────────────────────────────────────
+  test:
+    name: pytest
     runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: test-key-not-real
+      TAVILY_API_KEY: test-key-not-real
+      ELEVENLABS_API_KEY: test-key-not-real
+      DEEPGRAM_API_KEY: test-key-not-real
+      API_FOOTBALL_KEY: test-key-not-real
+
     steps:
-      - name: Trigger Railway Deploy
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
         run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"query": "mutation { deploymentTrigger(input: { serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\" }) { id } }"}' \
-            https://backboard.railway.app/graphql/v2
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+  # ── Deploy (só em main) ─────────────────────────────────────────────────────
+  deploy:
+    name: deploy → Mac Mini
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.MAC_MINI_HOST }}
+          username: ${{ secrets.MAC_MINI_USER }}
+          key: ${{ secrets.MAC_MINI_SSH_KEY }}
+          port: ${{ secrets.MAC_MINI_PORT || 22 }}
+          script: |
+            set -e
+            cd /Users/bcvertex/Morgan
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt -q
+            launchctl kickstart -k gui/$(id -u)/com.bcvertex.morgan
+            sleep 6
+            curl -sf http://localhost:8765/health | python3 -c "import sys,json; d=json.load(sys.stdin); print('Deploy OK — uptime:', d['uptime_s'], 's')"
