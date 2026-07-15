@@ -1224,6 +1224,59 @@ async def bot_multi_status():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+_NOTIF_FILE = Path(__file__).parent / "memory" / "notificacoes.json"
+
+def _load_notifs() -> list:
+    try:
+        return json.loads(_NOTIF_FILE.read_text())
+    except Exception:
+        return []
+
+def _save_notif(title: str, body: str):
+    notifs = _load_notifs()
+    notifs.append({"ts": datetime.now().isoformat()[:16], "title": title, "body": body})
+    _NOTIF_FILE.write_text(json.dumps(notifs[-200:], ensure_ascii=False))
+
+
+@app.get("/api/history")
+async def get_history(n: int = 30):
+    """Últimas N trocas do histórico de conversa."""
+    hist_file = Path(__file__).parent / "memory" / "historico.json"
+    try:
+        raw = json.loads(hist_file.read_text())
+        msgs = raw.get("vasco", raw) if isinstance(raw, dict) else raw
+        pairs = []
+        i = 0
+        while i < len(msgs) - 1:
+            if msgs[i].get("role") == "user" and msgs[i+1].get("role") == "assistant":
+                pairs.append({"user": msgs[i]["content"][:300], "assistant": msgs[i+1]["content"][:500]})
+                i += 2
+            else:
+                i += 1
+        return JSONResponse({"pairs": pairs[-n:]})
+    except Exception as e:
+        return JSONResponse({"pairs": [], "error": str(e)})
+
+
+@app.get("/api/reports")
+async def get_reports(n: int = 7):
+    """Últimos N reports diários."""
+    mem = Path(__file__).parent / "memory"
+    reports = sorted(mem.glob("report_*.txt"), reverse=True)[:n]
+    result = []
+    for f in reports:
+        date = f.stem.replace("report_", "")
+        result.append({"date": date, "content": f.read_text(encoding="utf-8")[:2000]})
+    return JSONResponse({"reports": result})
+
+
+@app.get("/api/notifications")
+async def get_notifications(n: int = 50):
+    """Últimas N notificações push enviadas."""
+    notifs = _load_notifs()
+    return JSONResponse({"notifications": notifs[-n:][::-1]})
+
+
 # ── Heartbeat interno ─────────────────────────────────────────────────────────
 
 import time as _time

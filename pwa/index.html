@@ -236,20 +236,21 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
       <div class="p-sub" id="pDate">--</div>
     </div>
     <div class="p-block">
-      <div class="p-label">Tempo</div>
+      <div class="p-label">Tempo · Moreira de Cónegos</div>
       <div class="p-temp" id="pTemp">--°</div>
       <div class="p-sub" id="pWeather">--</div>
-    </div>
-    <div class="p-block">
-      <div class="p-label">Hierarquia</div>
-      <div class="hier-line"><div class="hier-dot" style="background:#fff;box-shadow:0 0 4px #fff"></div><div class="hier-name">Vasco Botelho da Costa</div></div>
-      <div class="hier-line" style="padding-left:14px"><div class="hier-dot" style="background:var(--cyan);box-shadow:0 0 4px var(--cyan)"></div><div class="hier-name">Morgan CEO</div></div>
-      <div class="hier-line" style="padding-left:28px"><div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div><div class="hier-name">Scout · Coach · CFO</div></div>
     </div>
     <div class="p-block">
       <div class="p-label">Próximo Jogo</div>
       <div class="p-value" id="pJogo">--</div>
       <div class="p-sub" id="pJogoData">--</div>
+    </div>
+    <div class="p-block">
+      <div class="p-label" style="display:flex;justify-content:space-between;align-items:center">
+        Histórico de Conversa
+        <span style="font-size:10px;opacity:.5;cursor:pointer" onclick="loadHistory()">↺</span>
+      </div>
+      <div id="pHistory" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
     </div>
   </div>
 </div>
@@ -257,17 +258,28 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
 <div class="panel panel-right" id="panelRight">
   <div class="panel-content">
     <div class="p-block">
+      <div class="p-label" style="display:flex;justify-content:space-between;align-items:center">
+        Notificações
+        <span style="font-size:10px;opacity:.5;cursor:pointer" onclick="loadNotifications()">↺</span>
+      </div>
+      <div id="pNotifs" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+    </div>
+    <div class="p-block">
+      <div class="p-label" style="display:flex;justify-content:space-between;align-items:center">
+        Reports Diários
+        <span style="font-size:10px;opacity:.5;cursor:pointer" onclick="loadReports()">↺</span>
+      </div>
+      <div id="pReportList" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+      <div id="pReportContent" style="margin-top:8px;font-size:11px;color:var(--cyan);opacity:.85;white-space:pre-wrap;max-height:320px;overflow-y:auto;display:none"></div>
+    </div>
+    <div class="p-block">
       <div class="p-label">Scout — Oportunidades</div>
       <div id="pScout"></div>
     </div>
     <div class="p-block">
-      <div class="p-label">Último Resultado</div>
-      <div class="p-value" id="pResultado">--</div>
-    </div>
-    <div class="p-block">
       <div class="p-label">Sistema</div>
       <div class="p-sub">Mac Mini · online</div>
-      <div class="p-sub">Morgan v2 · PT-EU</div>
+      <div class="p-sub" id="pResultado">--</div>
     </div>
   </div>
 </div>
@@ -457,6 +469,84 @@ async function loadWidgets() {
   } catch(e){}
 }
 loadWidgets(); setInterval(loadWidgets,60000);
+
+// ── HISTÓRICO DE CONVERSA ──
+async function loadHistory() {
+  const el = document.getElementById('pHistory');
+  el.innerHTML = '<div style="opacity:.4;font-size:11px">A carregar…</div>';
+  try {
+    const d = await fetch(API+'/api/history?n=20').then(r=>r.json());
+    el.innerHTML = '';
+    if (!d.pairs?.length) { el.innerHTML='<div style="opacity:.4;font-size:11px">Sem histórico</div>'; return; }
+    [...d.pairs].reverse().forEach(p => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'border-bottom:1px solid rgba(0,255,255,.08);padding-bottom:8px';
+      const u = document.createElement('div');
+      u.style.cssText = 'font-size:11px;opacity:.5;text-align:right;margin-bottom:3px';
+      u.textContent = p.user;
+      const a = document.createElement('div');
+      a.style.cssText = 'font-size:11px;color:var(--cyan);opacity:.85;line-height:1.4';
+      a.textContent = p.assistant;
+      wrap.appendChild(u); wrap.appendChild(a);
+      el.appendChild(wrap);
+    });
+  } catch(e) { el.innerHTML='<div style="opacity:.4;font-size:11px">Erro ao carregar</div>'; }
+}
+
+// ── NOTIFICAÇÕES ──
+async function loadNotifications() {
+  const el = document.getElementById('pNotifs');
+  el.innerHTML = '<div style="opacity:.4;font-size:11px">A carregar…</div>';
+  try {
+    const d = await fetch(API+'/api/notifications?n=30').then(r=>r.json());
+    el.innerHTML = '';
+    if (!d.notifications?.length) { el.innerHTML='<div style="opacity:.4;font-size:11px">Sem notificações</div>'; return; }
+    d.notifications.forEach(n => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'border-bottom:1px solid rgba(0,255,255,.08);padding-bottom:6px';
+      wrap.innerHTML = `<div style="font-size:10px;opacity:.4">${n.ts}</div><div style="font-size:11px;font-weight:600;color:var(--amber)">${n.title}</div><div style="font-size:11px;opacity:.75">${n.body}</div>`;
+      el.appendChild(wrap);
+    });
+  } catch(e) { el.innerHTML='<div style="opacity:.4;font-size:11px">Erro ao carregar</div>'; }
+}
+
+// ── REPORTS DIÁRIOS ──
+async function loadReports() {
+  const listEl = document.getElementById('pReportList');
+  const contentEl = document.getElementById('pReportContent');
+  listEl.innerHTML = '<div style="opacity:.4;font-size:11px">A carregar…</div>';
+  contentEl.style.display = 'none';
+  try {
+    const d = await fetch(API+'/api/reports?n=7').then(r=>r.json());
+    listEl.innerHTML = '';
+    if (!d.reports?.length) { listEl.innerHTML='<div style="opacity:.4;font-size:11px">Sem reports</div>'; return; }
+    d.reports.forEach(r => {
+      const btn = document.createElement('div');
+      btn.style.cssText = 'font-size:12px;color:var(--cyan);cursor:pointer;padding:4px 0;border-bottom:1px solid rgba(0,255,255,.08)';
+      btn.textContent = '📄 Report ' + r.date;
+      btn.onclick = () => {
+        if (contentEl.dataset.active === r.date) {
+          contentEl.style.display = 'none';
+          contentEl.dataset.active = '';
+        } else {
+          contentEl.textContent = r.content;
+          contentEl.style.display = 'block';
+          contentEl.dataset.active = r.date;
+          contentEl.scrollTop = 0;
+        }
+      };
+      listEl.appendChild(btn);
+    });
+  } catch(e) { listEl.innerHTML='<div style="opacity:.4;font-size:11px">Erro ao carregar</div>'; }
+}
+
+// carregar ao abrir painel
+const _origToggle = togglePanel;
+function togglePanel(side) {
+  _origToggle(side);
+  if (side === 'left') loadHistory();
+  if (side === 'right') { loadNotifications(); loadReports(); }
+}
 
 // ── CHAT ──
 function showTranscript(u,m) {

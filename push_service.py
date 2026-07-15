@@ -85,4 +85,15 @@ def send_push(title: str, body: str, url: str = "/pwa/") -> dict:
     for ep in to_remove:
         remove_subscription(ep)
 
+    # guardar notificação no histórico local
+    try:
+        from pathlib import Path as _Path
+        _nf = _Path(__file__).parent / "memory" / "notificacoes.json"
+        _notifs = json.loads(_nf.read_text()) if _nf.exists() else []
+        from datetime import datetime as _dt
+        _notifs.append({"ts": _dt.now().isoformat()[:16], "title": title, "body": body})
+        _nf.write_text(json.dumps(_notifs[-200:], ensure_ascii=False))
+    except Exception:
+        pass
+
     return {"sent": sent, "failed": failed}
