@@ -434,20 +434,17 @@ async def serve_interface(request: Request):
 async def serve_interface_v2():
     return FileResponse(DESKTOP_DIR / "index_v2.html")
 
+_NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
+
 @app.get("/pwa/")
 @app.get("/pwa/index.html")
 async def serve_pwa():
-    return FileResponse(PWA_DIR / "index.html")
+    return FileResponse(PWA_DIR / "index.html", headers=_NO_CACHE)
 
 @app.get("/pwa/{filename}")
 async def serve_pwa_file(filename: str):
     f = PWA_DIR / filename
-    if f.exists():
-        # sw.js e index.html nunca em cache — forçar reload imediato
-        no_cache = filename in ("sw.js", "index.html")
-        headers = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"} if no_cache else {}
-        return FileResponse(f, headers=headers)
-    return FileResponse(PWA_DIR / "index.html")
+    return FileResponse(f if f.exists() else PWA_DIR / "index.html", headers=_NO_CACHE)
 
 
 @app.get("/api/widgets")

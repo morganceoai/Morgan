@@ -621,9 +621,10 @@ async function startMorgan(){
   if(scriptProc){scriptProc.disconnect();scriptProc=null;}
   document.getElementById('btnVoice').className='btn-voice active';
   try{
-    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
-    playbackCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,sampleRate:16000},video:false});
+    // iOS Safari não suporta sampleRate:16000 no AudioContext — usa o nativo e reamostrar
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    playbackCtx=new(window.AudioContext||window.webkitAudioContext)();
     await audioCtx.resume();
     await playbackCtx.resume();
     const wsUrl=API.replace('https','wss').replace('http','ws')+'/ws/hume';
@@ -647,28 +648,47 @@ async function startMorgan(){
     humeWS.onerror=()=>{document.getElementById('btnVoice').className='btn-voice';setState('idle');};
   }catch(e){console.error(e);document.getElementById('btnVoice').className='btn-voice';setState('idle');}
 }
+function _resampleTo16k(f32, fromRate){
+  // reamostrar de fromRate (ex:44100) para 16000 Hz
+  if(fromRate===16000)return f32;
+  const ratio=fromRate/16000;
+  const outLen=Math.round(f32.length/ratio);
+  const out=new Float32Array(outLen);
+  for(let i=0;i<outLen;i++)out[i]=f32[Math.min(Math.round(i*ratio),f32.length-1)];
+  return out;
+}
+function _f32ToInt16(f32){
+  const out=new Int16Array(f32.length);
+  for(let i=0;i<f32.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(f32[i]*32767)));
+  return out;
+}
 async function startCapture(){
   if(scriptProc)return;
+  const nativeRate=audioCtx.sampleRate; // 44100 ou 48000 no iOS
   const src=audioCtx.createMediaStreamSource(micStream);
-  // AudioWorklet para iOS (ScriptProcessor deprecated e não funciona em Safari/iOS)
+  const CHUNK=4096;
   try{
-    const workletCode=`class MicProcessor extends AudioWorkletProcessor{process(inputs){const ch=inputs[0]?.[0];if(ch&&ch.length){const out=new Int16Array(ch.length);for(let i=0;i<ch.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(ch[i]*32767)));this.port.postMessage(out.buffer,[out.buffer]);}return true;}}registerProcessor('mic-proc',MicProcessor);`;
-    const blob=new Blob([workletCode],{type:'application/javascript'});
-    const url=URL.createObjectURL(blob);
-    await audioCtx.audioWorklet.addModule(url);
-    URL.revokeObjectURL(url);
-    const node=new AudioWorkletNode(audioCtx,'mic-proc');
-    node.port.onmessage=ev=>{if(humeWS&&humeWS.readyState===1)humeWS.send(ev.data);};
-    src.connect(node);node.connect(audioCtx.destination);
-    scriptProc=node;
-  }catch(workletErr){
-    // fallback ScriptProcessor para browsers antigos
-    const proc=audioCtx.createScriptProcessor(4096,1,1);
-    proc.onaudioprocess=e=>{
+    // AudioWorklet — envia amostras nativas, JS principal faz resample
+    const code=`class P extends AudioWorkletProcessor{process(i){const c=i[0]?.[0];if(c)this.port.postMessage(c.slice());return true;}};registerProcessor('p',P);`;
+    const blob=new Blob([code],{type:'application/javascript'});
+    const burl=URL.createObjectURL(blob);
+    await audioCtx.audioWorklet.addModule(burl);
+    URL.revokeObjectURL(burl);
+    const node=new AudioWorkletNode(audioCtx,'p');
+    node.port.onmessage=ev=>{
       if(!humeWS||humeWS.readyState!==1)return;
-      const inp=e.inputBuffer.getChannelData(0),out=new Int16Array(inp.length);
-      for(let i=0;i<inp.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[i]*32767)));
-      humeWS.send(out.buffer);
+      const resampled=_resampleTo16k(ev.data,nativeRate);
+      humeWS.send(_f32ToInt16(resampled).buffer);
+    };
+    src.connect(node);
+    scriptProc=node;
+  }catch(e){
+    // fallback ScriptProcessor
+    const proc=audioCtx.createScriptProcessor(CHUNK,1,1);
+    proc.onaudioprocess=ev=>{
+      if(!humeWS||humeWS.readyState!==1)return;
+      const resampled=_resampleTo16k(ev.inputBuffer.getChannelData(0),nativeRate);
+      humeWS.send(_f32ToInt16(resampled).buffer);
     };
     src.connect(proc);proc.connect(audioCtx.destination);
     scriptProc=proc;
@@ -771,17 +791,20 @@ async function activarNotificacoes() {
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/pwa/sw.js?v=5')
+  // desregistar SW antigos (sw.js v1-v5) para limpar cache
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => { if (!r.active?.scriptURL?.includes('sw2.js')) r.unregister(); });
+  });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+
+  navigator.serviceWorker.register('/pwa/sw2.js')
     .then(reg => {
       _swReg = reg;
-      const sw = reg.installing || reg.waiting || reg.active;
-      if (reg.active) {
-        _initPush(reg);
-      } else if (sw) {
-        sw.addEventListener('statechange', () => {
-          if (sw.state === 'activated') _initPush(reg);
-        });
-      }
+      const activate = () => _initPush(reg);
+      if (reg.active) activate();
+      else (reg.installing || reg.waiting)?.addEventListener('statechange', e => {
+        if (e.target.state === 'activated') activate();
+      });
     })
     .catch(()=>{});
 }
