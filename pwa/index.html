@@ -389,7 +389,8 @@ for(let i=0;i<600;i++){
 function draw(){
   ctx.clearRect(0,0,W,H);
   t+=.009;
-  const R = R0;
+  if(!R0 && W) updateR();
+  const R = R0 || Math.min(window.innerWidth,window.innerHeight)*.26;
 
   // Transição de cor
   curRGB = lerpRGB(curRGB, STATE_RGB[morganState]||STATE_RGB.idle, .04);
