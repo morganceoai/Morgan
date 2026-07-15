@@ -443,7 +443,10 @@ async def serve_pwa():
 async def serve_pwa_file(filename: str):
     f = PWA_DIR / filename
     if f.exists():
-        return FileResponse(f)
+        # sw.js e index.html nunca em cache — forçar reload imediato
+        no_cache = filename in ("sw.js", "index.html")
+        headers = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"} if no_cache else {}
+        return FileResponse(f, headers=headers)
     return FileResponse(PWA_DIR / "index.html")
 
 
