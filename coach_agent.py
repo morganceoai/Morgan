@@ -53,41 +53,23 @@ def _mem0_coach_add(texto: str):
 # ── System Prompt ─────────────────────────────────────────────────────────────
 
 def _fetch_moreirense_fixtures() -> str:
-    """Busca próximos jogos e último resultado do Moreirense via API Football."""
+    """Busca próximos jogos do Moreirense via Tavily (API Football free plan não suporta época atual)."""
     try:
-        import httpx
-        api_key = os.getenv("API_FOOTBALL_KEY", "")
-        if not api_key:
-            return ""
-        headers = {"x-apisports-key": api_key}
-        with httpx.Client(timeout=5) as c:
-            r_next = c.get("https://v3.football.api-sports.io/fixtures",
-                           params={"team": 229, "next": 3, "season": 2026}, headers=headers)
-            r_last = c.get("https://v3.football.api-sports.io/fixtures",
-                           params={"team": 229, "last": 1, "season": 2026}, headers=headers)
-        linhas = ["Próximos jogos Moreirense:"]
-        for f in (r_next.json().get("response") or [])[:3]:
-            home = f["teams"]["home"]["name"]
-            away = f["teams"]["away"]["name"]
-            data = f["fixture"]["date"][:10]
-            hora = f["fixture"]["date"][11:16]
-            liga = f["league"]["name"]
-            loc = "casa" if home == "Moreirense" else "fora"
-            adv = away if home == "Moreirense" else home
-            linhas.append(f"  {data} {hora} — {adv} ({loc}) | {liga}")
-        last_resp = r_last.json().get("response")
-        if last_resp:
-            f = last_resp[0]
-            home = f["teams"]["home"]["name"]
-            away = f["teams"]["away"]["name"]
-            gh, ga = f["goals"]["home"], f["goals"]["away"]
-            adv = away if home == "Moreirense" else home
-            if home == "Moreirense":
-                res_str = f"{gh}-{ga}"
-            else:
-                res_str = f"{ga}-{gh}"
-            linhas.append(f"Último resultado: {adv} {res_str}")
-        return "\n".join(linhas)
+        from tavily import TavilyClient
+        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
+        r = client.search(
+            "Moreirense FC próximos jogos calendário 2025 2026 Liga Portugal",
+            max_results=3,
+            search_depth="basic"
+        )
+        snippets = []
+        for res in (r.get("results") or [])[:3]:
+            c = res.get("content", "")
+            if c:
+                snippets.append(c[:300])
+        if snippets:
+            return "Calendário Moreirense (fonte web):\n" + "\n---\n".join(snippets)
+        return ""
     except Exception:
         return ""
 
