@@ -50,11 +50,13 @@ class TestGoogleTrends:
         assert "AI automation" in result or "micro SaaS" in result or "Tendências" in result
 
     def test_trends_nao_usa_pytrends(self):
-        """pytrends foi arquivado — garantir que não é importado."""
+        """pytrends foi arquivado — garantir que não é importado (não chamado)."""
         import tools
         import inspect
         src = inspect.getsource(tools.google_trends)
-        assert "pytrends" not in src, "google_trends ainda usa pytrends (arquivado Abril 2025)"
+        # A docstring pode mencionar pytrends — o que não pode existir é a import
+        assert "import pytrends" not in src, "google_trends ainda importa pytrends (arquivado Abril 2025)"
+        assert "TrendReq" not in src, "google_trends usa TrendReq do pytrends"
 
 
 class TestTools:
