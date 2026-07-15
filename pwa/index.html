@@ -354,11 +354,14 @@ tick(); setInterval(tick, 1000);
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let W, H, cx, cy, t = 0;
+let R0 = 0;
+function updateR(){ R0 = Math.min(W, H) * 0.26; }
 
 function resize() {
   W = canvas.width = window.innerWidth;
   H = canvas.height = window.innerHeight;
   cx = W/2; cy = H/2;
+  updateR();
 }
 resize(); window.addEventListener('resize', resize);
 
@@ -371,7 +374,6 @@ function lerpRGB(a,b,f){ return a.map((v,i)=>v+(b[i]-v)*f); }
 function rgb(c,a){ return `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`; }
 
 // Partículas — menos, maiores, mais nítidas
-const R0 = Math.min(window.innerWidth, window.innerHeight) * 0.26;
 const PARTS = [];
 for(let i=0;i<600;i++){
   PARTS.push({
