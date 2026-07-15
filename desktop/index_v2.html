@@ -510,15 +510,17 @@ const NODES = [
   { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 285, angle: 0.58, size:7 },
   { id:'cfo',     label:'CFO',     role:'financeiro',    color:'110,130,160', ring: 280, angle:-2.55, size:7, inactive:true },
   // Operações — anel exterior médio
-  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring: 400, angle: 2.65, size:7 },
-  { id:'creator', label:'Creator', role:'negócios',      color:'190,150,10',  ring: 405, angle: 1.62, size:7 },
+  { id:'solver',   label:'Solver',   role:'manutenção',  color:'155,109,255', ring: 400, angle: 2.65, size:7 },
+  { id:'creator',  label:'Creator',  role:'meta-tool',   color:'255,170,0',   ring: 405, angle: 1.62, size:7 },
+  { id:'operator', label:'Operator', role:'operações',   color:'0,200,130',   ring: 410, angle:-1.80, size:7 },
+  { id:'marketeer',label:'Marketeer',role:'crescimento', color:'180,100,255', ring: 395, angle:-2.20, size:7 },
   // Infraestrutura — anel exterior
   { id:'memoria', label:'Memória', role:'',              color:'0,212,255',   ring: 510, angle:-0.85, size:6 },
   { id:'voz',     label:'Voz',     role:'',              color:'0,212,255',   ring: 500, angle:-0.15, size:6 },
   { id:'web',     label:'Web',     role:'',              color:'0,212,255',   ring: 520, angle: 0.22, size:6 },
   { id:'futebol', label:'Futebol', role:'',              color:'0,212,255',   ring: 510, angle: 0.95, size:6 },
   { id:'ia',      label:'IA',      role:'',              color:'0,212,255',   ring: 525, angle: 1.30, size:6 },
-  { id:'telegram',label:'Telegram',role:'',              color:'0,180,220',   ring: 495, angle: 2.00, size:6 },
+  { id:'app',     label:'App',     role:'',              color:'0,180,220',   ring: 495, angle: 2.00, size:6 },
   { id:'desktop', label:'Desktop', role:'',              color:'0,180,220',   ring: 485, angle: 2.40, size:6 },
   { id:'pwa',     label:'PWA',     role:'',              color:'0,180,220',   ring: 505, angle:-1.20, size:6 },
 ];
@@ -531,7 +533,7 @@ let W, H, CX, CY, t = 0;
 let morganState = 'idle';
 
 // Swap state: qual agente está no centro (null = CEO)
-const AGENT_IDS = ['scout','solver','coach','creator','cfo'];
+const AGENT_IDS = ['scout','coach','cfo','creator','operator','marketeer','solver'];
 let centeredId  = null;   // agente atualmente no centro
 let swapProgress = 1;     // 0→1: animação de swap
 let swapFrom = null;      // id do agente que entrou/saiu

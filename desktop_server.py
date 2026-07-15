@@ -1182,6 +1182,36 @@ async def get_activity(n: int = 20):
         return JSONResponse({"lines": [], "error": str(e)})
 
 
+@app.get("/api/agents")
+async def get_agents():
+    """Lista todos os agentes activos no sistema — lida dinamicamente dos ficheiros."""
+    import re
+    agents_dir = Path(__file__).parent
+    builtin = [
+        {"id": "ceo",       "label": "CEO",       "role": "núcleo",         "color": "190,150,10"},
+        {"id": "scout",     "label": "Scout",     "role": "inteligência",   "color": "190,150,10"},
+        {"id": "coach",     "label": "Coach",     "role": "análise tática", "color": "0,255,157"},
+        {"id": "cfo",       "label": "CFO",       "role": "financeiro",     "color": "110,130,160"},
+        {"id": "creator",   "label": "Creator",   "role": "meta-tool",      "color": "255,170,0"},
+        {"id": "operator",  "label": "Operator",  "role": "operações",      "color": "0,200,130"},
+        {"id": "marketeer", "label": "Marketeer", "role": "crescimento",    "color": "180,100,255"},
+        {"id": "solver",    "label": "Solver",    "role": "manutenção",     "color": "155,109,255"},
+    ]
+    builtin_ids = {a["id"] for a in builtin}
+    # Adicionar agentes criados dinamicamente pelo Creator
+    for f in sorted(agents_dir.glob("*_agent.py")):
+        agent_id = f.stem.replace("_agent", "")
+        if agent_id not in builtin_ids:
+            # Ler primeira linha da docstring como role
+            try:
+                first_doc = f.read_text(encoding="utf-8").split('"""')[1].strip().split("\n")[0][:40]
+            except Exception:
+                first_doc = ""
+            builtin.append({"id": agent_id, "label": agent_id.replace("_", " ").title(),
+                            "role": first_doc, "color": "100,200,255"})
+    return JSONResponse({"agents": builtin})
+
+
 @app.get("/api/agent")
 async def get_agent():
     """Agente desktop ativo neste momento."""

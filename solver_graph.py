@@ -261,7 +261,7 @@ def _pre_execution_tests() -> tuple[bool, str]:
             resultados.append(f"AVISO: não foi possível verificar {modulo}: {e}")
 
     # 2. Import dos módulos críticos
-    criticos = ["anthropic", "telegram", "fastapi", "langgraph"]
+    criticos = ["anthropic", "fastapi", "langgraph"]
     for mod in criticos:
         try:
             r = subprocess.run(

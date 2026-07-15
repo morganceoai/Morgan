@@ -267,10 +267,19 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
             <div class="hier-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber)"></div>
             <div class="hier-name" style="color:var(--amber)">CFO</div>
           </div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('creator')" id="abtn-creator">
+            <div class="hier-dot" style="background:#ffaa00;box-shadow:0 0 4px #ffaa00"></div>
+            <div class="hier-name" style="color:#ffaa00">Creator</div>
+          </div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('operator')" id="abtn-operator">
+            <div class="hier-dot" style="background:#00c882;box-shadow:0 0 4px #00c882"></div>
+            <div class="hier-name" style="color:#00c882">Operator</div>
+          </div>
           <div class="hier-line" style="cursor:pointer" onclick="selectAgent('marketeer')" id="abtn-marketeer">
             <div class="hier-dot" style="background:#b388ff;box-shadow:0 0 4px #b388ff"></div>
             <div class="hier-name" style="color:#b388ff">Marketeer</div>
           </div>
+          <div id="abtn-dynamic-agents"></div>
         </div>
       </div>
     </div>
@@ -514,6 +523,7 @@ async function loadWidgets() {
   } catch(e){}
 }
 loadWidgets(); setInterval(loadWidgets,60000);
+loadDynamicAgents();
 
 // ── HISTÓRICO DE CONVERSA ──
 async function loadHistory() {
@@ -591,9 +601,33 @@ function showTranscript(u,m) {
   if(u){const d=document.createElement('div');d.className='t-user';d.textContent=u;el.appendChild(d);}
   if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
 }
-const AGENTS = ['ceo','cfo','coach','scout','marketeer'];
-const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT',marketeer:'MARKETEER'};
+const AGENTS = ['ceo','cfo','coach','scout','creator','operator','marketeer'];
+const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT',creator:'CREATOR',operator:'OPERATOR',marketeer:'MARKETEER'};
+const AGENT_COLORS = {ceo:'var(--cyan)',cfo:'var(--amber)',coach:'var(--amber)',scout:'var(--amber)',creator:'#ffaa00',operator:'#00c882',marketeer:'#b388ff'};
 let _currentAgent = 'ceo';
+
+async function loadDynamicAgents(){
+  try{
+    const r = await fetch(API+'/api/agents');
+    const data = await r.json();
+    const known = new Set(AGENTS);
+    const container = document.getElementById('abtn-dynamic-agents');
+    if(!container) return;
+    container.innerHTML = '';
+    (data.agents||[]).forEach(ag=>{
+      if(known.has(ag.id)) return;
+      AGENTS.push(ag.id);
+      AGENT_LABELS[ag.id] = ag.label.toUpperCase();
+      const color = '#'+(ag.color||'100,200,255').split(',').map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+      AGENT_COLORS[ag.id] = color;
+      const div = document.createElement('div');
+      div.className='hier-line'; div.style.cursor='pointer'; div.id='abtn-'+ag.id;
+      div.onclick=()=>selectAgent(ag.id);
+      div.innerHTML=`<div class="hier-dot" style="background:${color};box-shadow:0 0 4px ${color}"></div><div class="hier-name" style="color:${color}">${ag.label}</div>`;
+      container.appendChild(div);
+    });
+  }catch(e){}
+}
 
 function _refreshAgentUI(agent){
   document.getElementById('agentBadge').textContent = AGENT_LABELS[agent]||agent.toUpperCase();

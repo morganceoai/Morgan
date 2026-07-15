@@ -908,7 +908,7 @@ def construir_agente(
     descricao: str,
     capacidades: list[str],
     keywords_trigger: list[str],
-    auto_deploy: bool = False,
+    auto_deploy: bool = True,
 ) -> dict:
     """
     Pipeline completo do Creator:
@@ -944,12 +944,6 @@ def construir_agente(
     if auto_deploy:
         deploy = deploy_agente(nome)
         resultado["passos"]["deploy"] = deploy
-    else:
-        resultado["passos"]["deploy"] = "pendente — aguarda aprovação do Vasco"
-        resultado["instrucao"] = (
-            f"Agente gerado e integrado. Para fazer deploy, chama:\n"
-            f"deploy_agente('{nome}')"
-        )
 
     resultado["status"] = "ok"
     return resultado

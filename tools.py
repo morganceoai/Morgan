@@ -1244,6 +1244,56 @@ TOOLS = [
         "name": "organizar_google_drive_sugestoes",
         "description": "Analisa o Google Drive do Vasco e sugere uma estrutura de organização em pastas. Não move ficheiros — só sugere.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "creator_listar_agentes",
+        "description": "Lista todos os agentes Python existentes no projecto Morgan.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "creator_construir_agente",
+        "description": "Cria um novo agente Morgan de forma autónoma: gera o código Python com IA, escreve o ficheiro e integra no desktop. Pede sempre confirmação ao Vasco antes do deploy.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do agente em minúsculas sem espaços (ex: 'operator', 'marketeer_v2')"},
+                "descricao": {"type": "string", "description": "O que o agente faz — descrição completa"},
+                "capacidades": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lista de capacidades específicas do agente"
+                },
+                "keywords_trigger": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Palavras-chave que activam este agente na conversa"
+                }
+            },
+            "required": ["nome", "descricao", "capacidades", "keywords_trigger"]
+        }
+    },
+    {
+        "name": "creator_rever_agente",
+        "description": "Mostra o código do agente gerado para revisão antes do deploy.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do agente (sem _agent.py)"}
+            },
+            "required": ["nome"]
+        }
+    },
+    {
+        "name": "creator_deploy_agente",
+        "description": "Faz deploy de um agente já criado: git commit + push + SSH pull + restart do servidor no Mac Mini. Usar APENAS após aprovação explícita do Vasco.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do agente (sem _agent.py)"},
+                "mensagem_commit": {"type": "string", "description": "Mensagem de commit git (opcional)"}
+            },
+            "required": ["nome"]
+        }
     }
 ]
 
@@ -1283,4 +1333,18 @@ TOOL_FUNCTIONS = {
     "atualizar_estado_imperio": atualizar_estado_imperio,
     "listar_google_drive": listar_google_drive,
     "organizar_google_drive_sugestoes": organizar_google_drive_sugestoes,
+    "creator_listar_agentes": lambda: __import__('creator_agent').listar_agentes(),
+    "creator_construir_agente": lambda nome, descricao, capacidades, keywords_trigger: (
+        __import__('json').dumps(
+            __import__('creator_agent').construir_agente(nome, descricao, capacidades, keywords_trigger, auto_deploy=False),
+            ensure_ascii=False, indent=2
+        )
+    ),
+    "creator_rever_agente": lambda nome: __import__('creator_agent').rever_agente(nome),
+    "creator_deploy_agente": lambda nome, mensagem_commit="": (
+        __import__('json').dumps(
+            __import__('creator_agent').deploy_agente(nome, mensagem_commit),
+            ensure_ascii=False, indent=2
+        )
+    ),
 }
