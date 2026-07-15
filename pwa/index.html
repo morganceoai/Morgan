@@ -241,6 +241,15 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
       <div class="p-sub" id="pWeather">--</div>
     </div>
     <div class="p-block">
+      <div class="p-label">Agente activo</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button onclick="selectAgent('ceo')"  id="abtn-ceo"   style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">CEO</button>
+        <button onclick="selectAgent('cfo')"  id="abtn-cfo"   style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">CFO</button>
+        <button onclick="selectAgent('coach')" id="abtn-coach" style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">COACH</button>
+        <button onclick="selectAgent('scout')" id="abtn-scout" style="flex:1;padding:6px 4px;font-size:11px;font-family:monospace;border-radius:6px;border:1px solid rgba(0,212,255,.3);background:transparent;color:var(--cyan);cursor:pointer">SCOUT</button>
+      </div>
+    </div>
+    <div class="p-block">
       <div class="p-label">Próximo Jogo</div>
       <div class="p-value" id="pJogo">--</div>
       <div class="p-sub" id="pJogoData">--</div>
@@ -557,13 +566,27 @@ function showTranscript(u,m) {
 const AGENTS = ['ceo','cfo','coach','scout'];
 const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT'};
 let _currentAgent = 'ceo';
-async function cycleAgent() {
-  const idx = AGENTS.indexOf(_currentAgent);
-  _currentAgent = AGENTS[(idx + 1) % AGENTS.length];
-  document.getElementById('agentBadge').textContent = AGENT_LABELS[_currentAgent];
-  try {
-    await fetch(API+'/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent:_currentAgent})});
-  } catch(e) {}
+
+function _refreshAgentUI(agent){
+  document.getElementById('agentBadge').textContent = AGENT_LABELS[agent]||agent.toUpperCase();
+  AGENTS.forEach(a=>{
+    const btn=document.getElementById('abtn-'+a);
+    if(!btn)return;
+    btn.style.background  = a===agent ? 'rgba(0,212,255,.18)' : 'transparent';
+    btn.style.borderColor = a===agent ? 'var(--cyan)' : 'rgba(0,212,255,.3)';
+    btn.style.fontWeight  = a===agent ? '700' : '400';
+  });
+}
+
+async function selectAgent(agent){
+  _currentAgent = agent;
+  _refreshAgentUI(agent);
+  try{ await fetch(API+'/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent})}); }catch(e){}
+}
+
+async function cycleAgent(){
+  const idx=AGENTS.indexOf(_currentAgent);
+  await selectAgent(AGENTS[(idx+1)%AGENTS.length]);
 }
 async function sendText() {
   const inp=document.getElementById('inp');
@@ -624,17 +647,32 @@ async function startMorgan(){
     humeWS.onerror=()=>{document.getElementById('btnVoice').className='btn-voice';setState('idle');};
   }catch(e){console.error(e);document.getElementById('btnVoice').className='btn-voice';setState('idle');}
 }
-function startCapture(){
+async function startCapture(){
   if(scriptProc)return;
   const src=audioCtx.createMediaStreamSource(micStream);
-  scriptProc=audioCtx.createScriptProcessor(4096,1,1);
-  src.connect(scriptProc);scriptProc.connect(audioCtx.destination);
-  scriptProc.onaudioprocess=e=>{
-    if(!humeWS||humeWS.readyState!==1)return;
-    const inp=e.inputBuffer.getChannelData(0),out=new Int16Array(inp.length);
-    for(let i=0;i<inp.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[i]*32767)));
-    humeWS.send(out.buffer);
-  };
+  // AudioWorklet para iOS (ScriptProcessor deprecated e não funciona em Safari/iOS)
+  try{
+    const workletCode=`class MicProcessor extends AudioWorkletProcessor{process(inputs){const ch=inputs[0]?.[0];if(ch&&ch.length){const out=new Int16Array(ch.length);for(let i=0;i<ch.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(ch[i]*32767)));this.port.postMessage(out.buffer,[out.buffer]);}return true;}}registerProcessor('mic-proc',MicProcessor);`;
+    const blob=new Blob([workletCode],{type:'application/javascript'});
+    const url=URL.createObjectURL(blob);
+    await audioCtx.audioWorklet.addModule(url);
+    URL.revokeObjectURL(url);
+    const node=new AudioWorkletNode(audioCtx,'mic-proc');
+    node.port.onmessage=ev=>{if(humeWS&&humeWS.readyState===1)humeWS.send(ev.data);};
+    src.connect(node);node.connect(audioCtx.destination);
+    scriptProc=node;
+  }catch(workletErr){
+    // fallback ScriptProcessor para browsers antigos
+    const proc=audioCtx.createScriptProcessor(4096,1,1);
+    proc.onaudioprocess=e=>{
+      if(!humeWS||humeWS.readyState!==1)return;
+      const inp=e.inputBuffer.getChannelData(0),out=new Int16Array(inp.length);
+      for(let i=0;i<inp.length;i++)out[i]=Math.max(-32768,Math.min(32767,Math.round(inp[i]*32767)));
+      humeWS.send(out.buffer);
+    };
+    src.connect(proc);proc.connect(audioCtx.destination);
+    scriptProc=proc;
+  }
 }
 function queueAudio(buf){playbackQueue.push(buf);if(!isPlaying)playNext();}
 async function playNext(){

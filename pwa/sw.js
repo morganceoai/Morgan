@@ -1,4 +1,4 @@
-const CACHE = 'morgan-pwa-v4';
+const CACHE = 'morgan-pwa-v5';
 const OFFLINE_URLS = ['/pwa/', '/pwa/index.html'];
 
 self.addEventListener('install', e => {
