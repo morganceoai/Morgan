@@ -187,6 +187,72 @@ def enviar_outreach_email(destinatario_email: str, assunto: str, corpo: str, nom
         return f"Erro ao enviar email: {e}"
 
 
+def otimizar_listings_etsy(nicho: str = "planners digitais") -> str:
+    """
+    Pesquisa keywords de alto tráfego Etsy e gera títulos + tags optimizados.
+    Proposta para aprovação — não publica directamente.
+    """
+    try:
+        from tavily import TavilyClient
+        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
+        r1 = c.search(f"etsy SEO keywords {nicho} 2026 high traffic tags titles best sellers", max_results=3, search_depth="basic")
+        r2 = c.search(f"etsy {nicho} top listings titles tags Portuguese Spanish", max_results=3, search_depth="basic")
+        snippets = []
+        for r in [r1, r2]:
+            snippets += [res.get("content", "")[:300] for res in (r.get("results") or [])[:3] if res.get("content")]
+        dados_seo = "\n---\n".join(snippets[:5])
+    except Exception as e:
+        dados_seo = f"(pesquisa indisponível: {e})"
+
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            system="És o Marketeer do Morgan. Especializas-te em SEO para Etsy. Geras títulos e tags de alta conversão.",
+            messages=[{"role": "user", "content": f"""Nicho: {nicho}
+Dados de pesquisa SEO:
+{dados_seo}
+
+Gera 3 propostas de optimização para listings Etsy:
+1. Título optimizado (max 140 chars, keywords à frente)
+2. 13 tags (separadas por vírgula)
+3. Primeira frase da descrição (gancho de 1 linha)
+
+Formato para cada proposta:
+TÍTULO: ...
+TAGS: ...
+DESCRIÇÃO: ...
+
+PT-PT. Sem emojis."""}]
+        )
+        return resp.content[0].text
+    except Exception as e:
+        return f"Erro ao gerar optimizações: {e}"
+
+
+def plano_pinterest_semanal(negocio: str = "PlannerAtlas", nicho: str = "planners digitais") -> str:
+    """Gera um plano de pins Pinterest para a semana — 5 pins com descrições e hashtags."""
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=500,
+            system="Crias planos de conteúdo Pinterest para lojas Etsy. Foco em pins que convertem em visitas.",
+            messages=[{"role": "user", "content": f"""Negócio: {negocio} — loja Etsy de {nicho}
+Mercados: PT, ES, BR
+
+Cria um plano de 5 pins para esta semana:
+- Título do pin (max 100 chars)
+- Descrição (max 200 chars, inclui hashtags relevantes)
+- Tipo de imagem sugerida
+
+Formato: PIN 1: | Título: | Descrição: | Imagem:
+PT-PT. Foco em descoberta orgânica."""}]
+        )
+        return resp.content[0].text
+    except Exception as e:
+        return f"Erro: {e}"
+
+
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
     """Regista uma nova campanha de marketing."""
     state = _load_state()
@@ -266,6 +332,29 @@ TOOLS = [
         }
     },
     {
+        "name": "otimizar_listings_etsy",
+        "description": "Pesquisa keywords de alto tráfego Etsy e gera propostas de títulos + tags optimizados para o nicho.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nicho": {"type": "string", "description": "Nicho da loja (ex: 'planners digitais', 'templates organização')"}
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "plano_pinterest_semanal",
+        "description": "Gera plano de 5 pins Pinterest para a semana com títulos, descrições e hashtags.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "negocio": {"type": "string", "description": "Nome do negócio (ex: 'PlannerAtlas')"},
+                "nicho": {"type": "string", "description": "Nicho de produto (ex: 'planners digitais')"}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "enviar_outreach_email",
         "description": "Envia um email de outreach personalizado via Gmail. Limite: 50 emails/dia. Requer confirmação do Vasco antes de enviar.",
         "input_schema": {
@@ -287,6 +376,8 @@ TOOL_MAP = {
     "redigir_mensagem_outreach": lambda a: redigir_mensagem_outreach(**a),
     "registar_campanha": lambda a: registar_campanha(**a),
     "pesquisar_pinterest": lambda a: pesquisar_pinterest(**a),
+    "otimizar_listings_etsy": lambda a: otimizar_listings_etsy(**a),
+    "plano_pinterest_semanal": lambda a: plano_pinterest_semanal(**a),
     "enviar_outreach_email": lambda a: enviar_outreach_email(**a),
 }
 

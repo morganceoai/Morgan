@@ -374,6 +374,31 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
+    # Aprovação / rejeição de oportunidades Scout
+    import re as _re
+    _m_aprovo = _re.match(r"^aprovo?\s+(.+)$", msg_lower.strip())
+    _m_rejeito = _re.match(r"^rejeito?\s+(.+)$", msg_lower.strip())
+    if _m_aprovo:
+        nome_op = _m_aprovo.group(1).strip()
+        try:
+            from approval_pipeline import executar_oportunidade_aprovada
+            reply = executar_oportunidade_aprovada(nome_op, f"Aprovado pelo Vasco: {nome_op}")
+        except Exception as e:
+            reply = f"Erro ao aprovar: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if _m_rejeito:
+        nome_op = _m_rejeito.group(1).strip()
+        try:
+            from scout_memory import arquivar_oportunidade
+            arquivar_oportunidade(nome_op)
+            reply = f"Oportunidade '{nome_op}' arquivada."
+        except Exception:
+            reply = f"Oportunidade '{nome_op}' marcada como rejeitada."
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
     # Reset explícito para CEO
     if any(k in msg_lower for k in ["morgan ceo", "volta ao morgan", "ceo", "morgan principal"]):
         _desktop_agent["current"] = "ceo"
@@ -1422,16 +1447,23 @@ def _dedup_mark(chave: str):
 
 
 def _should_run_briefing() -> bool:
+    # Briefing matinal apenas às 7h — conteúdo via Coach
     if _time.time() - _HEARTBEAT_START < 120:
         return False
     if is_pausado():
         return False
     agora = _agora_lisboa()
-    from config_service import load_config
-    horas = load_config().get("briefing_horas", [7, 20])
-    if agora.hour not in horas:
+    if agora.hour != 7:
         return False
     return not _dedup_check(f"push_briefing_{agora.strftime('%Y-%m-%d_%H')}")
+
+
+def _should_run_scout_melhorias() -> bool:
+    # Scout Missão B — melhorias a agentes existentes — quarta-feira às 20h
+    agora = _agora_lisboa()
+    if agora.weekday() != 2 or agora.hour != 20:
+        return False
+    return not _dedup_check(f"scout_melhorias_{agora.strftime('%Y-%W')}")
 
 
 def _should_run_scout() -> bool:
@@ -1441,108 +1473,74 @@ def _should_run_scout() -> bool:
     return not _dedup_check(f"push_scout_{agora.strftime('%Y-%W')}")
 
 
-def _build_briefing_prompt(hora: int, extra: dict = None) -> str:
-    memoria = load_memory()
-    scout_data = load_scout()
-    ops = list(scout_data.get("oportunidades", {}).keys())[:3]
-    ops_str = ", ".join(ops) if ops else "nenhuma ainda"
-    aprovadas = scout_data.get("aprovadas", [])
-    aprovadas_str = ", ".join(aprovadas[:3]) if aprovadas else "nenhuma"
-    periodo = "matinal" if hora == 7 else "noturno"
-
-    extra = extra or {}
-    meteo = extra.get("meteo", "")
-    bot_str = extra.get("bot", "")
-    proximo_jogo_str = extra.get("proximo_jogo", "")
-
-    blocos = [f"Memória do Vasco:\n{memoria}"]
-    if meteo:
-        blocos.append(f"Tempo em Moreira de Cónegos: {meteo}")
-    if bot_str:
-        blocos.append(f"Trading bot: {bot_str}")
-    if proximo_jogo_str:
-        blocos.append(f"Moreirense: {proximo_jogo_str}")
-    blocos.append(f"Scout — oportunidades activas: {ops_str}")
-    blocos.append(f"Scout — oportunidades aprovadas: {aprovadas_str}")
-
-    contexto = "\n\n".join(blocos)
-
-    return f"""És o Morgan. Gera o briefing {periodo} para o Vasco. Hora: {hora}h.
-
-{contexto}
-
-Instruções:
-- Directamente ao ponto, sem saudações longas
-- Se for 7h: foco no que fazer hoje, estado do bot de trading, próximo jogo se relevante, oportunidade mais prioritária do Scout
-- Se for 20h: resumo do que aconteceu, o que ficou por fazer, preparação para amanhã, menção ao resultado se houve jogo hoje
-- Máximo 7 linhas. Sem emojis. Português europeu."""
-
-
 async def _run_briefing(hora: int):
+    """Briefing matinal às 7h — gerado pelo Coach com dados de futebol + sistema."""
     loop = asyncio.get_event_loop()
+    agora = _agora_lisboa()
 
-    # Recolher dados em paralelo para o briefing enriquecido
-    extra = {}
+    # Dados em paralelo
+    meteo = ""
+    bot_str = ""
     try:
         async with httpx.AsyncClient() as c:
             r = await c.get("https://wttr.in/Moreira+de+Conegos?format=%t+%C", timeout=4)
-            extra["meteo"] = r.text.strip()
+            meteo = r.text.strip()
     except Exception:
         pass
 
     try:
         from trading_bot import get_status as _bot_status
         b = _bot_status()
-        extra["bot"] = (
+        bot_str = (
             f"{'ATIVO' if b.get('active') else 'PARADO'} | "
             f"PnL hoje: {b.get('pnl_today', 0):+.2f} USDT | "
-            f"PnL total: {b.get('pnl_total', 0):+.2f} USDT | "
-            f"Sinal: {b.get('signal', 'hold')}"
+            f"PnL total: {b.get('pnl_total', 0):+.2f} USDT"
         )
     except Exception:
         pass
 
-    try:
-        headers = {"x-apisports-key": API_FOOTBALL_KEY}
-        async with httpx.AsyncClient() as c:
-            r = await c.get(
-                "https://v3.football.api-sports.io/fixtures",
-                params={"team": 229, "next": 1, "season": 2026},
-                headers=headers, timeout=5
-            )
-            data = r.json()
-            if data.get("response"):
-                f = data["response"][0]
-                home = f["teams"]["home"]["name"]
-                away = f["teams"]["away"]["name"]
-                adv = away if home == "Moreirense" else home
-                data_j = f["fixture"]["date"][:10]
-                hora_j = f["fixture"]["date"][11:16]
-                loc = "casa" if home == "Moreirense" else "fora"
-                liga = f["league"]["name"]
-                extra["proximo_jogo"] = f"próximo jogo: {adv} ({loc}) — {data_j} {hora_j} | {liga}"
-    except Exception:
-        pass
+    from sistema_service import resumo_sistema
+    from scout_memory import load as load_scout_mem
 
-    prompt = _build_briefing_prompt(hora, extra)
-    # Gera reply com Claude
+    scout_data = load_scout_mem() if callable(getattr(__import__("scout_memory"), "load", None)) else load_scout()
+    aprovadas = scout_data.get("aprovadas", [])
+    oport_top = list(scout_data.get("oportunidades", {}).keys())[:2]
+
+    prompt = f"""És o Coach do Morgan — assistente pessoal do Vasco Botelho da Costa, treinador do Moreirense FC.
+Gera o briefing matinal das 7h. Data: {agora.strftime('%d/%m/%Y')}.
+
+DADOS DO DIA:
+{f'Tempo em Moreira de Cónegos: {meteo}' if meteo else ''}
+{f'Trading bot: {bot_str}' if bot_str else ''}
+Scout — oportunidades aprovadas: {', '.join(aprovadas[:2]) if aprovadas else 'nenhuma'}
+Scout — top oportunidades activas: {', '.join(oport_top) if oport_top else 'nenhuma nova'}
+
+SISTEMA:
+{resumo_sistema()}
+
+MEMÓRIA DO VASCO:
+{load_memory()}
+
+Instruções:
+- Começa com o que é mais urgente para hoje (futebol, negócios, sistema)
+- Se houver jogo hoje ou amanhã, é o primeiro ponto
+- Estado do trading bot (1 linha)
+- Oportunidade mais prioritária (1 linha)
+- Tom direto, como um braço direito fala ao chefe de manhã
+- Máximo 6 linhas. Sem emojis. Português europeu."""
+
     response = await loop.run_in_executor(
         None,
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=300,
-            system=get_system_prompt(),
+            system="És o Coach do Morgan, assistente pessoal do Vasco. Briefings directos, sem rodeios.",
             messages=[{"role": "user", "content": prompt}]
         )
     )
     texto = response.content[0].text if response.content else "Briefing indisponível."
-    periodo = "Briefing das 7h" if hora == 7 else "Briefing das 20h"
-    # Primeira linha como título, resto como corpo
-    linhas = texto.strip().split("\n", 1)
-    titulo = f"Morgan — {periodo}"
-    corpo = texto.strip()
-    send_push(title=titulo, body=corpo[:200], url="/pwa/")
-    _dedup_mark(f"push_briefing_{_agora_lisboa().strftime('%Y-%m-%d_%H')}")
+    send_push(title="Morgan — Bom dia", body=texto[:200], url="/pwa/")
+    _dedup_mark(f"push_briefing_{agora.strftime('%Y-%m-%d_%H')}")
 
 
 async def _run_scout_push():
@@ -1559,6 +1557,61 @@ async def _run_scout_push():
         url="/pwa/"
     )
     _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
+
+
+async def _run_scout_melhorias():
+    """Scout Missão B — quarta-feira 20h. Pesquisa melhorias para agentes existentes."""
+    loop = asyncio.get_event_loop()
+    from sistema_service import get_agentes_ativos
+
+    agentes = get_agentes_ativos()
+    agentes_lista = "\n".join(f"- {v['nome']}: {v['descricao']}" for v in agentes.values())
+
+    prompt = f"""És o Scout do Morgan. A tua Missão B é encontrar melhorias para os agentes existentes.
+
+AGENTES ACTUAIS:
+{agentes_lista}
+
+Para cada agente, pesquisa:
+1. Existe uma API ou biblioteca mais recente que melhore as suas capacidades?
+2. Há uma ferramenta nova (lançada nos últimos 3 meses) que valha integrar?
+3. O que os founders do IndieHackers/HN estão a usar para automatizar tarefas semelhantes?
+
+Responde com uma lista concisa de melhorias concretas, por agente.
+Formato: [Agente] — [Melhoria] — [Impacto estimado]
+Máximo 8 sugestões. Português europeu."""
+
+    try:
+        from tools import pesquisar_web
+        pesquisa = await loop.run_in_executor(
+            None,
+            lambda: pesquisar_web("new AI tools automation agents 2026 indie hackers")
+        )
+    except Exception:
+        pesquisa = ""
+
+    if pesquisa:
+        prompt += f"\n\nDADOS DE PESQUISA:\n{pesquisa[:800]}"
+
+    response = await loop.run_in_executor(
+        None,
+        lambda: claude.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=600,
+            system="És o Scout do Morgan. Foco em melhorias práticas e implementáveis.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+    )
+    texto = response.content[0].text if response.content else "Scout Missão B indisponível."
+
+    send_push(
+        title="Morgan Scout — Melhorias de agentes",
+        body=texto[:200],
+        url="/pwa/"
+    )
+
+    report_file = Path(__file__).parent / "memory" / f"scout_melhorias_{_agora_lisboa().strftime('%Y-%m-%d')}.txt"
+    report_file.write_text(texto, encoding="utf-8")
 
 
 def _should_run_report() -> bool:
@@ -1615,47 +1668,81 @@ async def _run_daily_report():
         scout_data = load_scout()
         aprovadas = scout_data.get("aprovadas", [])
         ops_str = ", ".join(aprovadas[:3]) if aprovadas else "nenhuma aprovada"
+        oport_novas = list(scout_data.get("oportunidades", {}).keys())[:2]
+        oport_str = ", ".join(oport_novas) if oport_novas else "nenhuma nova"
     except Exception:
         ops_str = "indisponível"
+        oport_str = "indisponível"
 
-    prompt = f"""És o Morgan. Gera o relatório de fim de dia para o Vasco.
+    # Estado Etsy / Operator
+    etsy_str = "indisponível"
+    try:
+        from operator_agent import _etsy_dados_reais
+        etsy_raw = await loop.run_in_executor(None, _etsy_dados_reais)
+        etsy_str = etsy_raw[:300]
+    except Exception:
+        pass
+
+    # Estado do sistema (agentes + negócios activos)
+    from sistema_service import resumo_sistema
+    sistema_str = resumo_sistema()
+
+    # Relatório de logs / erros do dia (últimas 20 linhas do error log)
+    erros_str = ""
+    try:
+        err_file = Path(__file__).parent / "morgan_error.log"
+        if err_file.exists():
+            linhas_err = err_file.read_text().strip().splitlines()[-10:]
+            erros_str = "\n".join(linhas_err) if linhas_err else "Sem erros registados."
+    except Exception:
+        erros_str = "Log de erros não disponível."
+
+    prompt = f"""És o Morgan CEO. Gera o relatório de fim de dia para o Vasco.
 Data: {agora.strftime('%d/%m/%Y')}
+
+SISTEMA MORGAN:
+{sistema_str}
 
 CONVERSAS DE HOJE ({n_trocas} trocas):
 {resumo_conv}
 
-TRADING BOT:
+CFO — TRADING BOT:
 {bot_str}
 
-SCOUT — OPORTUNIDADES APROVADAS:
-{ops_str}
+OPERATOR — ETSY / NEGÓCIOS:
+{etsy_str}
+
+SCOUT:
+Oportunidades aprovadas: {ops_str}
+Oportunidades activas: {oport_str}
+
+ERROS DO DIA:
+{erros_str}
 
 Instruções:
-- Resume em linguagem humana o que aconteceu hoje
-- O que foi feito, o que ficou por fazer, decisões tomadas
-- Estado do bot de trading e se houve algo relevante
+- Secção por agente/área: CFO, Operator, Scout, sistema
+- O que aconteceu hoje, o que ficou por fazer, decisões tomadas
+- Alertas se houver erros ou anomalias
 - O que o Vasco deve ter em mente amanhã
-- Tom direto, sem rodeios. Máximo 8 linhas. Sem emojis. Português europeu."""
+- Tom direto, como um relatório de CEO. Máximo 10 linhas. Sem emojis. Português europeu."""
 
     response = await loop.run_in_executor(
         None,
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=400,
+            max_tokens=500,
             system=get_system_prompt(),
             messages=[{"role": "user", "content": prompt}]
         )
     )
     texto = response.content[0].text if response.content else "Relatório indisponível."
 
-    # Push — título curto, corpo truncado (push tem limite de ~200 chars visíveis)
     send_push(
         title=f"Morgan — Relatório {agora.strftime('%d/%m')}",
         body=texto[:200],
         url="/pwa/"
     )
 
-    # Guardar relatório completo em ficheiro para consulta posterior
     report_file = Path(__file__).parent / "memory" / f"report_{hoje}.txt"
     report_file.write_text(texto, encoding="utf-8")
 
@@ -1753,9 +1840,14 @@ async def _heartbeat_loop():
             if _should_run_report():
                 await _run_daily_report()
 
-            # Scout dominical às 20h
+            # Scout Missão A — oportunidades de negócio (domingo 20h)
             if _should_run_scout():
                 await _run_scout_push()
+
+            # Scout Missão B — melhorias a agentes existentes (quarta 20h)
+            if _should_run_scout_melhorias():
+                _dedup_mark(f"scout_melhorias_{agora.strftime('%Y-%W')}")
+                await _run_scout_melhorias()
 
             # Plano semanal PlannerAtlas — segunda-feira às 8h
             chave_etsy = f"etsy_plano_{agora.strftime('%Y-%W')}"

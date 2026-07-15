@@ -1279,6 +1279,55 @@ TOOLS = [
             },
             "required": ["nome"]
         }
+    },
+    {
+        "name": "criar_conta_plataforma",
+        "description": "Usa browser automation (Playwright) para criar conta numa plataforma web. Preenche formulário de registo e submete. Requer aprovação do Vasco. Não automatiza 2FA.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "plataforma": {"type": "string", "description": "Nome da plataforma (ex: 'Gumroad', 'Pinterest')"},
+                "url_registo": {"type": "string", "description": "URL da página de registo"},
+                "email": {"type": "string", "description": "Email a usar (conta Zoho)"},
+                "password": {"type": "string", "description": "Password a definir"},
+                "dados_extra": {"type": "object", "description": "Campos adicionais: nome, empresa, etc.", "additionalProperties": {"type": "string"}}
+            },
+            "required": ["plataforma", "url_registo", "email", "password"]
+        }
+    },
+    {
+        "name": "verificar_email_confirmacao",
+        "description": "Verifica o email Zoho à procura de um email de confirmação de conta. Extrai e devolve o URL de confirmação.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "remetente_keywords": {"type": "array", "items": {"type": "string"}, "description": "Palavras-chave do remetente (ex: ['etsy', 'noreply'])"},
+                "assunto_keywords": {"type": "array", "items": {"type": "string"}, "description": "Palavras-chave do assunto (ex: ['confirm', 'verify'])"},
+                "minutos": {"type": "integer", "description": "Janela de tempo em minutos (padrão: 10)"}
+            },
+            "required": ["remetente_keywords"]
+        }
+    },
+    {
+        "name": "registar_negocio_sistema",
+        "description": "Regista um novo negócio no sistema Morgan — propaga conhecimento a todos os agentes (CEO, Marketeer, Operator, Solver, CFO) via Mem0.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "chave": {"type": "string", "description": "Identificador único em minúsculas sem espaços (ex: 'directorio_pt')"},
+                "nome": {"type": "string", "description": "Nome legível do negócio"},
+                "tipo": {"type": "string", "description": "Tipo: etsy, saas, servico, directorio, etc."},
+                "plataforma": {"type": "string", "description": "Plataforma principal (ex: etsy.com, gumroad.com)"},
+                "descricao": {"type": "string", "description": "Descrição do que o negócio faz"},
+                "email": {"type": "string", "description": "Email associado ao negócio"}
+            },
+            "required": ["chave", "nome", "tipo", "plataforma", "descricao"]
+        }
+    },
+    {
+        "name": "estado_sistema",
+        "description": "Devolve o estado completo do sistema Morgan: agentes activos, negócios activos, contas Zoho.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
     }
 ]
 
@@ -1331,5 +1380,17 @@ TOOL_FUNCTIONS = {
             __import__('creator_agent').deploy_agente(nome, mensagem_commit),
             ensure_ascii=False, indent=2
         )
+    ),
+    "criar_conta_plataforma": lambda plataforma, url_registo, email, password, dados_extra=None: (
+        __import__('automation_service').criar_conta_plataforma(plataforma, url_registo, email, password, dados_extra)
+    ),
+    "verificar_email_confirmacao": lambda remetente_keywords, assunto_keywords=None, minutos=10: (
+        __import__('automation_service').verificar_email_confirmacao(remetente_keywords, assunto_keywords, minutos) or "Nenhum email de confirmação encontrado ainda."
+    ),
+    "registar_negocio_sistema": lambda chave, nome, tipo, plataforma, descricao, email="": (
+        __import__('sistema_service').registar_negocio(chave, nome, tipo, plataforma, descricao, email)
+    ),
+    "estado_sistema": lambda: __import__('json').dumps(
+        __import__('sistema_service').get_estado(), ensure_ascii=False, indent=2
     ),
 }
