@@ -1,0 +1,308 @@
+"""
+Morgan Operator — Agente de operações do império BC Industries.
+Monitoriza e gere todos os negócios activos: Etsy (PlannerAtlas), directórios italianos
+de terapeutas e tutores, e futuros negócios. Acompanha receita, stock, reviews, e
+estado de cada negócio por fase. Reporta ao CEO com frequência semanal ou quando
+algo relevante acontece. A última decisão é sempre do Vasco.
+"""
+import os
+import json
+import logging
+from pathlib import Path
+from datetime import datetime, date
+import anthropic
+
+logger = logging.getLogger(__name__)
+
+MEMORY_DIR = Path(__file__).parent / "memory"
+OPERATOR_STATE_FILE = MEMORY_DIR / "operator_state.json"
+
+MEMORY_DIR.mkdir(exist_ok=True)
+
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+
+SYSTEM_PROMPT = """És o Morgan Operator, o agente de operações do império BC Industries.
+
+O teu papel é gerir, monitorizar e optimizar todos os negócios activos do Vasco, garantindo
+que cada um progride conforme o plano e que o CEO está sempre informado.
+
+NEGÓCIOS ACTIVOS:
+
+1. PlannerAtlas (Etsy)
+   - Loja Etsy com planners digitais em PT, ES, DE
+   - Nichos: produtividade, bullet journal, organização pessoal
+   - Métricas chave: vendas semanais, receita, reviews, tráfego, taxa de conversão
+   - Alertas: queda de vendas >20%, review negativa, produto sem stock
+
+2. Directórios Italianos
+   - Directórios de terapeutas e tutores em Itália
+   - Métricas chave: listagens activas, leads gerados, taxa de conversão, renovações
+   - Alertas: listagem expirada, queda de leads, problema de pagamento
+
+3. Futuros Negócios
+   - Registas e acompanhas novos negócios quando o Vasco os introduz
+   - Cada negócio tem uma fase: validação → MVP → lançamento → crescimento → escala
+
+RESPONSABILIDADES:
+
+Monitorização:
+- Acompanhar vendas e receita de todas as lojas Etsy activas
+- Verificar estado das listagens nos directórios italianos
+- Registar reviews e identificar padrões (positivos e negativos)
+- Acompanhar stock de produtos digitais (variantes, actualizações)
+- Verificar métricas de tráfego e conversão
+
+Análise e Acção:
+- Identificar quedas de desempenho e diagnosticar causas prováveis
+- Propor acções correctivas concretas: ajuste de preço, SEO, novo produto, promoção
+- Sugerir novos produtos com base em tendências e lacunas de mercado
+- Comparar desempenho entre períodos (semana vs semana anterior, mês vs mês)
+- Calcular ROI e margens de cada negócio
+
+Reporting ao CEO:
+- Relatório semanal com KPIs de todos os negócios
+- Alertas imediatos para eventos críticos (queda >30% vendas, review <3 estrelas)
+- Resumo do estado de cada negócio por fase
+- Recomendações prioritizadas por impacto estimado
+
+Gestão de Fases:
+- validação: testar hipótese de mercado, custo zero ou mínimo
+- MVP: primeiro produto funcional, primeiras vendas
+- lançamento: marketing activo, optimização de conversão
+- crescimento: escala, novos produtos, novos mercados
+- escala: automatização, delegação, expansão geográfica
+
+FORMATO DOS RELATÓRIOS:
+
+Relatório Semanal:
+- Data e período coberto
+- Resumo executivo (3 linhas máximo)
+- KPIs por negócio (tabela: negócio | receita | vendas | reviews | fase)
+- Top 3 prioridades da semana
+- Alertas activos
+- Recomendações para o CEO decidir
+
+Alerta Imediato:
+- Tipo de alerta e negócio afectado
+- Dados concretos (números, percentagens)
+- Causa provável
+- Acção recomendada
+- Urgência: ALTA / MÉDIA / BAIXA
+
+REGRAS:
+- Reportas sempre em português europeu
+- Usas dados concretos, nunca generalizações vagas
+- Propões acções específicas e executáveis, não conselhos genéricos
+- Quando não tens dados suficientes, dizes explicitamente o que falta
+- Nunca inventas métricas — se não sabes, dizes que precisas dos dados
+- Manténs registo histórico de todos os relatórios e alertas
+- A última decisão é sempre do Vasco
+"""
+
+
+def _load_state() -> dict:
+    try:
+        return json.loads(OPERATOR_STATE_FILE.read_text())
+    except Exception:
+        return {
+            "businesses": {
+                "planneratlas_etsy": {
+                    "name": "PlannerAtlas (Etsy)",
+                    "phase": "lançamento",
+                    "metrics": {
+                        "weekly_revenue": 0.0,
+                        "weekly_sales": 0,
+                        "total_revenue": 0.0,
+                        "total_sales": 0,
+                        "avg_review": 0.0,
+                        "review_count": 0,
+                        "last_updated": "",
+                    },
+                    "alerts": [],
+                    "notes": "",
+                },
+                "diretorios_italianos": {
+                    "name": "Directórios Italianos (Terapeutas/Tutores)",
+                    "phase": "validação",
+                    "metrics": {
+                        "active_listings": 0,
+                        "leads_this_week": 0,
+                        "total_leads": 0,
+                        "conversion_rate": 0.0,
+                        "monthly_revenue": 0.0,
+                        "last_updated": "",
+                    },
+                    "alerts": [],
+                    "notes": "",
+                },
+            },
+            "reports": [],
+            "alerts_history": [],
+            "last_weekly_report": "",
+            "last_check": "",
+        }
+
+
+def _save_state(state: dict):
+    OPERATOR_STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+
+
+def _add_report(state: dict, report: dict):
+    state["reports"].append(report)
+    state["reports"] = state["reports"][-52:]
+
+
+def _add_alert(state: dict, alert: dict):
+    state["alerts_history"].append(alert)
+    state["alerts_history"] = state["alerts_history"][-200:]
+
+
+def _build_context(state: dict) -> str:
+    businesses = state.get("businesses", {})
+    last_report = state.get("last_weekly_report", "nunca")
+    last_check = state.get("last_check", "nunca")
+
+    lines = [
+        f"Data actual: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        f"Último relatório semanal: {last_report}",
+        f"Última verificação: {last_check}",
+        "",
+        "ESTADO ACTUAL DOS NEGÓCIOS:",
+    ]
+
+    for key, biz in businesses.items():
+        lines.append(f"\n--- {biz['name']} ---")
+        lines.append(f"Fase: {biz['phase']}")
+        metrics = biz.get("metrics", {})
+        for k, v in metrics.items():
+            if k != "last_updated":
+                lines.append(f"  {k}: {v}")
+        if metrics.get("last_updated"):
+            lines.append(f"  Última actualização: {metrics['last_updated']}")
+        alerts = biz.get("alerts", [])
+        if alerts:
+            lines.append(f"  Alertas activos: {len(alerts)}")
+            for a in alerts[-3:]:
+                lines.append(f"    - {a}")
+        if biz.get("notes"):
+            lines.append(f"  Notas: {biz['notes']}")
+
+    recent_alerts = state.get("alerts_history", [])[-5:]
+    if recent_alerts:
+        lines.append("\nÚLTIMOS ALERTAS:")
+        for a in recent_alerts:
+            lines.append(f"  [{a.get('date', '')}] {a.get('type', '')} — {a.get('message', '')}")
+
+    recent_reports = state.get("reports", [])[-3:]
+    if recent_reports:
+        lines.append("\nÚLTIMOS RELATÓRIOS:")
+        for r in recent_reports:
+            lines.append(f"  [{r.get('date', '')}] {r.get('summary', '')}")
+
+    return "\n".join(lines)
+
+
+def _check_weekly_report_needed(state: dict) -> bool:
+    last = state.get("last_weekly_report", "")
+    if not last:
+        return True
+    try:
+        last_date = datetime.strptime(last, "%Y-%m-%d").date()
+        delta = date.today() - last_date
+        return delta.days >= 7
+    except Exception:
+        return True
+
+
+def _parse_and_update_state(state: dict, reply: str, msg: str):
+    state["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    lower_msg = msg.lower()
+    lower_reply = reply.lower()
+
+    report_keywords = ["relatório semanal", "weekly report", "kpis", "resumo executivo"]
+    if any(kw in lower_reply for kw in report_keywords):
+        today = date.today().strftime("%Y-%m-%d")
+        state["last_weekly_report"] = today
+        summary_lines = [l for l in reply.split("\n") if l.strip()]
+        summary = summary_lines[0][:120] if summary_lines else "Relatório gerado"
+        _add_report(state, {
+            "date": today,
+            "summary": summary,
+            "type": "weekly",
+        })
+
+    alert_keywords = ["alerta", "queda", "urgência", "crítico", "problema"]
+    if any(kw in lower_reply for kw in alert_keywords):
+        _add_alert(state, {
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "type": "auto-detectado",
+            "message": msg[:100],
+        })
+
+    for biz_key in state.get("businesses", {}):
+        biz_name = state["businesses"][biz_key]["name"].lower()
+        if any(part in lower_msg or part in lower_reply for part in biz_name.split()):
+            phases = ["validação", "mvp", "lançamento", "crescimento", "escala"]
+            for phase in phases:
+                if phase in lower_reply:
+                    state["businesses"][biz_key]["phase"] = phase
+                    break
+
+
+def get_operator_reply(msg: str) -> str:
+    logger.info("operator_agent recebeu mensagem: %s", msg[:80])
+
+    state = _load_state()
+    context = _build_context(state)
+
+    needs_weekly = _check_weekly_report_needed(state)
+    weekly_hint = ""
+    if needs_weekly:
+        weekly_hint = "\n[SISTEMA: Já passaram 7 dias desde o último relatório semanal. Considera incluir um relatório semanal completo na tua resposta se for adequado.]"
+
+    messages = [
+        {
+            "role": "user",
+            "content": f"{context}\n{weekly_hint}\n\nMensagem do CEO:\n{msg}",
+        }
+    ]
+
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=2048,
+            system=SYSTEM_PROMPT,
+            messages=messages,
+        )
+        reply = response.content[0].text
+        logger.info("operator_agent respondeu com %d caracteres", len(reply))
+    except Exception as e:
+        logger.error("Erro ao chamar Claude: %s", e)
+        reply = f"Erro ao processar pedido: {e}"
+
+    _parse_and_update_state(state, reply, msg)
+    _save_state(state)
+
+    return reply
+
+
+def run_operator():
+    print("Morgan Operator — modo interactivo")
+    print("Escreve 'sair' para terminar.\n")
+    while True:
+        try:
+            msg = input("CEO: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nA encerrar Operator.")
+            break
+        if msg.lower() in ("sair", "exit", "quit"):
+            break
+        if not msg:
+            continue
+        reply = get_operator_reply(msg)
+        print(f"\nOperator: {reply}\n")
+
+
+if __name__ == "__main__":
+    run_operator()

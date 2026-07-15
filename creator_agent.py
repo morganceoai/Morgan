@@ -675,6 +675,294 @@ Tom: inspiracional, produtivo, minimalista. Público-alvo: estudantes e profissi
     return r.content[0].text if r.content else "Conteúdo indisponível."
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CREATOR META-TOOL — Constrói e faz deploy de novos agentes de forma autónoma
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import subprocess
+import textwrap
+
+MORGAN_DIR = Path(__file__).parent
+MAC_MINI_HOST = "bcvertex@100.100.15.110"
+MAC_MINI_MORGAN_DIR = "/Users/bcvertex/Morgan"
+
+SYSTEM_PROMPT_META_CREATOR = """És o Morgan Creator, um meta-agente especializado em construir outros agentes Python.
+Tens acesso ao código-fonte de todos os agentes existentes como referência.
+Segues sempre os padrões do projecto:
+- Ficheiro standalone com funções públicas: get_X_reply(msg) ou run_X()
+- Usa anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+- System prompt em português europeu com regras claras
+- Retorna sempre uma string
+- Ferramentas via TOOLS/TOOL_FUNCTIONS de tools.py se necessário
+- Logging com logger = logging.getLogger(__name__)
+- Estado persistido em memory/X_state.json se necessário
+- Nunca uses emojis no código. Código limpo, sem comentários desnecessários.
+A última decisão é sempre do Vasco."""
+
+
+def listar_agentes() -> list[str]:
+    """Lista todos os ficheiros de agente Python no projecto."""
+    agentes = []
+    for f in sorted(MORGAN_DIR.glob("*_agent.py")):
+        agentes.append(f.name)
+    return agentes
+
+
+def ler_agente(nome_ficheiro: str) -> str:
+    """Lê o código de um agente existente (para usar como referência/template)."""
+    f = MORGAN_DIR / nome_ficheiro
+    if not f.exists():
+        return f"Ficheiro {nome_ficheiro} não encontrado."
+    return f.read_text(encoding="utf-8")
+
+
+def gerar_codigo_agente(nome: str, descricao: str, capacidades: list[str]) -> str:
+    """
+    Usa Claude para gerar o código Python completo de um novo agente.
+    nome: nome do agente (ex: 'operator')
+    descricao: o que o agente faz (ex: 'Gere todas as lojas Etsy e directórios')
+    capacidades: lista de capacidades (ex: ['gerir listagens Etsy', 'monitorizar receita'])
+    """
+    import anthropic as _a
+
+    # Ler agentes existentes como referência
+    refs = []
+    for ag_file in ["cfo_agent.py", "coach_agent.py", "marketeer_agent.py"]:
+        codigo = ler_agente(ag_file)
+        if not codigo.startswith("Ficheiro"):
+            refs.append(f"=== {ag_file} ===\n{codigo[:1500]}")
+
+    referencias = "\n\n".join(refs)
+    caps_str = "\n".join(f"- {c}" for c in capacidades)
+
+    prompt = f"""Cria o ficheiro Python completo para um novo agente Morgan chamado '{nome}_agent.py'.
+
+DESCRIÇÃO DO AGENTE:
+{descricao}
+
+CAPACIDADES OBRIGATÓRIAS:
+{caps_str}
+
+AGENTES EXISTENTES COMO REFERÊNCIA DE PADRÕES:
+{referencias}
+
+REQUISITOS TÉCNICOS:
+1. Função principal: get_{nome}_reply(msg: str) -> str
+2. System prompt em português europeu detalhado, com regras claras
+3. Integração com Claude claude-sonnet-4-6 via anthropic SDK
+4. Se precisar de ferramentas externas, usar TOOLS/TOOL_FUNCTIONS de tools.py
+5. Se precisar de estado persistente, usar memory/{nome}_state.json
+6. Logging com logger = logging.getLogger(__name__)
+7. Docstring no topo do ficheiro a explicar o propósito
+8. Código limpo, sem comentários desnecessários, sem emojis
+
+Devolve APENAS o código Python completo, sem explicações antes ou depois.
+Começa com a docstring do módulo (\"\"\"...\"\"\") e termina com if __name__ == \"__main__\":"""
+
+    client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=4096,
+        system=SYSTEM_PROMPT_META_CREATOR,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    codigo = response.content[0].text if response.content else ""
+
+    # Limpar markdown code blocks se o Claude os incluiu
+    if codigo.startswith("```python"):
+        codigo = codigo[9:]
+    if codigo.startswith("```"):
+        codigo = codigo[3:]
+    if codigo.endswith("```"):
+        codigo = codigo[:-3]
+
+    return codigo.strip()
+
+
+def escrever_agente(nome: str, codigo: str) -> dict:
+    """Escreve o código do agente para o disco."""
+    ficheiro = MORGAN_DIR / f"{nome}_agent.py"
+    try:
+        ficheiro.write_text(codigo, encoding="utf-8")
+        return {"status": "ok", "ficheiro": str(ficheiro), "linhas": len(codigo.splitlines())}
+    except Exception as e:
+        return {"status": "erro", "message": str(e)}
+
+
+def integrar_no_desktop(nome: str, keywords_trigger: list[str]) -> dict:
+    """
+    Integra o novo agente no desktop_server.py:
+    - Adiciona import
+    - Adiciona função de routing _quer_X()
+    - Adiciona handling no chat_with_morgan()
+    Retorna status da integração.
+    """
+    desktop = MORGAN_DIR / "desktop_server.py"
+    codigo = desktop.read_text(encoding="utf-8")
+
+    fn_import = f"get_{nome}_reply"
+    modulo = f"{nome}_agent"
+
+    # Verificar se já está integrado
+    if fn_import in codigo:
+        return {"status": "ja_integrado", "agente": nome}
+
+    # 1. Adicionar import após os imports existentes de agentes
+    import_line = f"from {modulo} import {fn_import}\n"
+    # Inserir após a última linha "from X_agent import"
+    import_anchor = "from marketeer_agent import get_marketeer_reply\n"
+    if import_anchor in codigo:
+        codigo = codigo.replace(import_anchor, import_anchor + import_line)
+    else:
+        # Fallback: adicionar antes da linha "from trading_bot"
+        codigo = codigo.replace("from trading_bot import", import_line + "from trading_bot import", 1)
+
+    # 2. Adicionar função _quer_X() após _quer_marketeer()
+    kw_list = str(keywords_trigger).replace("'", '"')
+    nova_func = f"""
+def _quer_{nome}(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in {kw_list})
+
+"""
+    quer_marketeer_end = "def _chat_ceo(user_text: str) -> str:"
+    if quer_marketeer_end in codigo:
+        codigo = codigo.replace(quer_marketeer_end, nova_func + quer_marketeer_end)
+
+    # 3. Adicionar handling no chat_with_morgan(), antes do "# Scout"
+    handling = f"""
+    if _quer_{nome}(user_text):
+        _desktop_agent["current"] = "{nome}"
+        try:
+            reply = "[{nome.upper()}] " + {fn_import}(user_text)
+        except Exception as e:
+            reply = f"[{nome.upper()}] Erro: {{e}}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+"""
+    scout_anchor = "    # Scout — CEO com contexto Scout"
+    if scout_anchor in codigo:
+        codigo = codigo.replace(scout_anchor, handling + scout_anchor)
+
+    # 4. Adicionar ao valid set em /api/agent
+    valid_anchor = 'valid = {"ceo", "coach", "cfo", "scout", "solver", "creator"}'
+    if valid_anchor in codigo and f'"{nome}"' not in valid_anchor:
+        novo_valid = valid_anchor.replace("}", f', "{nome}"}}')
+        codigo = codigo.replace(valid_anchor, novo_valid)
+
+    try:
+        desktop.write_text(codigo, encoding="utf-8")
+        return {"status": "ok", "agente": nome, "import": import_line.strip()}
+    except Exception as e:
+        return {"status": "erro", "message": str(e)}
+
+
+def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
+    """
+    Faz deploy completo do agente:
+    1. git add + commit + push no MacBook
+    2. SSH no Mac Mini: git pull + kill + restart do server
+    """
+    ficheiro = f"{nome}_agent.py"
+    if not mensagem_commit:
+        mensagem_commit = f"feat: {nome}_agent — criado pelo Creator"
+
+    resultados = {}
+
+    # 1. git add + commit + push
+    try:
+        subprocess.run(["git", "add", ficheiro, "desktop_server.py", "creator_agent.py"],
+                       cwd=MORGAN_DIR, check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-m", mensagem_commit],
+                       cwd=MORGAN_DIR, check=True, capture_output=True)
+        push = subprocess.run(["git", "push"], cwd=MORGAN_DIR, capture_output=True, text=True)
+        resultados["git"] = "ok" if push.returncode == 0 else f"erro: {push.stderr[:200]}"
+    except subprocess.CalledProcessError as e:
+        resultados["git"] = f"erro: {e.stderr.decode()[:200] if e.stderr else str(e)}"
+
+    # 2. SSH: pull + restart
+    restart_cmd = (
+        f"cd {MAC_MINI_MORGAN_DIR} && "
+        "git pull && "
+        "pkill -f desktop_server.py; "
+        "sleep 2; "
+        f"nohup python3 {MAC_MINI_MORGAN_DIR}/desktop_server.py "
+        f"> {MAC_MINI_MORGAN_DIR}/morgan_server.log 2>&1 &"
+    )
+    try:
+        ssh = subprocess.run(
+            ["ssh", "-o", "ConnectTimeout=15", "-o", "StrictHostKeyChecking=no",
+             MAC_MINI_HOST, restart_cmd],
+            capture_output=True, text=True, timeout=30
+        )
+        resultados["deploy"] = "ok" if ssh.returncode == 0 else f"erro: {ssh.stderr[:200]}"
+    except Exception as e:
+        resultados["deploy"] = f"erro: {e}"
+
+    return resultados
+
+
+def construir_agente(
+    nome: str,
+    descricao: str,
+    capacidades: list[str],
+    keywords_trigger: list[str],
+    auto_deploy: bool = False,
+) -> dict:
+    """
+    Pipeline completo do Creator:
+    1. Gera código Python com Claude
+    2. Escreve o ficheiro
+    3. Integra no desktop_server.py
+    4. (Opcional) Deploy automático no Mac Mini
+
+    Devolve um dict com o resultado de cada passo e o código gerado.
+    O Vasco pode rever o código antes de autorizar o deploy.
+    """
+    resultado = {"nome": nome, "passos": {}}
+
+    # Passo 1 — Gerar código
+    print(f"[Creator] A gerar {nome}_agent.py...", flush=True)
+    codigo = gerar_codigo_agente(nome, descricao, capacidades)
+    if not codigo or len(codigo) < 100:
+        return {"status": "erro", "message": "Código gerado inválido ou muito curto.", "codigo": codigo}
+    resultado["passos"]["gerar"] = f"ok ({len(codigo.splitlines())} linhas)"
+    resultado["codigo"] = codigo
+
+    # Passo 2 — Escrever ficheiro
+    escrita = escrever_agente(nome, codigo)
+    resultado["passos"]["escrever"] = escrita["status"]
+    if escrita["status"] != "ok":
+        return {"status": "erro", "message": escrita.get("message"), **resultado}
+
+    # Passo 3 — Integrar no desktop
+    integracao = integrar_no_desktop(nome, keywords_trigger)
+    resultado["passos"]["integrar"] = integracao["status"]
+
+    # Passo 4 — Deploy (só se autorizado)
+    if auto_deploy:
+        deploy = deploy_agente(nome)
+        resultado["passos"]["deploy"] = deploy
+    else:
+        resultado["passos"]["deploy"] = "pendente — aguarda aprovação do Vasco"
+        resultado["instrucao"] = (
+            f"Agente gerado e integrado. Para fazer deploy, chama:\n"
+            f"deploy_agente('{nome}')"
+        )
+
+    resultado["status"] = "ok"
+    return resultado
+
+
+def rever_agente(nome: str) -> str:
+    """Lê o agente gerado para revisão antes do deploy."""
+    f = MORGAN_DIR / f"{nome}_agent.py"
+    if not f.exists():
+        return f"Agente {nome}_agent.py não existe ainda."
+    return f.read_text(encoding="utf-8")
+
+
 if __name__ == "__main__":
     # Teste rápido
     resultado = criar_sub_morgan("Directório de nicho PT/BR monetizado")

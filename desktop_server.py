@@ -29,6 +29,7 @@ from voice_id import enroll_voice, is_vasco, has_profile, load_profile
 from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
 from marketeer_agent import get_marketeer_reply
+from operator_agent import get_operator_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from mem0_service import mem0_get, mem0_add, mem0_collective_get
@@ -271,6 +272,11 @@ def _quer_marketeer(msg: str) -> bool:
                                   "copywriting", "copy", "mensagem de venda", "crescimento",
                                   "canal de vendas", "conversão", "funil"])
 
+
+def _quer_operator(msg: str) -> bool:
+    m = msg.lower()
+    return any(k in m for k in ["operator", "operações", "lojas", "etsy vendas", "directório estado", "negócios estado", "receita total", "planneratlas"])
+
 def _chat_ceo(user_text: str) -> str:
     """CEO — chamada direta ao Claude com ferramentas."""
     conversation_history.append({"role": "user", "content": user_text})
@@ -368,6 +374,16 @@ def chat_with_morgan(user_text: str) -> str:
             reply = "[MARKETEER] " + get_marketeer_reply(user_text)
         except Exception as e:
             reply = f"[MARKETEER] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+
+    if _quer_operator(user_text):
+        _desktop_agent["current"] = "operator"
+        try:
+            reply = "[OPERATOR] " + get_operator_reply(user_text)
+        except Exception as e:
+            reply = f"[OPERATOR] Erro: {e}"
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -1177,7 +1193,7 @@ async def set_agent(request: Request):
     """Define o agente ativo via canvas click."""
     body = await request.json()
     agent = body.get("agent", "ceo")
-    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator"}
+    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator", "operator"}
     if agent in valid:
         _desktop_agent["current"] = agent
     return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
