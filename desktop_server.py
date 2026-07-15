@@ -436,13 +436,26 @@ async def serve_interface_v2():
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
+from fastapi.responses import RedirectResponse
+
+# /pwa/* redireciona para /app/* (URL nova sem cache no browser)
 @app.get("/pwa/")
 @app.get("/pwa/index.html")
-async def serve_pwa():
-    return FileResponse(PWA_DIR / "index.html", headers=_NO_CACHE)
+async def redirect_pwa_root():
+    return RedirectResponse("/app/", status_code=302)
 
 @app.get("/pwa/{filename}")
-async def serve_pwa_file(filename: str):
+async def redirect_pwa_file(filename: str):
+    return RedirectResponse(f"/app/{filename}", status_code=302)
+
+# /app/ — URL principal da PWA (nunca esteve em cache)
+@app.get("/app/")
+@app.get("/app/index.html")
+async def serve_app():
+    return FileResponse(PWA_DIR / "index.html", headers=_NO_CACHE)
+
+@app.get("/app/{filename}")
+async def serve_app_file(filename: str):
     f = PWA_DIR / filename
     return FileResponse(f if f.exists() else PWA_DIR / "index.html", headers=_NO_CACHE)
 

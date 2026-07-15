@@ -18,12 +18,12 @@ self.addEventListener('push', e => {
   const title = data.title || 'Morgan';
   const options = {
     body:     data.body  || '',
-    icon:     '/pwa/icon-192.png',
-    badge:    '/pwa/icon-192.png',
+    icon:     '/app/icon-192.png',
+    badge:    '/app/icon-192.png',
     vibrate:  [200, 100, 200],
     tag:      'morgan-notification',
     renotify: true,
-    data:     { url: data.url || '/pwa/' },
+    data:     { url: data.url || '/app/' },
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
@@ -33,7 +33,7 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
-        if (c.url.includes('/pwa/') && 'focus' in c) return c.focus();
+        if (c.url.includes('/app/') && 'focus' in c) return c.focus();
       }
       return clients.openWindow(e.notification.data.url);
     })

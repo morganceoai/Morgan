@@ -449,6 +449,8 @@ function togglePanel(side) {
   document.getElementById('overlay').classList.add('active');
   document.getElementById('tabL').textContent = side==='left'?'‹':'›';
   document.getElementById('tabR').textContent = side==='right'?'›':'‹';
+  if (side==='left') loadHistory();
+  if (side==='right') { loadNotifications(); loadReports(); }
 }
 function closePanels(reset=true) {
   document.getElementById('panelLeft').classList.remove('open');
@@ -547,14 +549,6 @@ async function loadReports() {
       listEl.appendChild(btn);
     });
   } catch(e) { listEl.innerHTML='<div style="opacity:.4;font-size:11px">Erro ao carregar</div>'; }
-}
-
-// carregar ao abrir painel
-const _origToggle = togglePanel;
-function togglePanel(side) {
-  _origToggle(side);
-  if (side === 'left') loadHistory();
-  if (side === 'right') { loadNotifications(); loadReports(); }
 }
 
 // ── CHAT ──
@@ -797,7 +791,7 @@ if ('serviceWorker' in navigator) {
   });
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 
-  navigator.serviceWorker.register('/pwa/sw2.js')
+  navigator.serviceWorker.register('/app/sw2.js')
     .then(reg => {
       _swReg = reg;
       const activate = () => _initPush(reg);
