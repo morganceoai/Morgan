@@ -1,6 +1,6 @@
 """
 Serviço de configuração centralizado — lê/escreve config.yaml.
-Partilhado por desktop_server.py, telegram_bot.py e todos os agentes.
+Partilhado por desktop_server.py e todos os agentes.
 """
 import yaml
 from pathlib import Path

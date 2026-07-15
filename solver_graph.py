@@ -245,7 +245,7 @@ def _pre_execution_tests() -> tuple[bool, str]:
     resultados = []
 
     # 1. Sintaxe dos ficheiros Python críticos
-    for modulo in ["telegram_bot.py", "tools.py", "solver_graph.py"]:
+    for modulo in ["desktop_server.py", "tools.py", "solver_graph.py"]:
         try:
             r = subprocess.run(
                 [sys.executable, "-m", "py_compile", modulo],

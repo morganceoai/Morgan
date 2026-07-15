@@ -630,7 +630,7 @@ def solver_verificar_saude() -> str:
     resultados = []
 
     # Verifica variáveis de ambiente críticas
-    vars_criticas = ["ANTHROPIC_API_KEY", "TELEGRAM_BOT_TOKEN", "ELEVENLABS_API_KEY",
+    vars_criticas = ["ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY",
                      "DEEPGRAM_API_KEY", "TAVILY_API_KEY"]
     em_falta = [v for v in vars_criticas if not os.getenv(v)]
     if em_falta:
@@ -1103,7 +1103,7 @@ TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "caminho": {"type": "string", "description": "Caminho do ficheiro (relativo ao dir Morgan ou absoluto). Ex: 'telegram_bot.py', 'memory/audit.log'"}
+                "caminho": {"type": "string", "description": "Caminho do ficheiro (relativo ao dir Morgan ou absoluto). Ex: 'desktop_server.py', 'memory/audit.log'"}
             },
             "required": ["caminho"]
         }

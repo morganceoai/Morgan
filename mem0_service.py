@@ -1,6 +1,6 @@
 """
 Serviço centralizado de memória de longo prazo via Mem0.
-Usado por desktop_server.py, telegram_bot.py e todos os agentes.
+Usado por desktop_server.py e todos os agentes.
 
 Mem0 extrai automaticamente factos importantes de cada conversa
 e devolve os mais relevantes por query semântica — memória infinita
