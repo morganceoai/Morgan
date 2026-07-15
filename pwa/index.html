@@ -771,7 +771,7 @@ async function activarNotificacoes() {
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/pwa/sw.js')
+  navigator.serviceWorker.register('/pwa/sw.js?v=5')
     .then(reg => {
       _swReg = reg;
       const sw = reg.installing || reg.waiting || reg.active;
