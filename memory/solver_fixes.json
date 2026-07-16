@@ -1,0 +1,9 @@
+[
+  {
+    "data": "2026-07-16T14:47:56.261730",
+    "problema": "teste simples",
+    "diagnostico": "DIAGNÓSTICO: problema de teste\nCONFIANÇA_DIAGNÓSTICO: 85%\nREVERSÍVEL: sim\nIMPACTO: isolado",
+    "fix": "EXECUÇÃO: feito\nCONFIANÇA_EXECUÇÃO: 90%",
+    "confianca": 90
+  }
+]
