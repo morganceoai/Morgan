@@ -1735,8 +1735,13 @@ async def _run_daily_report():
             if str(m.get("created_at", m.get("timestamp", ""))).startswith(hoje)
         ]
         n_trocas = len([m for m in msgs_hoje if m.get("role") == "user"])
+        def _conv_texto(m):
+            c = m.get('content', '')
+            if isinstance(c, list):
+                c = ' '.join(b.get('text', '') if isinstance(b, dict) else str(b) for b in c)
+            return str(c)[:120]
         resumo_conv = "\n".join(
-            f"  {m['role']}: {str(m.get('content',''))[:120]}"
+            f"  {m['role']}: {_conv_texto(m)}"
             for m in msgs_hoje[-20:]
         ) if msgs_hoje else "  Nenhuma conversa registada hoje."
     except Exception:
