@@ -253,6 +253,73 @@ PT-PT. Foco em descoberta orgânica."""}]
         return f"Erro: {e}"
 
 
+def analisar_instagram_referencia(conta_referencia: str = "pepteam", conta_vasco: str = "vascobotelhodacosta") -> str:
+    """
+    Analisa uma conta Instagram de referência (ex: @pepteam de Pep Guardiola)
+    e produz um plano de crescimento para a conta do Vasco como treinador.
+    Usa pesquisa web como proxy (Instagram não tem API pública sem aprovação).
+    """
+    from tools import pesquisar_web
+
+    resultados = []
+    for q in [
+        f"instagram @{conta_referencia} estratégia conteúdo futebol treinador",
+        f"instagram coach football content strategy growth 2026",
+        f"treinador futebol instagram crescimento conta pessoal dicas 2026",
+    ]:
+        try:
+            resultados.append(pesquisar_web(q)[:500])
+        except Exception:
+            pass
+
+    pesquisa = "\n---\n".join(resultados) if resultados else "Pesquisa indisponível."
+
+    hoje = date.today().strftime("%d/%m/%Y")
+
+    prompt = f"""Analisa a estratégia de Instagram do @{conta_referencia} (conta de Pep Guardiola) como referência.
+Com base nos dados de pesquisa, define um plano de crescimento para @{conta_vasco} (treinador de futebol profissional no Moreirense FC, Portugal).
+
+Contexto do Vasco:
+- Treinador no Moreirense FC (Liga Portugal 2)
+- Especialidade: análise táctica, coaching, desenvolvimento de jogadores
+- Objectivo: construir autoridade como treinador PT e eventualmente monetizar (cursos, consultoria)
+- Tem o Morgan (IA) para criar e agendar conteúdo automaticamente
+
+Dados de pesquisa:
+{pesquisa[:1500]}
+
+Plano de crescimento — estrutura:
+1. O que @{conta_referencia} faz bem (3 pontos max)
+2. Tipos de conteúdo para @{conta_vasco} (com exemplos concretos)
+3. Frequência e timing ideal (dias/horas)
+4. Hashtag strategy
+5. Primeiras 4 semanas — calendário concreto semana a semana
+6. KPIs a monitorizar (seguidores, reach, engagement rate)
+7. O que o Morgan executa automaticamente
+
+Máximo 400 palavras. Português europeu. Directo e accionável."""
+
+    try:
+        r = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1000,
+            system="És o Morgan Marketeer. Analisas estratégias de crescimento em redes sociais com foco em conversão e autoridade.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        plano = r.content[0].text.strip()
+    except Exception as e:
+        plano = f"(erro ao gerar plano: {e})"
+
+    # Guardar plano em memória
+    output_file = MEMORY_DIR / f"instagram_plano_{date.today().strftime('%Y%m%d')}.txt"
+    output_file.write_text(
+        f"Análise Instagram — @{conta_referencia} → @{conta_vasco} ({hoje})\n{'='*60}\n{plano}",
+        encoding="utf-8"
+    )
+
+    return plano
+
+
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
     """Regista uma nova campanha de marketing."""
     state = _load_state()
@@ -379,6 +446,7 @@ TOOL_MAP = {
     "otimizar_listings_etsy": lambda a: otimizar_listings_etsy(**a),
     "plano_pinterest_semanal": lambda a: plano_pinterest_semanal(**a),
     "enviar_outreach_email": lambda a: enviar_outreach_email(**a),
+    "analisar_instagram_referencia": lambda a: analisar_instagram_referencia(**a),
 }
 
 

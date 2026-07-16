@@ -161,13 +161,17 @@ Respondes "aprovo {oportunidade}" para avançar ou "rejeito {oportunidade}" para
 def executar_oportunidade_aprovada(oportunidade: str, descricao: str) -> str:
     """
     Activa os planos após aprovação do Vasco.
-    Por agora: regista no sistema e notifica agentes.
-    O Creator trata da implementação técnica quando chamado.
+    1. Regista no sistema central
+    2. Marca como aprovada no Scout
+    3. Creator cria sub-Morgan automaticamente
+    4. Regista no Notion (BC Industries > Pipeline)
     """
     from sistema_service import registar_negocio
     from scout_memory import aprovar_oportunidade as _aprova
 
-    # Registar no sistema central
+    linhas = []
+
+    # 1. Registar no sistema central
     chave = oportunidade.lower().replace(" ", "_")[:30]
     registar_negocio(
         chave=chave,
@@ -177,15 +181,39 @@ def executar_oportunidade_aprovada(oportunidade: str, descricao: str) -> str:
         descricao=descricao,
         notificar=False,
     )
+    linhas.append(f"Registado no sistema: {chave}")
 
-    # Marcar como aprovada no scout
+    # 2. Marcar como aprovada no Scout
     try:
         _aprova(oportunidade)
-    except Exception:
-        pass
+        linhas.append("Scout: marcado como aprovado")
+    except Exception as e:
+        linhas.append(f"Scout (erro): {e}")
+
+    # 3. Creator cria sub-Morgan automaticamente (Sprint H)
+    try:
+        from creator_agent import criar_sub_morgan
+        resultado = criar_sub_morgan(oportunidade)
+        status = resultado.get("status", "?")
+        nome_sub = resultado.get("nome", oportunidade)
+        if status == "criado":
+            linhas.append(f"Creator: sub-Morgan '{nome_sub}' criado (id: {resultado.get('id')})")
+        elif status == "ja_existe":
+            linhas.append(f"Creator: sub-Morgan '{nome_sub}' já existe")
+        else:
+            linhas.append(f"Creator: {resultado}")
+    except Exception as e:
+        linhas.append(f"Creator (erro): {e}")
+
+    # 4. Registar no Notion
+    try:
+        from notion_service import registar_oportunidade
+        registar_oportunidade(oportunidade, descricao, estado="Aprovada")
+        linhas.append("Notion: oportunidade registada em BC Industries > Pipeline")
+    except Exception as e:
+        linhas.append(f"Notion (erro): {e}")
 
     return (
-        f"Oportunidade '{oportunidade}' aprovada e registada no sistema.\n"
-        f"CEO, Marketeer, Operator e Solver foram notificados via Mem0.\n"
-        f"Creator a preparar plano técnico — aguarda briefing."
+        f"Oportunidade '{oportunidade}' aprovada.\n"
+        + "\n".join(f"  • {l}" for l in linhas)
     )

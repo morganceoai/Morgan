@@ -204,6 +204,145 @@ def verificar_alertas_criticos() -> list:
 
 _cfo_history: list = []
 
+def analisar_reits() -> str:
+    """
+    Análise estática de REITs e fundos imobiliários PT/ES/IE como alternativa
+    de rendimento passivo para o portfólio BC Industries.
+    Actualizar quando houver dados em tempo real via API.
+    """
+    fundos = [
+        # Portugal
+        {
+            "nome": "Sierra Income Fund (SIFB)",
+            "mercado": "PT",
+            "tipo": "REIT cotado",
+            "foco": "Centros comerciais PT/ES",
+            "dividend_yield_est": "5-7%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio",
+            "notas": "Gerido pela Sierra (Sonae). Liquidez diária na Euronext Lisboa.",
+        },
+        {
+            "nome": "ECS — Edifício Chiado (imobiliário privado)",
+            "mercado": "PT",
+            "tipo": "Fundo imobiliário fechado",
+            "foco": "Imóveis comerciais Lisboa/Porto",
+            "dividend_yield_est": "4-6%",
+            "min_investimento": "€5.000–€25.000",
+            "risco": "Médio",
+            "notas": "Distribuição anual. Liquidez limitada — horizonte 5+ anos.",
+        },
+        # Espanha
+        {
+            "nome": "Merlin Properties (MRL.MC)",
+            "mercado": "ES",
+            "tipo": "SOCIMI (REIT espanhol)",
+            "foco": "Escritórios, logística, centros comerciais ES/PT",
+            "dividend_yield_est": "4-5%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio",
+            "notas": "IBEX 35. Cotada na Bolsa de Madrid. Dividend yield estável.",
+        },
+        {
+            "nome": "Inmobiliaria Colonial (COL.MC)",
+            "mercado": "ES",
+            "tipo": "SOCIMI",
+            "foco": "Escritórios prime Madrid/Barcelona/Paris",
+            "dividend_yield_est": "3-4%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio-baixo",
+            "notas": "Prime office. Menor yield, maior estabilidade.",
+        },
+        # Irlanda
+        {
+            "nome": "IRES REIT (IRES.IE)",
+            "mercado": "IE",
+            "tipo": "REIT residencial",
+            "foco": "Apartamentos Dublin",
+            "dividend_yield_est": "5-6%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio",
+            "notas": "Cotada na Euronext Dublin. Exposição ao mercado residencial IE.",
+        },
+        {
+            "nome": "Hibernia REIT → Brookfield (absors. 2022)",
+            "mercado": "IE",
+            "tipo": "Privado pós-aquisição",
+            "foco": "Escritórios Dublin",
+            "dividend_yield_est": "N/A",
+            "min_investimento": "Não cotado",
+            "risco": "N/A",
+            "notas": "Já não cotado. Referência histórica.",
+        },
+        # ETFs como alternativa
+        {
+            "nome": "iShares European Property Yield (IPRP.L)",
+            "mercado": "EU",
+            "tipo": "ETF REIT Europa",
+            "foco": "Diversificado — PT/ES/DE/FR/NL",
+            "dividend_yield_est": "3-4%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio-baixo",
+            "notas": "Diversificação máxima. Liquidez diária. Ideal para começar.",
+        },
+        {
+            "nome": "Xtrackers FTSE EPRA/NAREIT (XREA.DE)",
+            "mercado": "EU",
+            "tipo": "ETF REIT Europa + Global",
+            "foco": "REITs Europeus + US",
+            "dividend_yield_est": "3-5%",
+            "min_investimento": "Acções — sem mínimo",
+            "risco": "Médio-baixo",
+            "notas": "Exposição global com peso europeu. Acumulação ou distribuição disponíveis.",
+        },
+    ]
+
+    hoje = date.today().strftime("%d/%m/%Y")
+    linhas = [
+        f"CFO — Análise REITs e Fundos Imobiliários PT/ES/IE ({hoje})",
+        "=" * 60,
+        "",
+        "OBJECTIVO: Rendimento passivo complementar ao trading e Etsy.",
+        "META: Contribuição para €10.000/mês passivo do Vasco.",
+        "",
+    ]
+
+    por_mercado: dict[str, list] = {}
+    for f in fundos:
+        por_mercado.setdefault(f["mercado"], []).append(f)
+
+    for mercado, fs in por_mercado.items():
+        linhas.append(f"── {mercado} ──")
+        for f in fs:
+            linhas += [
+                f"  {f['nome']} ({f['tipo']})",
+                f"    Foco: {f['foco']}",
+                f"    Yield estimado: {f['dividend_yield_est']} | Risco: {f['risco']}",
+                f"    Mínimo: {f['min_investimento']}",
+                f"    Nota: {f['notas']}",
+                "",
+            ]
+
+    linhas += [
+        "── RECOMENDAÇÃO CFO ──",
+        "",
+        "Para capital inicial <€5.000: ETF iShares IPRP.L ou Xtrackers XREA.DE.",
+        "  → Liquidez diária, diversificação, yield 3-5%, sem gestão activa.",
+        "",
+        "Para capital €5.000–€25.000: Merlin Properties (MRL.MC) + ETF.",
+        "  → SOCIMI PT/ES com track record, dividend estável.",
+        "",
+        "Para capital >€25.000: adicionar Sierra Income Fund (SIFB) para exposição PT directa.",
+        "",
+        "Próximo passo: Vasco confirma envelope de capital disponível para imobiliário",
+        "→ CFO afina alocação e timing de entrada.",
+        "",
+        "Confiança 70% — dados de yield são estimativas 2025-2026. Verificar prospecto actual antes de investir.",
+    ]
+
+    return "\n".join(linhas)
+
+
 def _build_cfo_system() -> str:
     r = avaliar_risco_trading()
     hoje = datetime.now().strftime("%d de %B de %Y")
@@ -227,6 +366,7 @@ Estado: {'ATIVO' if r['active'] else 'PARADO'} | Risco: {r['nivel_risco'].upper(
 4. Produzir relatórios financeiros diários e mensais
 5. Quando o império crescer: supervisionar receitas dos sub-Morgans, balanços, impostos
 6. Avaliar viabilidade financeira de novos negócios antes de aprovação
+7. Aconselhar sobre REITs e fundos imobiliários PT/ES/IE como rendimento passivo complementar (usa analisar_reits() para dados detalhados)
 
 ## Regras de risco:
 - Drawdown dia >5%: alerta imediato ao Vasco

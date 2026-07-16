@@ -1601,6 +1601,13 @@ async def _run_scout_relatorio_completo():
 
     pesquisa_combinada = "\n\n---\n\n".join(resultados)
 
+    # Incluir análise de REITs do CFO
+    try:
+        from cfo_agent import analisar_reits
+        reits_analise = analisar_reits()
+    except Exception as e:
+        reits_analise = f"(análise REITs indisponível: {e})"
+
     prompt = f"""És o Scout do Morgan. O Vasco quer lançar 5 negócios hoje. Analisa estas oportunidades com base nos dados de pesquisa abaixo.
 
 CONTEXTO DO VASCO:
@@ -1619,6 +1626,9 @@ PRIORIDADES IDENTIFICADAS:
 
 DADOS DE PESQUISA:
 {pesquisa_combinada[:2000]}
+
+ANÁLISE CFO — REITs PT/ES/IE:
+{reits_analise[:1000]}
 
 Para cada oportunidade:
 - Nome do negócio
@@ -1772,14 +1782,14 @@ async def _run_daily_report():
         ops_str = "indisponível"
         oport_str = "indisponível"
 
-    # Estado Etsy / Operator
-    etsy_str = "indisponível"
+    # Sprint I — Operator monitoriza todos os negócios autonomamente
+    operator_str = "indisponível"
     try:
-        from operator_agent import _etsy_dados_reais
-        etsy_raw = await loop.run_in_executor(None, _etsy_dados_reais)
-        etsy_str = etsy_raw[:300]
-    except Exception:
-        pass
+        from operator_agent import monitorizar_negocios
+        operator_str = await loop.run_in_executor(None, monitorizar_negocios)
+        operator_str = operator_str[:600]
+    except Exception as e:
+        operator_str = f"(erro: {e})"
 
     # Estado do sistema (agentes + negócios activos)
     from sistema_service import resumo_sistema
@@ -1807,8 +1817,8 @@ CONVERSAS DE HOJE ({n_trocas} trocas):
 CFO — TRADING BOT:
 {bot_str}
 
-OPERATOR — ETSY / NEGÓCIOS:
-{etsy_str}
+OPERATOR — NEGÓCIOS ACTIVOS:
+{operator_str}
 
 SCOUT:
 Oportunidades aprovadas: {ops_str}

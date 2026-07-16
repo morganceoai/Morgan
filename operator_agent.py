@@ -301,6 +301,80 @@ def get_operator_reply(msg: str) -> str:
     return reply
 
 
+def monitorizar_negocios() -> str:
+    """
+    Sprint I — ciclo de monitorização autónomo.
+    Chamado pelo CEO periodicamente (ex: relatório 22h).
+    Verifica o estado de todos os negócios activos e devolve resumo + alertas.
+    """
+    state = _load_state()
+    businesses = state.get("businesses", {})
+    alertas = []
+    resumo = []
+
+    # Verificar PlannerAtlas (Etsy)
+    etsy_real = _etsy_dados_reais()
+    if etsy_real:
+        resumo.append(f"[PlannerAtlas Etsy]\n{etsy_real}")
+    else:
+        resumo.append("[PlannerAtlas Etsy] Dados OAuth pendentes — ETSY_KEYSTRING em falta.")
+        alertas.append("Etsy sem dados reais — activar OAuth urgente para monitorizar visitas e receita.")
+
+    # Verificar trading bot
+    try:
+        from cfo_agent import avaliar_risco_trading
+        r = avaliar_risco_trading()
+        estado_bot = "ACTIVO" if r["active"] else "PARADO"
+        resumo.append(
+            f"[Trading Bot BTC/USDT]\n"
+            f"  Estado: {estado_bot} | Capital: ${r['capital_atual']:.2f} USDT\n"
+            f"  PnL total: {r['pnl_total']:+.2f} USDT | Drawdown: {r['drawdown_total_pct']:.1f}%"
+        )
+        if r["alertas"]:
+            for a in r["alertas"]:
+                alertas.append(f"Bot: {a}")
+    except Exception as e:
+        resumo.append(f"[Trading Bot] Erro ao verificar: {e}")
+
+    # Verificar sub-Morgans criados pelo Creator
+    try:
+        from creator_agent import listar_sub_morgans
+        subs = listar_sub_morgans()
+        if subs:
+            for sub in subs:
+                receita = sub.get("receita_atual", 0)
+                fase = sub.get("fase", "?")
+                resumo.append(
+                    f"[{sub['nome']}]\n"
+                    f"  Fase: {fase} | Receita: €{receita:.2f}/mês\n"
+                    f"  Interacções: {sub.get('metricas', {}).get('interacoes', 0)}"
+                )
+                if receita == 0 and fase not in ("validacao",):
+                    alertas.append(f"{sub['nome']}: receita zero — rever estratégia.")
+    except Exception:
+        pass
+
+    # Outros negócios em state
+    for key, biz in businesses.items():
+        if key in ("planneratlas", "trading"):
+            continue
+        metrics = biz.get("metrics", {})
+        resumo.append(f"[{biz['name']}] Fase: {biz.get('phase', '?')} | Métricas: {metrics}")
+
+    # Actualizar estado
+    state["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    _save_state(state)
+
+    output = "OPERATOR — Monitorização autónoma\n" + "=" * 40 + "\n"
+    output += "\n\n".join(resumo)
+    if alertas:
+        output += "\n\n⚠ ALERTAS:\n" + "\n".join(f"• {a}" for a in alertas)
+    else:
+        output += "\n\nSem alertas activos."
+
+    return output
+
+
 def run_operator():
     print("Morgan Operator — modo interactivo")
     print("Escreve 'sair' para terminar.\n")
