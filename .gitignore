@@ -14,3 +14,10 @@ start_morgan.sh
 vapid_private.pem
 memory/push_subscriptions.json
 memory/push_dedup.json
+graphify-out/
+memory/notion_ids.json
+memory/report_*.txt
+memory/sistema_estado.json
+memory/operator_state.json
+memory/solver_fixes.json
+memory/scout_memoria.json
