@@ -450,7 +450,13 @@ def chat_with_morgan(user_text: str) -> str:
         scout_ctx = f"\n\n[SCOUT] Oportunidades em memória: {', '.join(ops) if ops else 'nenhuma ainda.'}"
         old_system = get_system_prompt
         def scout_system():
-            return get_system_prompt() + scout_ctx + "\n\nResponde como Morgan Scout — analisa oportunidades de negócio com dados reais."
+            return get_system_prompt() + scout_ctx + (
+                "\n\nResponde como Morgan Scout — analisa oportunidades de negócio com dados reais."
+                "\n\nPRIORIDADES ACTUAIS DO SCOUT:"
+                "\n1. Lego como negócio: o Vasco tem coleção Lego e quer loja no BrickLink.com. Pesquisa: sets com maior valorização 2026, margens revendedores BrickLink, volume de mercado, estratégia de entrada."
+                "\n2. REITs / Fundos Real Estate: ETFs disponíveis para investidores PT/EU, yield médio, risco, capital inicial €500-5000."
+                "\n3. Oportunidades digitais PT/BR: SaaS, infoprodutos, marketplaces com potencial passivo."
+            )
         # Temporariamente override
         reply_body = _chat_ceo_with_system(user_text, scout_system())
         reply = "[SCOUT] " + reply_body
@@ -1572,6 +1578,80 @@ async def _run_scout_push():
     _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
 
 
+async def _run_scout_relatorio_completo():
+    """Scout on-demand — análise completa de oportunidades de negócio com pesquisa real."""
+    loop = asyncio.get_event_loop()
+
+    # Pesquisar em paralelo: Lego/BrickLink, REITs, oportunidades digitais PT/BR
+    queries = [
+        "BrickLink lego reseller business profit margins 2026",
+        "REIT ETF Portugal Europe passive income 2026",
+        "negócios digitais passivos Portugal Brasil SaaS 2026",
+        "indie hackers passive income $1000 month 2026",
+    ]
+
+    resultados = []
+    from tools import pesquisar_web
+    for q in queries:
+        try:
+            r = await loop.run_in_executor(None, lambda q=q: pesquisar_web(q))
+            resultados.append(r[:400])
+        except Exception:
+            pass
+
+    pesquisa_combinada = "\n\n---\n\n".join(resultados)
+
+    prompt = f"""És o Scout do Morgan. O Vasco quer lançar 5 negócios hoje. Analisa estas oportunidades com base nos dados de pesquisa abaixo.
+
+CONTEXTO DO VASCO:
+- Treinador de futebol no Moreirense FC (Portugal)
+- Tem uma coleção de Lego e interesse em loja BrickLink
+- Quer rendimento passivo de €10k/mês
+- Tem o Morgan (8 agentes IA) para executar automaticamente
+- Capital inicial disponível: pequeno (€200-1000 por negócio)
+
+PRIORIDADES IDENTIFICADAS:
+1. Loja BrickLink (Lego) — o Vasco tem coleção, quer escalar
+2. REITs / fundos real estate — investimento passivo PT/EU
+3. Produto digital futebol PT/BR — análise táctica, templates, conteúdo
+4. Negócio IA/automação para PMEs portuguesas
+5. Quinta oportunidade — o que os dados revelam
+
+DADOS DE PESQUISA:
+{pesquisa_combinada[:2000]}
+
+Para cada oportunidade:
+- Nome do negócio
+- Potencial de receita em 90 dias (€/mês)
+- Capital inicial necessário (€)
+- O que o Morgan executa automaticamente vs o que o Vasco faz uma vez
+- Nível de risco: Baixo/Médio/Alto
+- Próximo passo concreto (hoje)
+
+Sê específico e realista. Português europeu. Máximo 400 palavras."""
+
+    response = await loop.run_in_executor(
+        None,
+        lambda: claude.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=1200,
+            system="És o Scout do BC Industries. Analisas oportunidades de negócio com dados reais. Directo, concreto, sem hype.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+    )
+    texto = response.content[0].text if response.content else "Scout indisponível."
+
+    send_push(
+        title="Morgan Scout — 5 Negócios para hoje",
+        body=texto[:200],
+        url="/pwa/"
+    )
+
+    report_file = Path(__file__).parent / "memory" / f"report_{_agora_lisboa().strftime('%Y-%m-%d')}.txt"
+    report_file.write_text(texto, encoding="utf-8")
+    print(f"[scout] relatório completo guardado: {report_file}", flush=True)
+
+
 async def _run_scout_melhorias():
     """Scout Missão B — quarta-feira 20h. Pesquisa melhorias para agentes existentes."""
     loop = asyncio.get_event_loop()
@@ -1609,9 +1689,9 @@ Máximo 8 sugestões. Português europeu."""
     response = await loop.run_in_executor(
         None,
         lambda: claude.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=600,
-            system="És o Scout do Morgan. Foco em melhorias práticas e implementáveis.",
+            model="claude-opus-4-8",
+            max_tokens=800,
+            system="És o Scout do Morgan. Foco em melhorias práticas e implementáveis. Análise profunda e rigorosa.",
             messages=[{"role": "user", "content": prompt}]
         )
     )
@@ -1852,6 +1932,12 @@ async def _heartbeat_loop():
             # Relatório diário às 22h
             if _should_run_report():
                 await _run_daily_report()
+
+            # Scout on-demand — 16h de hoje (16/07/2026) — 5 negócios
+            chave_scout_hoje = "scout_ondemand_20260716_16h"
+            if agora.strftime('%Y-%m-%d') == '2026-07-16' and agora.hour == 16 and not _dedup_check(chave_scout_hoje):
+                _dedup_mark(chave_scout_hoje)
+                asyncio.create_task(_run_scout_relatorio_completo())
 
             # Scout Missão A — oportunidades de negócio (domingo 20h)
             if _should_run_scout():

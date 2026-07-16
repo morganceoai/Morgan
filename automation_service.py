@@ -20,9 +20,9 @@ from typing import Optional
 
 # ── Zoho IMAP ─────────────────────────────────────────────────────────────────
 
-ZOHO_EMAIL    = os.getenv("ZOHO_EMAIL", "")
-ZOHO_PASSWORD = os.getenv("ZOHO_PASSWORD", "")
-ZOHO_IMAP     = "imap.zoho.eu"  # ou imap.zoho.com dependendo da conta
+ZOHO_EMAIL    = os.getenv("MORGAN_EMAIL", "morgan@bcvertex.com")
+ZOHO_PASSWORD = os.getenv("MORGAN_EMAIL_PASS", "")
+ZOHO_IMAP     = "imap.purelymail.com"
 
 
 def _imap_connect() -> imaplib.IMAP4_SSL:
@@ -120,6 +120,24 @@ def listar_emails_recentes(n: int = 10) -> str:
         return f"Erro IMAP: {e}"
 
 
+# ── Push notification para acções do browser ──────────────────────────────────
+
+def _notificar_browser(titulo: str, corpo: str):
+    """Envia push ao Vasco quando o browser automation faz algo importante."""
+    try:
+        import urllib.request, json as _json
+        data = _json.dumps({"title": titulo, "body": corpo, "url": "/pwa/"}).encode()
+        req = urllib.request.Request(
+            "http://localhost:8765/api/push",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=3)
+    except Exception:
+        pass  # push é best-effort — não bloqueia a automation
+
+
 # ── Playwright browser automation ─────────────────────────────────────────────
 
 def _playwright_disponivel() -> bool:
@@ -207,12 +225,17 @@ def criar_conta_plataforma(plataforma: str, url_registo: str, email: str, passwo
         if "zoho" in email.lower() or "morganceoai" in email.lower():
             registar_conta_zoho(email)
 
-        return (
+        resultado = (
             f"Formulário de registo submetido em {plataforma}.\n"
             f"Título da página: {title}\n"
             f"Verifica o email {email} para confirmação (usar verificar_email_confirmacao).\n"
             f"NOTA: Se houver 2FA, o Vasco tem de completar manualmente."
         )
+        _notificar_browser(
+            f"Morgan criou conta em {plataforma}",
+            f"Email: {email} | Aguarda confirmação"
+        )
+        return resultado
 
     except Exception as e:
         return f"Erro na automation de {plataforma}: {e}"
@@ -231,6 +254,7 @@ def visitar_url_confirmacao(url: str) -> str:
             page.wait_for_load_state("networkidle", timeout=8000)
             title = page.title()
             browser.close()
+        _notificar_browser("Morgan confirmou conta", f"URL visitado: {title}")
         return f"URL visitado. Título: {title}"
     except Exception as e:
         return f"Erro: {e}"

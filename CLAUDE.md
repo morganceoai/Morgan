@@ -1,45 +1,71 @@
 # Morgan — Contexto para Claude Code
 
 Este ficheiro é carregado automaticamente em cada sessão. Lê-o na íntegra antes de qualquer trabalho.
+Lê também `memory/MEMORY.md` e os ficheiros de memória relevantes antes de começar.
 
 ---
 
 ## O que é o Morgan
 
-Morgan é o assistente pessoal de IA do Vasco Botelho da Costa. **NÃO é apenas um bot de Telegram** — o Telegram é um canal de acesso, não a interface principal. A interface principal é um avatar a pulsar (ainda por construir). No futuro: PWA, widget iOS, Dynamic Island.
-
-Morgan é o "braço direito" do Vasco. A última decisão é sempre do Vasco. Morgan sugere, analisa, e executa o que for autorizado.
+Morgan é o assistente pessoal de IA do Vasco Botelho da Costa e o CEO do império BC Industries.
+**O Telegram foi removido.** A interface principal é a PWA em morgan.bcvertex.com (ainda a ser construída).
+Morgan é o "braço direito" do Vasco. A última decisão é sempre do Vasco.
 
 ---
 
 ## Quem é o Vasco
 
 - Treinador de futebol no Moreirense FC (Portugal)
-- Objetivo: €10.000/mês de rendimento passivo
+- Objetivo: €10.000/mês de rendimento passivo via BC Industries
 - Email pessoal: vascobotelhodacosta@gmail.com
-- Email de infraestrutura do Morgan: morganceoai@gmail.com
-- Prefere respostas diretas, sem rodeios
-- Fala português europeu (PT-PT)
+- Email sistema: morgan@bcvertex.com | vasco@bcvertex.com (PurelyMail, bcvertex.com)
+- **Fala e prefere respostas em PT-PT**
+- Prefere respostas directas e curtas — sem rodeios, sem sumários no final
+- Quando apresentas opções, **máximo 3**, com recomendação clara
+- Confirmar abordagem antes de implementar código novo — não implementar sem alinhamento
+- A última decisão é sempre do Vasco
 
 ---
 
-## Arquitetura técnica
+## Arquitectura actual (Julho 2026)
 
 | Componente | Detalhe |
 |---|---|
 | Linguagem | Python 3.12, venv em `~/Morgan/venv` |
-| Deploy | Railway.app (Hobby $5/mês) — auto-deploy no push para GitHub |
+| Deploy | **Mac Mini** (ssh vasco@mac-mini) — git pull via SSH; Railway CANCELADO |
 | GitHub | github.com/morganceoai/Morgan |
-| LLM | Anthropic Claude `claude-sonnet-4-6` |
-| Telegram | python-telegram-bot |
-| Voz (STT) | Deepgram — transcreve áudios enviados pelo Vasco |
-| Voz (TTS) | ElevenLabs `eleven_multilingual_v2` — responde em áudio PT-PT |
-| Pesquisa web | Tavily (conta morganceoai@gmail.com) |
-| Futebol | API Football |
-| Scout | Product Hunt API (Bearer token), HN Firebase API, pytrends |
+| CI/CD | GitHub Actions (secrets pendentes: MAC_MINI_HOST, MAC_MINI_USER, MAC_MINI_SSH_KEY) |
+| LLM principal | `claude-sonnet-4-6` (rotina); `claude-opus-4-8` para decisões estratégicas |
+| LLM router | `claude-haiku-4-5-20251001` — classifica intent (cfo/coach/marketeer/etc.) |
+| Interface | PWA morgan.bcvertex.com (em construção); voz via ElevenLabs Conv. AI (migração pendente) |
+| Voz STT | Deepgram (PT-PT) |
+| Voz TTS | ElevenLabs (voz Morgan Freeman clonada) |
+| Browser automation | Playwright headless (Mac Mini) — agentes usam, independente do browser do Vasco |
+| Email IMAP | PurelyMail — imap.purelymail.com:993 |
+| Pesquisa web | Tavily + Exa (a integrar) |
+| Memória | Mem0 Cloud (MEM0_API_KEY activo) + Qdrant Cloud (activo) |
+| Observabilidade | LangSmith (LANGCHAIN_API_KEY activo — activar SENTRY_DSN) |
+| Futebol | API Football + StatsBomb Open Data |
+| Scout | Product Hunt API, HN Firebase API, pytrends |
+| Trading | CCXT + Binance (100 USDT BTC/USDT activo, BINANCE_TESTNET=false) |
+| Etsy | PlannerAtlas (8 listings activos, etsy OAuth pendente) |
 
-### Variáveis de ambiente (.env e Railway)
-`ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TAVILY_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `DEEPGRAM_API_KEY`, `API_FOOTBALL_KEY`, `PRODUCT_HUNT_TOKEN`
+---
+
+## Os 8 Agentes
+
+| Agente | Ficheiro | Responsabilidade |
+|---|---|---|
+| CEO | `desktop_server.py` | Orquestra, briefings, decisões, push ao Vasco |
+| Scout | `scout_agent.py` | Dom 20h: oportunidades de negócio; Qua 20h: melhorias ao sistema |
+| Coach | `coach_agent.py` | Exclusivamente futebol — Moreirense, análise, scouting |
+| CFO | `cfo_agent.py` | Exclusivamente trading e finanças — nunca misturar com Coach |
+| Creator | `creator_agent.py` | Cria e faz deploy de novos agentes/ferramentas |
+| Solver | `solver_agent.py` | Debugging, erros, LangGraph, manutenção |
+| Operator | `operator_agent.py` | Gestão de negócios activos (Etsy, plataformas) |
+| Marketeer | `marketeer_agent.py` | SEO Etsy, Pinterest, conteúdo, outreach |
+
+**Regra de ouro dos briefings:** CEO orquestra UMA mensagem. Coach = futebol apenas. CFO = trading apenas. Nunca misturar áreas.
 
 ---
 
@@ -47,90 +73,39 @@ Morgan é o "braço direito" do Vasco. A última decisão é sempre do Vasco. Mo
 
 | Ficheiro | Função |
 |---|---|
-| `telegram_bot.py` | Ficheiro principal — bot, heartbeat, Scout, comandos |
-| `tools.py` | Todas as ferramentas disponíveis ao Morgan |
-| `scout_memory.py` | Memória persistente do Scout (JSON) |
-| `memory_store.py` | Memória de factos do Morgan (factos.md) |
-| `conversation_store.py` | Histórico de conversa por utilizador |
-| `voice.py` | Utilitários de voz |
-| `heartbeat.py` | Lógica de heartbeat |
-| `morgan.py` | Entry point alternativo |
+| `desktop_server.py` | Servidor principal — heartbeat, briefings, Scout, aprovações |
+| `tools.py` | Ferramentas do CEO |
+| `sistema_service.py` | Fonte de verdade — agentes, negócios, contas Zoho |
+| `automation_service.py` | Playwright + IMAP PurelyMail |
+| `approval_pipeline.py` | Pipeline paralela de aprovação de oportunidades |
+| `scout_memory.py` | Memória persistente do Scout |
+| `memory_store.py` | Factos do Morgan (factos.md) |
 
-### Ficheiros de estado (em `~/Morgan/memory/`)
-- `scout_memoria.json` — histórico de oportunidades do Scout
-- `factos.md` — memória de factos do Morgan
-- `heartbeat_state.json` — estado do heartbeat e briefings
-- `noticias_enviadas.json` — deduplicação de notícias
-- `audit.log` — log de ações
+### Estado em `~/Morgan/memory/`
+- `sistema_estado.json` — fonte de verdade: 8 agentes + negócios + contas
+- `scout_memoria.json` — histórico Scout
+- `heartbeat_state.json` — estado briefings
+- `audit.log` — log de acções
 
 ---
 
-## O que está implementado (100% ativo)
+## Briefings e horários automáticos
 
-### Conversação
-- Responde a mensagens de texto no Telegram
-- Responde a mensagens de voz (Deepgram transcreve → Claude processa → ElevenLabs responde em áudio)
-- Histórico de conversa por utilizador
-- Sistema de confirmação antes de ações sensíveis (`pedir_confirmacao`)
-
-### Briefings automáticos
-- **7h e 20h** todos os dias (exceto horas de silêncio: 23h–7h)
-- Conteúdo: meteo, notícias Moreirense FC, resultados recentes, próximos jogos, menções ao nome do Vasco
-- Sem repetições (deduplicação por hash)
-
-### Monitorização de nome
-- `monitorizar_nome()` pesquisa "Vasco Botelho da Costa" em 10 plataformas via Tavily: Reddit, YouTube, X/Twitter, Facebook, Instagram, TikTok, LinkedIn, Transfermarkt, ZeroZero, web geral
-- Corre nos briefings das 7h e 20h — **NÃO tem loop separado de 2 em 2 horas**
-
-### Morgan AI Scout
-- Corre **todos os domingos às 20h** (integrado no heartbeat)
-- Usa **7 ferramentas** em cada relatório:
-  1. `product_hunt_trending` — produtos IA mais votados (API GraphQL com Bearer token)
-  2. `hacker_news_trending` — HN Firebase API, filtra posts com score > 50 e keywords IA/negócio
-  3. `reddit_trending` — via Tavily com site:reddit.com (API direta bloqueada com 403)
-  4. `scout_oportunidades` — 10 queries Tavily sobre mercados PT/BR/ES, SaaS, IA, rendimento passivo
-  5. `indiehackers_trending` — via Tavily, dados reais de receita de fundadores
-  6. `google_trends` — pytrends, valida crescimento das top 3 oportunidades
-  7. `monitorizar_oportunidades_aprovadas` — pesquisa aprofundada de oportunidades aprovadas pelo Vasco (só corre se existirem aprovadas)
-- Memória persistente: `scout_memoria.json` guarda histórico semanal, oportunidades recorrentes, aprovações
-- Extrai bloco JSON do relatório, chama `registar_oportunidades()`, remove JSON antes de enviar ao Vasco
-- Vasco pode aprovar oportunidades dizendo "aprova [nome]" → Morgan chama `aprovar_oportunidade_scout()`
-
-### Comandos Telegram
-- `/status` — estado atual (ativo/pausado, horas silêncio, modelo, hora)
-
-### Controlos de comportamento
-- Horas de silêncio configuráveis (padrão 23h–7h)
-- Pode ser pausado/despausado
-- Modelo configurável
+- **7h diário** — CEO: Coach (futebol 2 linhas) + CFO (trading 1 linha) + Scout (oportunidade top) → 1 push
+- **22h diário** — CEO: relatório completo (todos os agentes, erros, sistema)
+- **Domingo 20h** — Scout Mission A: oportunidades de negócio
+- **Quarta 20h** — Scout Mission B: melhorias ao ecossistema de agentes
+- **Silêncio:** 23h–7h
 
 ---
 
-## O que NÃO está implementado ainda
+## Pipeline de aprovação de oportunidades
 
-| Item | Notas |
-|---|---|
-| Interface avatar (PWA) | Eixo B Fase 3 — a interface principal visual |
-| Widget iOS / Dynamic Island | Futuro — "virar o ecrã e ele estar logo ali" |
-| Multi-agente (CrewAI/AutoGen) | Fase 4 — Morgan CEO + sub-Morgans |
-| X API | $100/mês — ativar quando houver receita |
-| Perplexity API | Pesquisa mais profunda — ativar quando houver receita |
-| Google Search API | Cobertura máxima — ativar quando houver receita |
-
----
-
-## Hierarquia de negócios (Eixo C)
-
-```
-Vasco (decisão final)
-  └── Morgan CEO (braço direito)
-        ├── Morgan AI Scout  ← primeiro e único agente definido
-        └── Morgan [Negócio X], [Y]...  ← definidos pelo Scout com dados
-```
-
-Os negócios **não estão definidos à partida**. O Scout descobre quais os melhores com base em dados reais. O futebol foi um exemplo em conversa — pode ou não entrar no top.
-
-Marcos de rendimento passivo: €1k → €3k → €10k → €25k → €50k → sem teto.
+Quando Scout detecta oportunidade:
+1. Execução paralela: Creator (plano técnico) + Marketeer (estratégia) + Solver (riscos) + CFO (projecções)
+2. CEO compila e envia briefing completo ao Vasco
+3. Vasco diz "aprovo X" → `executar_oportunidade_aprovada()` → regista em `sistema_estado.json`
+4. Vasco diz "rejeito X" → arquiva
 
 ---
 
@@ -138,22 +113,43 @@ Marcos de rendimento passivo: €1k → €3k → €10k → €25k → €50k �
 
 | Serviço | Email | Estado |
 |---|---|---|
-| GitHub | morganceoai@gmail.com | ✅ migrado |
-| Railway | morganceoai@gmail.com | ✅ migrado |
-| ElevenLabs | morganceoai@gmail.com | ✅ migrado |
-| Tavily | morganceoai@gmail.com | ✅ migrado |
-| Product Hunt | morganceoai@gmail.com | ✅ criado diretamente |
-| Deepgram | vascobotelhodacosta@gmail.com | ⏳ migrar quando $200 crédito acabar |
-| API Football | (bloqueado) | ⏳ migrar quando subscrição acabar |
-| Twilio | — | ❌ cancelado |
-| ngrok | — | ❌ cancelado |
+| GitHub | morganceoai@gmail.com | ✅ |
+| ElevenLabs | morganceoai@gmail.com | ✅ |
+| Tavily | morganceoai@gmail.com | ✅ |
+| Product Hunt | morganceoai@gmail.com | ✅ |
+| PurelyMail | morgan@bcvertex.com | ✅ activo |
+| Mem0 | — | ✅ activo (MEM0_API_KEY) |
+| Qdrant | — | ✅ activo (QDRANT_URL) |
+| Binance | — | ✅ live (100 USDT) |
+| Etsy | — | ⏳ OAuth pendente (ETSY_KEYSTRING em falta) |
+| Deepgram | vascobotelhodacosta@gmail.com | ⏳ migrar quando crédito acabar |
+| Railway | — | ❌ cancelado |
+| Telegram | — | ❌ removido |
+
+---
+
+## O que NÃO está implementado ainda
+
+| Item | Notas |
+|---|---|
+| PWA morgan.bcvertex.com | Interface visual principal — a construir |
+| ElevenLabs Conversational AI | Substituir Hume EVI (PT-PT quebrado) — decisão tomada, não implementado |
+| Etsy OAuth | ETSY_KEYSTRING em falta → `python etsy_service.py --setup` |
+| GitHub Actions secrets | MAC_MINI_HOST, MAC_MINI_USER, MAC_MINI_SSH_KEY |
+| Gmail outreach | GMAIL_OUTREACH_USER + GMAIL_OUTREACH_PASS |
+| Sentry | Activar SENTRY_DSN (já no requirements.txt) |
+| Widget iOS / Dynamic Island | Futuro |
 
 ---
 
 ## Preferências de trabalho do Vasco
 
-- Respostas diretas e curtas — sem rodeios
-- Nunca implementar monitorização com loops frequentes sem confirmação (ex: foi pedido para remover loop de 2 em 2 horas para menções de nome)
-- A última decisão é sempre do Vasco — Morgan sugere, Vasco decide
-- Guardar em memória tudo o que for relevante ao longo da conversa, sem esperar que Vasco peça
-- Quando há dúvida sobre o estado do código, **ler o ficheiro antes de assumir**
+- **Respostas em PT-PT**, directas e curtas — sem sumários no final, sem rodeios
+- Quando há opções: **máximo 3**, com recomendação clara e o principal trade-off
+- **Confirmar abordagem antes de implementar** — não avançar sem alinhamento
+- **Nunca implementar loops frequentes** sem confirmação (ex: removido loop 2h para menções de nome)
+- **Guardar em memória** tudo o que for relevante — não esperar que Vasco peça
+- **Ler o ficheiro antes de assumir** — quando há dúvida sobre estado do código
+- Para explorar questões abertas ("o que fazemos sobre X?"): resposta em 2-3 frases com recomendação, não plano completo
+- Para tarefas simples: executar directamente sem narrar o processo
+- Dar contexto rápido quando muda de direcção ou encontra algo importante — uma frase chega

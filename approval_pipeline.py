@@ -17,6 +17,7 @@ _claude = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
 _HAIKU = "claude-haiku-4-5-20251001"
 _SONNET = "claude-sonnet-4-6"
+_OPUS  = "claude-opus-4-8"
 
 
 def _ask(system: str, prompt: str, model: str = _HAIKU, max_tokens: int = 400) -> str:
@@ -108,6 +109,32 @@ async def preparar_briefing_aprovacao(oportunidade: str, descricao: str) -> str:
         creator_f, marketeer_f, solver_f, cfo_f
     )
 
+    # CEO usa Opus para sintetizar os 4 inputs e dar recomendação final
+    sintese_prompt = f"""Oportunidade: {oportunidade}
+Descrição: {descricao}
+
+Análises dos agentes:
+CREATOR: {creator_r}
+MARKETEER: {marketeer_r}
+SOLVER: {solver_r}
+CFO: {cfo_r}
+
+Com base nestes inputs, dá a tua recomendação estratégica em 3 linhas:
+- Vale a pena avançar? Porquê?
+- O maior risco
+- Próximo passo concreto se aprovado
+Sê directo. Português europeu."""
+
+    try:
+        sintese = _ask(
+            "És o Morgan CEO. Sintetizas análises dos teus agentes e dás recomendações estratégicas ao Vasco.",
+            sintese_prompt,
+            model=_OPUS,
+            max_tokens=300,
+        )
+    except Exception:
+        sintese = "(síntese indisponível)"
+
     briefing = f"""OPORTUNIDADE DETECTADA: {oportunidade}
 {descricao}
 
@@ -122,6 +149,9 @@ async def preparar_briefing_aprovacao(oportunidade: str, descricao: str) -> str:
 
 ─── CFO — Projeção financeira ───
 {cfo_r}
+
+─── CEO — Recomendação ───
+{sintese}
 
 Respondes "aprovo {oportunidade}" para avançar ou "rejeito {oportunidade}" para arquivar."""
 
