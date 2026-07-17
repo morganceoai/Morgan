@@ -1511,7 +1511,8 @@ async def _run_briefing(hora: int):
 
     # Scout
     scout_data = load_scout()
-    aprovadas = scout_data.get("aprovadas", [])
+    aprovadas_raw = scout_data.get("aprovadas", [])
+    aprovadas = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
     oport_top = list(scout_data.get("oportunidades", {}).keys())[:1]
 
     prompt = f"""És o Morgan CEO. Gera o briefing matinal das 7h para o Vasco Botelho da Costa.
@@ -1764,7 +1765,8 @@ async def _run_daily_report():
     # Scout — oportunidades aprovadas
     try:
         scout_data = load_scout()
-        aprovadas = scout_data.get("aprovadas", [])
+        aprovadas_raw = scout_data.get("aprovadas", [])
+        aprovadas = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
         ops_str = ", ".join(aprovadas[:3]) if aprovadas else "nenhuma aprovada"
         oport_novas = list(scout_data.get("oportunidades", {}).keys())[:2]
         oport_str = ", ".join(oport_novas) if oport_novas else "nenhuma nova"
