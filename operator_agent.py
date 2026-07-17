@@ -11,6 +11,8 @@ import logging
 from pathlib import Path
 from datetime import datetime, date
 import anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

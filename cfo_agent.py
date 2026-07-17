@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from datetime import datetime, date
 import anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 MEMORY_DIR = Path(__file__).parent / "memory"
 TRADING_STATE_FILE = MEMORY_DIR / "trading_state.json"

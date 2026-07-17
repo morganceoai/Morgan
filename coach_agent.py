@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from datetime import datetime
 import anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 MEMORY_DIR = Path(__file__).parent / "memory"
 COACH_LOG_FILE = MEMORY_DIR / "coach_log.json"

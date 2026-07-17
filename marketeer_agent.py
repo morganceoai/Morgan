@@ -12,6 +12,8 @@ from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from datetime import datetime, date
 import anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 MEMORY_DIR = Path(__file__).parent / "memory"
 MARKETEER_FILE = MEMORY_DIR / "marketeer_state.json"

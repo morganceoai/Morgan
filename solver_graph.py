@@ -14,6 +14,8 @@ from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 import anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 FIXES_FILE = Path(__file__).parent / "memory" / "solver_fixes.json"
 
