@@ -61,13 +61,32 @@ DESKTOP_DIR = Path(__file__).parent / "desktop"
 # Histórico de conversa — carregado do disco ao arrancar, persiste entre sessões
 conversation_history: list[dict] = get_context_messages(DESKTOP_USER_ID)
 
+def _mem0_guardar_se_relevante(user_text: str, reply: str):
+    """Guarda no Qdrant em background. Haiku extrai só os factos relevantes antes de guardar."""
+    try:
+        import threading
+        threading.Thread(
+            target=mem0_add,
+            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": reply}]),
+            daemon=True
+        ).start()
+    except Exception:
+        pass
+
 
 def get_system_prompt(query: str = "") -> str:
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
 
-    # Mem0 desligado temporariamente (quota esgotada até 1 Agosto 2026)
+    # Memória semântica de longo prazo via Qdrant
     contexto = memoria
+    if query:
+        try:
+            mem_semantica = mem0_get("vasco", query, limit=8)
+            if mem_semantica:
+                contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
+        except Exception:
+            pass
 
     return f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
 Data e hora atual: {agora}
@@ -335,16 +354,8 @@ def _chat_ceo(user_text: str) -> str:
         )
     reply = "".join(block.text for block in response.content if hasattr(block, "text"))
     conversation_history.append({"role": "assistant", "content": reply})
-    # Guardar no Mem0 em background (não bloqueia a resposta)
-    try:
-        import threading
-        threading.Thread(
-            target=mem0_add,
-            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": reply}]),
-            daemon=True
-        ).start()
-    except Exception:
-        pass
+    # Guardar no Mem0 apenas trocas com decisões ou factos novos (poupar quota)
+    _mem0_guardar_se_relevante(user_text, reply)
     return reply
 
 # Agente ativo por sessão desktop
@@ -442,23 +453,14 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-    # Scout — CEO com contexto Scout
+    # Scout — agente standalone com quality gate
     if agente_alvo == "scout":
         _desktop_agent["current"] = "scout"
-        scout_data = load_scout()
-        ops = list(scout_data.get("oportunidades", {}).keys())[:5]
-        scout_ctx = f"\n\n[SCOUT] Oportunidades em memória: {', '.join(ops) if ops else 'nenhuma ainda.'}"
-        old_system = get_system_prompt
-        def scout_system():
-            return get_system_prompt() + scout_ctx + (
-                "\n\nResponde como Morgan Scout — analisa oportunidades de negócio com dados reais."
-                "\n\nPRIORIDADES ACTUAIS DO SCOUT:"
-                "\n1. Lego como negócio: o Vasco tem coleção Lego e quer loja no BrickLink.com. Pesquisa: sets com maior valorização 2026, margens revendedores BrickLink, volume de mercado, estratégia de entrada."
-                "\n2. REITs / Fundos Real Estate: ETFs disponíveis para investidores PT/EU, yield médio, risco, capital inicial €500-5000."
-                "\n3. Oportunidades digitais PT/BR: SaaS, infoprodutos, marketplaces com potencial passivo."
-            )
-        # Temporariamente override
-        reply_body = _chat_ceo_with_system(user_text, scout_system())
+        try:
+            from scout_agent import get_scout_reply
+            reply_body = get_scout_reply(user_text)
+        except Exception as e:
+            reply_body = f"[Scout indisponível: {e}]"
         reply = "[SCOUT] " + reply_body
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
@@ -711,13 +713,7 @@ async def chat_stream(request: Request):
                 yield text
         conversation_history.append({"role": "assistant", "content": full_reply})
         store_save(DESKTOP_USER_ID, "assistant", full_reply)
-        # Guardar no Mem0 em background
-        import threading
-        threading.Thread(
-            target=mem0_add,
-            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": full_reply}]),
-            daemon=True
-        ).start()
+        _mem0_guardar_se_relevante(user_text, full_reply)
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
@@ -1091,15 +1087,9 @@ REGRAS OBRIGATÓRIAS:
                             if text:
                                 store_save(DESKTOP_USER_ID, "assistant", text)
                                 await websocket.send_text(json.dumps({"type": "agent", "text": text}))
-                                # Guardar troca voz no Mem0 (em background)
                                 _last_user = getattr(ws_hume, "_last_user_text", "")
                                 if _last_user:
-                                    import threading
-                                    threading.Thread(
-                                        target=mem0_add,
-                                        args=("vasco", [{"role": "user", "content": _last_user}, {"role": "assistant", "content": text}]),
-                                        daemon=True
-                                    ).start()
+                                    _mem0_guardar_se_relevante(_last_user, text)
                         elif t == "assistant_end":
                             await websocket.send_text(json.dumps({"type": "done"}))
                         elif t == "error":
@@ -1563,15 +1553,15 @@ Instruções:
 
 
 async def _run_scout_push():
-    scout_data = load_scout()
-    ops = scout_data.get("oportunidades", {})
-    if not ops:
-        corpo = "Nenhuma oportunidade nova esta semana."
-    else:
-        top = list(ops.items())[:2]
-        corpo = " | ".join(f"{n}" for n, _ in top)
+    loop = asyncio.get_event_loop()
+    try:
+        from scout_agent import missao_a_oportunidades
+        relatorio = await loop.run_in_executor(None, missao_a_oportunidades)
+        corpo = relatorio[:300]
+    except Exception as e:
+        corpo = f"Erro Scout Missão A: {e}"
     send_push(
-        title="Morgan Scout — Relatório Semanal",
+        title="Morgan Scout — Oportunidades Validadas",
         body=corpo[:200],
         url="/pwa/"
     )
@@ -1947,12 +1937,6 @@ async def _heartbeat_loop():
             # Relatório diário às 22h
             if _should_run_report():
                 await _run_daily_report()
-
-            # Scout on-demand — 16h de hoje (16/07/2026) — 5 negócios
-            chave_scout_hoje = "scout_ondemand_20260716_16h"
-            if agora.strftime('%Y-%m-%d') == '2026-07-16' and agora.hour == 16 and not _dedup_check(chave_scout_hoje):
-                _dedup_mark(chave_scout_hoje)
-                asyncio.create_task(_run_scout_relatorio_completo())
 
             # Scout Missão A — oportunidades de negócio (domingo 20h)
             if _should_run_scout():

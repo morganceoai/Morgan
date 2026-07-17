@@ -1,130 +1,218 @@
 """
-Serviço centralizado de memória de longo prazo via Mem0.
-Suporta dois modos:
-  1. Cloud  — MEM0_API_KEY definido → MemoryClient (API paga)
-  2. Local  — QDRANT_URL + QDRANT_API_KEY definidos → Memory local com Qdrant Cloud
+Serviço de memória de longo prazo via Qdrant Cloud.
+Substitui Mem0 Cloud — sem quota, sem custo adicional.
 
-Sem nenhuma variável definida: modo degradado (sem memória persistente, log de aviso).
+Arquitectura:
+  - Qdrant Cloud (QDRANT_URL + QDRANT_API_KEY): vector store
+  - fastembed (local, gratuito): embeddings 384-dim
+  - Haiku: extrai factos estruturados das conversas antes de guardar
+
+API pública (compatível com código existente):
+  mem0_add(user_id, messages)
+  mem0_get(user_id, query, limit)
+  mem0_get_all(user_id, limit)
+  mem0_collective_add(agent, content)
+  mem0_collective_get(query, limit)
+  mem0_mode() → str
 """
 import os
+import json
 import logging
+import uuid
+from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 _log = logging.getLogger("mem0_service")
 
-# ── Clientes singleton ─────────────────────────────────────────────────────────
-_cloud_client = None   # MemoryClient (cloud)
-_local_client = None   # Memory (local + Qdrant)
-_mode: str = "none"    # "cloud" | "local" | "none"
+QDRANT_URL = os.getenv("QDRANT_URL", "")
+QDRANT_KEY = os.getenv("QDRANT_API_KEY", "")
+ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+COLLECTION_NAME = "morgan_memory"
+EMBEDDING_DIM = 384  # fastembed all-MiniLM-L6-v2
+
+_qdrant = None
+_embedder = None
+_mode = "none"
 
 
 def _init():
-    global _cloud_client, _local_client, _mode
+    global _qdrant, _embedder, _mode
     if _mode != "none":
-        return  # já inicializado
+        return
 
-    mem0_key = os.getenv("MEM0_API_KEY", "")
-    qdrant_url = os.getenv("QDRANT_URL", "")
-    qdrant_key = os.getenv("QDRANT_API_KEY", "")
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not QDRANT_URL or not QDRANT_KEY:
+        _log.warning("[Mem] QDRANT_URL ou QDRANT_API_KEY em falta — memória desactivada")
+        _mode = "degraded"
+        return
 
-    # Modo 1: cloud MemoryClient
-    if mem0_key:
-        try:
-            from mem0 import MemoryClient
-            _cloud_client = MemoryClient(api_key=mem0_key)
-            _mode = "cloud"
-            _log.info("[Mem0] modo cloud ativo")
-            return
-        except Exception as e:
-            _log.warning(f"[Mem0] falha cloud: {e}")
-
-    # Modo 2: local Memory + Qdrant Cloud + Anthropic embeddings
-    if qdrant_url and qdrant_key and anthropic_key:
-        try:
-            from mem0 import Memory
-            config = {
-                "vector_store": {
-                    "provider": "qdrant",
-                    "config": {
-                        "url": qdrant_url,
-                        "api_key": qdrant_key,
-                        "collection_name": "morgan_memory",
-                        "embedding_model_dims": 1536,
-                    },
-                },
-                "embedder": {
-                    "provider": "openai",  # mem0 usa openai-compatible; funciona com Anthropic se OPENAI_API_KEY mockado
-                    "config": {"model": "text-embedding-3-small"},
-                },
-                "llm": {
-                    "provider": "anthropic",
-                    "config": {
-                        "model": "claude-haiku-4-5-20251001",
-                        "api_key": anthropic_key,
-                    },
-                },
-            }
-            _local_client = Memory.from_config(config)
-            _mode = "local"
-            _log.info("[Mem0] modo local (Qdrant Cloud) ativo")
-            return
-        except Exception as e:
-            _log.warning(f"[Mem0] falha local/Qdrant: {e}")
-
-    _log.warning("[Mem0] sem MEM0_API_KEY nem QDRANT_URL — memória desativada")
-    _mode = "degraded"
-
-
-# ── API pública ────────────────────────────────────────────────────────────────
-
-def mem0_get(user_id: str, query: str, limit: int = 10) -> str:
-    _init()
     try:
-        if _mode == "cloud" and _cloud_client:
-            results = _cloud_client.search(query=query, filters={"user_id": user_id}, limit=limit)
-        elif _mode == "local" and _local_client:
-            results = _local_client.search(query=query, user_id=user_id, limit=limit)
+        from qdrant_client import QdrantClient
+        from qdrant_client.models import Distance, VectorParams, PointStruct
+        _qdrant = QdrantClient(url=QDRANT_URL, api_key=QDRANT_KEY)
+
+        from qdrant_client.models import PayloadSchemaType
+        # Criar collection se não existir
+        existing = [c.name for c in _qdrant.get_collections().collections]
+        if COLLECTION_NAME not in existing:
+            _qdrant.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
+            )
+            _qdrant.create_payload_index(
+                collection_name=COLLECTION_NAME,
+                field_name="user_id",
+                field_schema=PayloadSchemaType.KEYWORD,
+            )
+            _log.info(f"[Mem] collection '{COLLECTION_NAME}' criada")
         else:
-            return ""
-        memorias = []
-        for r in (results or []):
-            m = r.get("memory", "") if isinstance(r, dict) else str(r)
-            if m:
-                memorias.append(m)
-        return "\n".join(f"- {m}" for m in memorias)
+            # Garantir índice mesmo em collections existentes
+            try:
+                _qdrant.create_payload_index(
+                    collection_name=COLLECTION_NAME,
+                    field_name="user_id",
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
     except Exception as e:
-        _log.error(f"[Mem0] get erro: {e}")
-        return ""
+        _log.error(f"[Mem] erro ao conectar Qdrant: {e}")
+        _mode = "degraded"
+        return
+
+    try:
+        from fastembed import TextEmbedding
+        _embedder = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    except Exception as e:
+        _log.error(f"[Mem] erro ao carregar fastembed: {e}")
+        _mode = "degraded"
+        return
+
+    _mode = "qdrant"
+    _log.info("[Mem] modo Qdrant Cloud activo")
+
+
+def _embed(text: str) -> list[float]:
+    embeddings = list(_embedder.embed([text]))
+    return embeddings[0].tolist()
+
+
+def _extrair_factos(messages: list) -> list[str]:
+    """Usa Haiku para extrair factos memoráveis de uma troca de mensagens."""
+    if not ANTHROPIC_KEY:
+        return [m.get("content", "") for m in messages if m.get("role") == "user"]
+
+    conversa = "\n".join(
+        f"{m.get('role','?').upper()}: {m.get('content','')}"
+        for m in messages
+        if isinstance(m.get("content"), str)
+    )
+    if not conversa.strip():
+        return []
+
+    try:
+        import anthropic
+        c = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        r = c.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=300,
+            system=(
+                "Extrai factos memoráveis desta conversa. "
+                "Só extrai o que tem valor a longo prazo: decisões, preferências, factos sobre o Vasco, "
+                "objectivos, negócios, pessoas mencionadas. "
+                "Ignora perguntas triviais e respostas sem informação nova. "
+                "Responde com uma lista JSON de strings curtas (máx 20 palavras cada). "
+                "Se não há nada memorável, responde com []."
+            ),
+            messages=[{"role": "user", "content": conversa}],
+        )
+        text = r.content[0].text.strip()
+        # Extrair o JSON da resposta
+        import re
+        m = re.search(r"\[.*\]", text, re.DOTALL)
+        if m:
+            factos = json.loads(m.group())
+            return [f for f in factos if isinstance(f, str) and f.strip()]
+        return []
+    except Exception as e:
+        _log.warning(f"[Mem] extracção de factos falhou: {e}")
+        return []
 
 
 def mem0_add(user_id: str, messages: list):
     _init()
+    if _mode != "qdrant":
+        return
+
+    factos = _extrair_factos(messages)
+    if not factos:
+        return
+
     try:
-        if _mode == "cloud" and _cloud_client:
-            _cloud_client.add(messages, user_id=user_id)
-        elif _mode == "local" and _local_client:
-            _local_client.add(messages, user_id=user_id)
+        from qdrant_client.models import PointStruct
+        pontos = []
+        for facto in factos:
+            vec = _embed(facto)
+            pontos.append(PointStruct(
+                id=str(uuid.uuid4()),
+                vector=vec,
+                payload={
+                    "memory": facto,
+                    "user_id": user_id,
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+            ))
+        _qdrant.upsert(collection_name=COLLECTION_NAME, points=pontos)
     except Exception as e:
-        _log.error(f"[Mem0] add erro: {e}")
+        _log.error(f"[Mem] add erro: {e}")
+
+
+def mem0_get(user_id: str, query: str, limit: int = 10) -> str:
+    _init()
+    if _mode != "qdrant":
+        return ""
+
+    try:
+        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        vec = _embed(query)
+        results = _qdrant.query_points(
+            collection_name=COLLECTION_NAME,
+            query=vec,
+            query_filter=Filter(
+                must=[FieldCondition(key="user_id", match=MatchValue(value=user_id))]
+            ),
+            limit=limit,
+            score_threshold=0.5,
+            with_payload=True,
+        )
+        memorias = [r.payload.get("memory", "") for r in results.points if r.payload]
+        return "\n".join(f"- {m}" for m in memorias if m)
+    except Exception as e:
+        _log.error(f"[Mem] get erro: {e}")
+        return ""
 
 
 def mem0_get_all(user_id: str, limit: int = 50) -> str:
     _init()
+    if _mode != "qdrant":
+        return ""
+
     try:
-        if _mode == "cloud" and _cloud_client:
-            results = _cloud_client.get_all(filters={"user_id": user_id}, limit=limit)
-        elif _mode == "local" and _local_client:
-            results = _local_client.get_all(user_id=user_id, limit=limit)
-        else:
-            return ""
-        memorias = []
-        for r in (results or []):
-            m = r.get("memory", "") if isinstance(r, dict) else str(r)
-            if m:
-                memorias.append(m)
-        return "\n".join(f"- {m}" for m in memorias)
+        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        results, _ = _qdrant.scroll(
+            collection_name=COLLECTION_NAME,
+            scroll_filter=Filter(
+                must=[FieldCondition(key="user_id", match=MatchValue(value=user_id))]
+            ),
+            limit=limit,
+            with_payload=True,
+        )
+        memorias = [r.payload.get("memory", "") for r in results if r.payload]
+        return "\n".join(f"- {m}" for m in memorias if m)
     except Exception as e:
-        _log.error(f"[Mem0] get_all erro: {e}")
+        _log.error(f"[Mem] get_all erro: {e}")
         return ""
 
 
@@ -137,6 +225,5 @@ def mem0_collective_get(query: str, limit: int = 5) -> str:
 
 
 def mem0_mode() -> str:
-    """Devolve o modo atual: 'cloud', 'local', 'degraded' ou 'none'."""
     _init()
     return _mode

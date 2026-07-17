@@ -153,38 +153,38 @@ def _registar_outreach_enviado():
 
 def enviar_outreach_email(destinatario_email: str, assunto: str, corpo: str, nome_destinatario: str = "") -> str:
     """
-    Envia email de outreach via Gmail SMTP (App Password).
-    Requer GMAIL_OUTREACH_USER e GMAIL_OUTREACH_PASS nas variáveis de ambiente.
+    Envia email de outreach via PurelyMail SMTP.
+    Usa MORGAN_EMAIL e MORGAN_EMAIL_PASS do .env.
     Limite diário: 50 emails.
     """
     enviados = _outreach_hoje()
     if enviados >= _OUTREACH_CAP:
         return f"Limite diário de {_OUTREACH_CAP} emails atingido. Retoma amanhã."
 
-    gmail_user = os.getenv("GMAIL_OUTREACH_USER", "")
-    gmail_pass = os.getenv("GMAIL_OUTREACH_PASS", "")
-    if not gmail_user or not gmail_pass:
-        return "Variáveis GMAIL_OUTREACH_USER / GMAIL_OUTREACH_PASS não configuradas. Adiciona ao .env e Railway."
+    smtp_user = os.getenv("MORGAN_EMAIL", "")
+    smtp_pass = os.getenv("MORGAN_EMAIL_PASS", "")
+    if not smtp_user or not smtp_pass:
+        return "Variáveis MORGAN_EMAIL / MORGAN_EMAIL_PASS não configuradas no .env."
 
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = assunto
-        msg["From"] = gmail_user
-        msg["To"] = destinatario_email
-        if nome_destinatario:
-            msg["To"] = f"{nome_destinatario} <{destinatario_email}>"
+        msg["From"] = smtp_user
+        msg["To"] = f"{nome_destinatario} <{destinatario_email}>" if nome_destinatario else destinatario_email
         msg.attach(MIMEText(corpo, "plain", "utf-8"))
 
         ctx = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as server:
-            server.login(gmail_user, gmail_pass)
-            server.sendmail(gmail_user, destinatario_email, msg.as_string())
+        with smtplib.SMTP("smtp.purelymail.com", 587) as server:
+            server.ehlo()
+            server.starttls(context=ctx)
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, destinatario_email, msg.as_string())
 
         _registar_outreach_enviado()
         enviados_agora = _outreach_hoje()
         return f"Email enviado para {destinatario_email}. Total hoje: {enviados_agora}/{_OUTREACH_CAP}."
     except smtplib.SMTPAuthenticationError:
-        return "Erro de autenticação Gmail. Verifica o App Password em Google Account → Segurança → Palavras-passe de app."
+        return "Erro de autenticação PurelyMail. Verifica MORGAN_EMAIL_PASS no .env."
     except Exception as e:
         return f"Erro ao enviar email: {e}"
 
@@ -424,8 +424,20 @@ TOOLS = [
         }
     },
     {
+        "name": "analisar_instagram_referencia",
+        "description": "Analisa o Instagram de uma conta de referência e compara com a conta do Vasco para identificar estratégias de crescimento.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "conta_referencia": {"type": "string", "description": "Handle Instagram da conta de referência (sem @)", "default": "pepteam"},
+                "conta_vasco": {"type": "string", "description": "Handle Instagram do Vasco (sem @)", "default": "vascobotelhodacosta"}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "enviar_outreach_email",
-        "description": "Envia um email de outreach personalizado via Gmail. Limite: 50 emails/dia. Requer confirmação do Vasco antes de enviar.",
+        "description": "Envia um email de outreach personalizado via PurelyMail. Limite: 50 emails/dia. Requer confirmação do Vasco antes de enviar.",
         "input_schema": {
             "type": "object",
             "properties": {

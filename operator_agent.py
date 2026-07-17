@@ -286,7 +286,7 @@ def get_operator_reply(msg: str) -> str:
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-6",
             max_tokens=2048,
             system=SYSTEM_PROMPT,
             messages=messages,

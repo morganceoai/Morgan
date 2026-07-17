@@ -1,31 +1,139 @@
 import os
 import requests
-from tavily import TavilyClient
 from memory_store import save_fact, remove_fact, list_memory
 
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+EXA_API_KEY = os.getenv("EXA_API_KEY")
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+BRAVE_API_KEY = os.getenv("BRAVE_API_KEY")
 
 PRIMEIRA_LIGA_ID = 94
 CURRENT_SEASON = 2026
 
 
-def pesquisar_web(query: str) -> str:
-    """Pesquisa na web e devolve um resumo dos resultados."""
+def _pesquisar_exa(query: str, num_results: int = 5) -> list[dict]:
+    """Pesquisa semântica via Exa AI — retorna lista de {title, content, url}."""
+    if not EXA_API_KEY:
+        return []
     try:
+        from exa_py import Exa
+        exa = Exa(api_key=EXA_API_KEY)
+        results = exa.search_and_contents(query, num_results=num_results, text={"max_characters": 500})
+        return [{"title": r.title or "", "content": r.text or "", "url": r.url or ""} for r in results.results]
+    except Exception:
+        return []
+
+
+def _pesquisar_tavily(query: str, num_results: int = 5) -> list[dict]:
+    """Pesquisa via Tavily — retorna lista de {title, content, url}."""
+    if not TAVILY_API_KEY:
+        return []
+    try:
+        from tavily import TavilyClient
         client = TavilyClient(api_key=TAVILY_API_KEY)
-        # Garante resultados recentes adicionando o ano se não estiver na query
-        if "2026" not in query and "2025" not in query:
-            query = f"{query} 2026"
-        result = client.search(query=query, search_depth="advanced", max_results=5)
-        if not result.get("results"):
-            return "Não encontrei resultados para essa pesquisa."
-        output = []
-        for r in result["results"]:
-            output.append(f"**{r['title']}**\n{r['content']}\nFonte: {r['url']}")
-        return "\n\n---\n\n".join(output)
-    except Exception as e:
-        return f"Erro na pesquisa web: {e}"
+        result = client.search(query=query, search_depth="advanced", max_results=num_results)
+        return [{"title": r.get("title",""), "content": r.get("content",""), "url": r.get("url","")} for r in result.get("results", [])]
+    except Exception:
+        return []
+
+
+def _pesquisar_brave(query: str, num_results: int = 5) -> list[dict]:
+    """Pesquisa via Brave Search API (2000 req/mês gratuitas)."""
+    if not BRAVE_API_KEY:
+        return []
+    try:
+        r = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers={"Accept": "application/json", "X-Subscription-Token": BRAVE_API_KEY},
+            params={"q": query, "count": num_results, "text_decorations": False},
+            timeout=10
+        )
+        data = r.json()
+        results = []
+        for item in data.get("web", {}).get("results", [])[:num_results]:
+            results.append({
+                "title": item.get("title", ""),
+                "content": item.get("description", ""),
+                "url": item.get("url", ""),
+            })
+        return results
+    except Exception:
+        return []
+
+
+def _pesquisar_duckduckgo(query: str, num_results: int = 5) -> list[dict]:
+    """Pesquisa via DuckDuckGo — gratuita, sem API key."""
+    try:
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=num_results))
+        return [{"title": r.get("title",""), "content": r.get("body",""), "url": r.get("href","")} for r in results]
+    except Exception:
+        return []
+
+
+def pesquisar_web(query: str, modo: str = "auto") -> str:
+    """Pesquisa na web com cascade: Exa → Tavily → Brave → DuckDuckGo.
+    modo='auto': usa o melhor disponível.
+    modo='semantico': força Exa (ideal para análise de mercado).
+    modo='noticias': força Tavily (ideal para informação recente).
+    """
+    if "2026" not in query and "2025" not in query:
+        query = f"{query} 2026"
+
+    resultados: list[dict] = []
+
+    if modo == "semantico":
+        resultados = _pesquisar_exa(query)
+    elif modo == "noticias":
+        resultados = _pesquisar_tavily(query) or _pesquisar_duckduckgo(query)
+    else:
+        # Auto: Exa primeiro (melhor qualidade), depois fallbacks
+        resultados = (
+            _pesquisar_exa(query) or
+            _pesquisar_tavily(query) or
+            _pesquisar_brave(query) or
+            _pesquisar_duckduckgo(query)
+        )
+
+    if not resultados:
+        return "Não encontrei resultados para essa pesquisa (todas as fontes indisponíveis)."
+
+    fonte = ""
+    if resultados and EXA_API_KEY and modo != "noticias":
+        fonte = " [Exa]"
+    elif resultados and TAVILY_API_KEY:
+        fonte = " [Tavily]"
+
+    output = []
+    for r in resultados[:5]:
+        if r.get("title") or r.get("content"):
+            output.append(f"**{r['title']}**{fonte}\n{r['content']}\nFonte: {r['url']}")
+    return "\n\n---\n\n".join(output) if output else "Sem resultados."
+
+
+def pesquisar_mercado(query: str) -> str:
+    """Síntese de mercado via Perplexity (se disponível) ou pesquisa_web em modo semântico.
+    Ideal para o Scout: retorna análise sintetizada com fontes, não resultados crus.
+    """
+    if PERPLEXITY_API_KEY:
+        try:
+            import anthropic as _a
+            client = _a.Anthropic(
+                api_key=PERPLEXITY_API_KEY,
+                base_url="https://api.perplexity.ai"
+            )
+            response = client.messages.create(
+                model="llama-3.1-sonar-large-128k-online",
+                max_tokens=1000,
+                messages=[{"role": "user", "content": f"{query}\n\nResponde com dados concretos, números reais e fontes. Mínimo 3 fontes citadas."}]
+            )
+            return response.content[0].text
+        except Exception:
+            pass
+    # Fallback: pesquisa semântica agregada
+    return pesquisar_web(query, modo="semantico")
 
 
 def classificacao_primeira_liga() -> str:
@@ -500,69 +608,7 @@ ALLOWED_DIRS = [MORGAN_DIR, MORGAN_DIR / "memory", MORGAN_DIR / "desktop"]
 
 # Comandos de diagnóstico permitidos (read-only, seguros)
 _CMD_WHITELIST = ["ps", "grep", "tail", "head", "cat", "ls", "wc", "df", "free",
-                  "python3", "pip", "railway", "git log", "git status", "git diff"]
-
-
-def solver_railway_logs(linhas: int = 100) -> str:
-    """Obtém os logs de produção do Railway via API GraphQL."""
-    import os, requests as req
-    # MORGAN_RAILWAY_TOKEN evita conflito com variáveis reservadas pelo Railway (RAILWAY_*)
-    token = os.getenv("MORGAN_RAILWAY_TOKEN", "")
-    project_id = "77619047-faab-42de-9a90-c525ae2f99f4"
-    service_id = "53a301b6-f998-4b9b-b736-cd6745065c2f"
-    if not token:
-        return "MORGAN_RAILWAY_TOKEN não configurado. Adiciona a variável no Railway (não usar prefixo RAILWAY_ — é reservado)."
-    try:
-        # Railway API v2 — obtém o deployment mais recente e os seus logs
-        # Passo 1: último deployment do serviço
-        q_deploy = """
-        query($serviceId: String!, $projectId: String!) {
-          deployments(input: {serviceId: $serviceId, projectId: $projectId}, first: 1) {
-            edges { node { id status createdAt } }
-          }
-        }
-        """
-        r = req.post(
-            "https://backboard.railway.app/graphql/v2",
-            json={"query": q_deploy, "variables": {"serviceId": service_id, "projectId": project_id}},
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            timeout=10,
-        )
-        data = r.json()
-        edges = data.get("data", {}).get("deployments", {}).get("edges", [])
-        if not edges:
-            # Fallback: devolve o que a API retornou para diagnóstico
-            return f"Sem deployments encontrados. Resposta API: {str(data)[:500]}"
-
-        deploy_id = edges[0]["node"]["id"]
-        deploy_status = edges[0]["node"].get("status", "?")
-
-        # Passo 2: logs do deployment
-        q_logs = """
-        query($deploymentId: String!) {
-          deploymentLogs(deploymentId: $deploymentId) {
-            timestamp
-            severity
-            message
-          }
-        }
-        """
-        r2 = req.post(
-            "https://backboard.railway.app/graphql/v2",
-            json={"query": q_logs, "variables": {"deploymentId": deploy_id}},
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            timeout=10,
-        )
-        data2 = r2.json()
-        logs = data2.get("data", {}).get("deploymentLogs", [])
-        if not logs:
-            return f"Deployment {deploy_id} ({deploy_status}) sem logs. Resposta: {str(data2)[:300]}"
-
-        linhas_txt = [f"[{l.get('timestamp','')}] [{l.get('severity','')}] {l.get('message','')}" for l in logs]
-        cabecalho = f"Deployment: {deploy_id} | Status: {deploy_status} | {len(logs)} linhas\n---\n"
-        return cabecalho + "\n".join(linhas_txt[-linhas:])
-    except Exception as e:
-        return f"Erro a obter logs Railway: {e}"
+                  "python3", "pip", "git log", "git status", "git diff"]
 
 
 def solver_ler_ficheiro(caminho: str) -> str:
@@ -731,18 +777,21 @@ def solver_git_commit_push(mensagem: str) -> str:
         return f"Erro: {e}"
 
 
-def solver_railway_deploy() -> str:
-    """Faz deploy no Railway. REQUER confirmação prévia do Vasco."""
+def solver_mac_mini_logs(linhas: int = 50) -> str:
+    """Obtém as últimas N linhas do log do Morgan no Mac Mini via SSH."""
+    import subprocess
+    host = os.getenv("MAC_MINI_HOST", "100.100.15.110")
+    user = os.getenv("MAC_MINI_USER", "bcvertex")
     try:
         result = subprocess.run(
-            "railway up --detach",
-            shell=True, capture_output=True, text=True,
-            cwd=str(MORGAN_DIR), timeout=120
+            ["ssh", "-o", "ConnectTimeout=8", "-o", "StrictHostKeyChecking=no",
+             f"{user}@{host}", f"tail -{linhas} /Users/bcvertex/Morgan/morgan_server.log"],
+            capture_output=True, text=True, timeout=15
         )
         output = (result.stdout + result.stderr).strip()
-        return output or "Deploy iniciado."
+        return output or "(sem output)"
     except Exception as e:
-        return f"Erro: {e}"
+        return f"Erro SSH Mac Mini: {e}"
 
 
 def solver_editar_ficheiro(caminho: str, texto_antigo: str, texto_novo: str) -> str:
@@ -1072,14 +1121,25 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
-        "name": "solver_railway_logs",
-        "description": "Obtém os logs reais de produção do Railway — o que está a acontecer no servidor. Usa para diagnosticar erros em produção que não aparecem no audit.log local. Requer RAILWAY_API_TOKEN, RAILWAY_PROJECT_ID e RAILWAY_SERVICE_ID configurados.",
+        "name": "solver_mac_mini_logs",
+        "description": "Obtém as últimas N linhas do log do Morgan no Mac Mini via SSH. Usa para diagnosticar erros em produção.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "linhas": {"type": "integer", "description": "Número de linhas de log a obter. Default: 100."}
+                "linhas": {"type": "integer", "description": "Número de linhas de log a obter. Default: 50."}
             },
             "required": []
+        }
+    },
+    {
+        "name": "pesquisar_mercado",
+        "description": "Síntese de mercado via Perplexity (se disponível) ou pesquisa semântica Exa. Ideal para o Scout validar uma oportunidade com dados reais antes de propor ao CEO. Retorna análise sintetizada com fontes.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Pergunta de mercado. Ex: 'TAM mercado CRM freelancers global 2026 receita real founders'"}
+            },
+            "required": ["query"]
         }
     },
     {
@@ -1142,8 +1202,8 @@ TOOLS = [
         }
     },
     {
-        "name": "solver_railway_deploy",
-        "description": "Faz deploy no Railway após commit e push. APENAS após aprovação explícita do Vasco. Usar sempre depois de solver_git_commit_push.",
+        "name": "solver_mac_mini_restart",
+        "description": "Reinicia o servidor Morgan no Mac Mini via SSH. APENAS após aprovação explícita do Vasco.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
@@ -1361,8 +1421,12 @@ TOOL_FUNCTIONS = {
     "solver_git_log": solver_git_log,
     "solver_git_diff": solver_git_diff,
     "solver_git_commit_push": solver_git_commit_push,
-    "solver_railway_deploy": solver_railway_deploy,
-    "solver_railway_logs": solver_railway_logs,
+    "solver_mac_mini_logs": lambda linhas=50: solver_mac_mini_logs(linhas),
+    "solver_mac_mini_restart": lambda: solver_executar_correcao(
+        "ssh -o ConnectTimeout=8 -o StrictHostKeyChecking=no bcvertex@100.100.15.110 "
+        "'launchctl kickstart -k gui/$(id -u)/com.bcvertex.morgan'"
+    ),
+    "pesquisar_mercado": pesquisar_mercado,
     "consultar_historico_imperio": consultar_historico_imperio,
     "atualizar_estado_imperio": atualizar_estado_imperio,
     "listar_google_drive": listar_google_drive,

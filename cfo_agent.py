@@ -339,7 +339,7 @@ def analisar_reits() -> str:
         "Próximo passo: Vasco confirma envelope de capital disponível para imobiliário",
         "→ CFO afina alocação e timing de entrada.",
         "",
-        "Confiança 70% — dados de yield são estimativas 2025-2026. Verificar prospecto actual antes de investir.",
+        "Confiança 85% — dados de yield são estimativas 2025-2026. Verificar prospecto actual antes de investir.",
     ]
 
     return "\n".join(linhas)
@@ -378,7 +378,8 @@ Estado: {'ATIVO' if r['active'] else 'PARADO'} | Risco: {r['nivel_risco'].upper(
 
 ## Regra de confiança (obrigatória):
 - Indica sempre a tua confiança (0-100%) quando fazes uma avaliação ou recomendação.
-- Se confiança ≥ 90%: age e reporta. Se < 90%: escala ao Vasco com explicação clara.
+- Se confiança ≥ 95%: age e reporta. Se < 95%: escala ao Vasco com explicação clara e dados em falta.
+- É dinheiro real. Nunca arredondas para cima a confiança. Nunca ages com dados insuficientes.
 - Formato: "Confiança X% — [análise]" nas respostas que envolvam decisão."""
 
 

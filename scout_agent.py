@@ -1,0 +1,296 @@
+"""
+Morgan Scout — Agente de inteligência de mercado do império BC Industries.
+Missão A (domingo 20h): identifica e valida oportunidades de negócio.
+Missão B (quarta 20h): melhorias ao ecossistema de agentes.
+
+QUALITY GATE OBRIGATÓRIO: nenhuma oportunidade passa ao CEO sem:
+  1. TAM com número real (fonte citada)
+  2. Mínimo 3 casos de sucesso públicos com receita declarada
+  3. Mercado por país validado com dados (não hipóteses)
+  4. Capital inicial mínimo estimado com base em ferramentas reais
+  5. 3 competidores directos com preços e tráfego estimado
+  6. Tempo realista até primeiro €1 (dados de fundadores reais)
+  7. Confiança mínima 85% — abaixo disso descarta ou marca como "em investigação"
+  8. Formato padronizado obrigatório antes de propor ao CEO
+"""
+import os
+import json
+from pathlib import Path
+from datetime import datetime, date
+import anthropic
+from dotenv import load_dotenv
+load_dotenv()
+
+MEMORY_DIR = Path(__file__).parent / "memory"
+SCOUT_STATE_FILE = MEMORY_DIR / "scout_state.json"
+SCOUT_REPORTS_DIR = MEMORY_DIR / "scout_reports"
+SCOUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+
+
+# ── Quality Gate ──────────────────────────────────────────────────────────────
+
+QUALITY_GATE_PROMPT = """És o Morgan Scout. Antes de propor qualquer oportunidade ao CEO, aplica o Quality Gate obrigatório.
+
+QUALITY GATE — 8 critérios (todos obrigatórios):
+
+1. TAM (Mercado Total Endereçável)
+   - Obrigatório: número real com fonte citada (ex: "$4.2B em 2026, Statista")
+   - Recusa se: "grande mercado", "mercado em crescimento" sem números
+
+2. Casos de sucesso reais
+   - Obrigatório: mínimo 3 fundadores reais com receita declarada e links
+   - Recusa se: só "este modelo funciona" sem exemplos verificáveis
+
+3. Mercado por país validado
+   - Obrigatório: dados concretos por país (volume de pesquisa, nº empresas alvo, competidores locais)
+   - Recusa se: "mercado PT/BR/ES" sem validar qual e porquê
+
+4. Capital inicial real
+   - Obrigatório: itemização detalhada (hosting €X/mês, ferramentas €X, tempo desenvolvimento X horas)
+   - Recusa se: "custo baixo" ou "praticamente zero"
+
+5. Competidores directos
+   - Obrigatório: 3 competidores com preços actuais, tráfego estimado (SimilarWeb/Ahrefs), e ponto fraco explorável
+   - Recusa se: "sem competição" ou lista vaga
+
+6. Timeline realista
+   - Obrigatório: dias/semanas até primeiro cliente, com base em casos reais de fundadores similares
+   - Recusa se: "pode gerar rendimento rapidamente"
+
+7. Confiança
+   - Mínimo 85% para propor ao CEO
+   - Entre 70-85%: marca como "em investigação — mais dados necessários"
+   - Abaixo de 70%: descarta, não propõe
+
+8. Formato padronizado obrigatório
+   OPORTUNIDADE: [nome claro]
+   MERCADO: [país(es) validado(s) com dados]
+   TAM: [valor com fonte]
+   CASOS REAIS: [3 fundadores/empresas com receita e link]
+   COMPETIDORES: [3 com preços e tráfego]
+   CAPITAL INICIAL: [itemização detalhada, total em €]
+   RECEITA ESTIMADA: [30/60/90 dias com base em casos reais]
+   TEMPO ATÉ 1º CLIENTE: [dias, baseado em dados reais]
+   INTERVENÇÃO DO VASCO: [o que ele faz uma vez + o que o Morgan automatiza]
+   CONFIANÇA: [X%]
+   PRÓXIMO PASSO: [acção concreta hoje]
+
+Se não conseguires preencher todos os campos com dados reais, NÃO propões. Dizes: "Dados insuficientes — em investigação."
+"""
+
+SCOUT_MISSAO_A_PROMPT = """És o Morgan Scout. Hoje é domingo — Missão A: identificar as melhores oportunidades de negócio para o Vasco Botelho da Costa.
+
+CONTEXTO DO VASCO:
+- Treinador de futebol no Moreirense FC (Portugal) — muito pouco tempo disponível
+- Objetivo: €10.000/mês de rendimento passivo
+- Capital disponível: pequeno (€200-1000 por oportunidade para começar)
+- Tem o Morgan (8 agentes IA) para executar automaticamente
+- Prefere negócios onde a sua intervenção seja ZERO após lançamento, ou máximo "aprovar uma vez por semana"
+- NÃO quer negócios que dependam da sua identidade como treinador de futebol
+
+CRITÉRIOS DE SELECÇÃO:
+- Rendimento passivo real (não "semi-passivo")
+- Mercados globais ou ibéricos (não só Portugal — mercado pequeno)
+- Modelos com provas de receita de fundadores solo
+- Capital inicial acessível
+- Automatizável pelo Morgan
+
+PROCESSO DE TRABALHO:
+1. Pesquisa extensa em múltiplas fontes (IndieHackers, HN, Product Hunt, Reddit, Exa)
+2. Identifica 5-10 candidatos iniciais
+3. Aplica o Quality Gate a cada um
+4. Propõe ao CEO apenas os que passam o gate com ≥85% confiança
+5. Máximo 3 oportunidades por relatório (as 3 melhores)
+
+Usa as ferramentas pesquisar_mercado, pesquisar_web, hacker_news_trending, indiehackers_trending, product_hunt_trending para recolher dados.
+Depois aplica o Quality Gate a cada candidato.
+"""
+
+SCOUT_MISSAO_B_PROMPT = """És o Morgan Scout. Hoje é quarta-feira — Missão B: melhorias ao ecossistema de agentes Morgan.
+
+OBJETIVO:
+Identificar ferramentas, APIs, ou técnicas novas (lançadas nos últimos 3 meses) que melhorem as capacidades dos agentes existentes.
+
+AGENTES A ANALISAR: CEO, Coach, CFO, Creator, Solver, Operator, Marketeer
+
+PARA CADA AGENTE:
+- Existe uma API ou biblioteca mais recente que melhore as suas capacidades?
+- Há uma ferramenta nova que valha integrar?
+- O que os founders do IndieHackers/HN estão a usar para automatizar tarefas semelhantes?
+- Qual o custo mensal? É compatível com o orçamento actual (mínimo)?
+
+FORMATO:
+[Agente] — [Melhoria] — [Impacto estimado] — [Custo] — [Prioridade: ALTA/MÉDIA/BAIXA]
+
+Máximo 8 sugestões. Só propõe o que tem impacto real e custo justificado.
+"""
+
+
+# ── Estado persistente ────────────────────────────────────────────────────────
+
+def _load_state() -> dict:
+    try:
+        return json.loads(SCOUT_STATE_FILE.read_text())
+    except Exception:
+        return {
+            "oportunidades_investigacao": [],  # passaram gate parcialmente
+            "oportunidades_propostas": [],      # passaram gate completo, propostas ao CEO
+            "oportunidades_aprovadas": [],      # aprovadas pelo Vasco
+            "oportunidades_rejeitadas": [],     # rejeitadas
+            "ultima_missao_a": "",
+            "ultima_missao_b": "",
+            "missoes_completadas": 0,
+        }
+
+
+def _save_state(state: dict):
+    SCOUT_STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+
+
+def _get_tools_scout() -> list:
+    from tools import TOOLS
+    names = [
+        "pesquisar_web", "pesquisar_mercado",
+        "hacker_news_trending", "indiehackers_trending",
+        "product_hunt_trending", "reddit_trending",
+        "google_trends", "ver_historico_scout",
+        "monitorizar_oportunidades_aprovadas",
+    ]
+    return [t for t in TOOLS if t["name"] in names]
+
+
+def _run_tool(name: str, inp: dict) -> str:
+    from tools import TOOL_FUNCTIONS
+    fn = TOOL_FUNCTIONS.get(name)
+    if not fn:
+        return f"Ferramenta {name} não encontrada."
+    try:
+        return fn(**inp) if inp else fn()
+    except Exception as e:
+        return f"Erro em {name}: {e}"
+
+
+def _chamar_claude_scout(system: str, messages: list, max_tokens: int = 2000) -> str:
+    tools = _get_tools_scout()
+    msgs = list(messages)
+    while True:
+        response = _client.messages.create(
+            model="claude-opus-4-8",  # Scout usa Opus — decisões de negócio
+            max_tokens=max_tokens,
+            system=system,
+            tools=tools,
+            messages=msgs,
+        )
+        if response.stop_reason == "tool_use":
+            msgs.append({"role": "assistant", "content": response.content})
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    result = _run_tool(block.name, block.input)
+                    tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+            msgs.append({"role": "user", "content": tool_results})
+        else:
+            return "".join(b.text for b in response.content if hasattr(b, "text"))
+
+
+def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
+    """Aplica o Quality Gate a uma oportunidade descrita em texto.
+    Retorna (texto_validado, confianca).
+    """
+    system = QUALITY_GATE_PROMPT + "\n\nSe os dados forem insuficientes, diz exactamente o que falta e porque não pode ser proposta agora."
+    msgs = [{"role": "user", "content": f"Aplica o Quality Gate a esta oportunidade:\n\n{oportunidade_raw}"}]
+    resultado = _chamar_claude_scout(system, msgs, max_tokens=1500)
+
+    # Extrair confiança do texto
+    import re
+    m = re.search(r"CONFIANÇA:\s*(\d+)%", resultado, re.IGNORECASE)
+    confianca = int(m.group(1)) if m else 0
+
+    return resultado, confianca
+
+
+# ── Missões ───────────────────────────────────────────────────────────────────
+
+def missao_a_oportunidades() -> str:
+    """Missão A — domingo 20h: identificar e validar oportunidades de negócio."""
+    state = _load_state()
+
+    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT
+
+    msgs = [{"role": "user", "content": (
+        "Inicia a Missão A. Pesquisa, identifica candidatos, e para cada um aplica o Quality Gate. "
+        "Propõe apenas os que passam com ≥85% confiança. "
+        "No final, apresenta o relatório estruturado com máximo 3 oportunidades validadas."
+    )}]
+
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=3000)
+
+    # Guardar relatório
+    hoje = date.today().strftime("%Y-%m-%d")
+    report_file = SCOUT_REPORTS_DIR / f"missao_a_{hoje}.txt"
+    report_file.write_text(relatorio, encoding="utf-8")
+
+    state["ultima_missao_a"] = hoje
+    state["missoes_completadas"] = state.get("missoes_completadas", 0) + 1
+    _save_state(state)
+
+    return relatorio
+
+
+def missao_b_melhorias() -> str:
+    """Missão B — quarta 20h: melhorias ao ecossistema de agentes."""
+    from sistema_service import get_agentes_ativos
+    state = _load_state()
+
+    try:
+        agentes = get_agentes_ativos()
+        agentes_lista = "\n".join(f"- {v['nome']}: {v['descricao']}" for v in agentes.values())
+    except Exception:
+        agentes_lista = "CEO, Scout, Coach, CFO, Creator, Solver, Operator, Marketeer"
+
+    system = SCOUT_MISSAO_B_PROMPT
+    msgs = [{"role": "user", "content": (
+        f"Agentes actuais:\n{agentes_lista}\n\n"
+        "Pesquisa melhorias. Usa hacker_news_trending e pesquisar_web. "
+        "Propõe apenas melhorias com impacto real e custo justificado."
+    )}]
+
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=1500)
+
+    hoje = date.today().strftime("%Y-%m-%d")
+    report_file = SCOUT_REPORTS_DIR / f"missao_b_{hoje}.txt"
+    report_file.write_text(relatorio, encoding="utf-8")
+
+    state["ultima_missao_b"] = hoje
+    _save_state(state)
+
+    return relatorio
+
+
+def get_scout_reply(user_message: str) -> str:
+    """Resposta directa do Scout quando invocado na conversa."""
+    system = (
+        "És o Morgan Scout, o agente de inteligência de mercado do império BC Industries.\n"
+        "Especialidade: identificar e VALIDAR oportunidades de negócio com dados reais.\n"
+        "Nunca propões hipóteses sem dados. Nunca exageras potencial. "
+        "Cada afirmação tem fonte ou é marcada como estimativa.\n"
+        "Responde sempre em PT-PT. Tom: directo, factual, sem hype.\n\n"
+        + QUALITY_GATE_PROMPT
+    )
+    msgs = [{"role": "user", "content": user_message}]
+    return _chamar_claude_scout(system, msgs)
+
+
+def estado_scout() -> dict:
+    """Estado actual do Scout para o CEO."""
+    state = _load_state()
+    return {
+        "ultima_missao_a": state.get("ultima_missao_a", "nunca"),
+        "ultima_missao_b": state.get("ultima_missao_b", "nunca"),
+        "oportunidades_em_investigacao": len(state.get("oportunidades_investigacao", [])),
+        "oportunidades_propostas": len(state.get("oportunidades_propostas", [])),
+        "oportunidades_aprovadas": len(state.get("oportunidades_aprovadas", [])),
+        "missoes_completadas": state.get("missoes_completadas", 0),
+    }
