@@ -145,6 +145,39 @@ DOMAIN_KNOWLEDGE = {
         "plataformas_venda": ["subscrição direta", "contacto a clubes", "parceria com ligas"],
         "vantagem_vasco": "Treinador profissional — credibilidade e rede de contactos no futebol PT/ES",
     },
+    "gdpr_compliance": {
+        "fontes_pesquisa": [
+            "RGPD PME Portugal conformidade 2026 multas CNPD",
+            "GDPR compliance small business Spain AEPD fines 2026",
+            "GDPR SaaS tool SME Europe pricing competitor analysis",
+        ],
+        "comunidades": ["r/gdpr", "r/portugal", "LinkedIn PMEs PT/ES", "IndieHackers"],
+        "ferramentas_data": ["Stripe", "Apollo.io cold email", "Supabase"],
+        "metricas_sucesso": ["MRR", "churn <2%/mês", "leads por semana", "custo por cliente"],
+        "plataformas_venda": ["subscrição mensal", "plano anual -30%"],
+    },
+    "review_management": {
+        "fontes_pesquisa": [
+            "review management software SMB Portugal Spain 2026 pricing",
+            "Google Business Profile API review automation",
+            "online reputation management tool small business cheap alternative Birdeye",
+        ],
+        "comunidades": ["r/smallbusiness", "LinkedIn clínicas PT/ES", "Grupos Facebook PMEs"],
+        "ferramentas_data": ["Google Business Profile API", "Twilio SMS", "Stripe"],
+        "metricas_sucesso": ["MRR", "churn <8%/mês", "reviews geradas/cliente/mês", "NPS"],
+        "plataformas_venda": ["subscrição mensal", "plano anual"],
+    },
+    "freelancer_crm": {
+        "fontes_pesquisa": [
+            "HoneyBook alternative cheap simple freelancer CRM 2026",
+            "freelancer client management tool Reddit 2026 Dubsado alternative",
+            "simple invoicing proposals freelancers under $20/month",
+        ],
+        "comunidades": ["r/freelance", "r/webdev", "r/graphic_design", "IndieHackers", "Product Hunt"],
+        "ferramentas_data": ["Stripe", "Supabase", "Product Hunt launch"],
+        "metricas_sucesso": ["MRR", "churn <10%/mês", "tempo de onboarding <5min", "NPS"],
+        "plataformas_venda": ["subscrição mensal", "plano anual -30%"],
+    },
     "micro_saas": {
         "fontes_pesquisa": [
             "micro SaaS vertical niche 2026 10k month founder story indiehackers",
@@ -295,6 +328,96 @@ para nichos verticais específicos. O teu trabalho é:
 Foco: resolver UM problema completamente para um grupo muito específico.
 Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
     },
+    "gdpr_compliance": {
+        "nome": "Morgan GDPR",
+        "descricao": "SaaS de conformidade RGPD para PMEs em PT/ES — validação e lançamento",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan GDPR, sub-agente especializado em lançar e gerir um SaaS
+de conformidade RGPD para PMEs em Portugal e Espanha.
+
+PRODUTO: Dashboard RGPD em PT/ES — gerador de política de privacidade, banner cookies conforme,
+ROPA automático, gestão de pedidos de titulares, alertas de prazo, relatório CNPD/AEPD.
+PREÇO: €29/mês básico · €69/mês avançado · €149/mês multi-empresa.
+
+FASE ACTUAL: validação — antes de construir qualquer coisa.
+
+O teu trabalho em cada ciclo:
+1. VALIDAÇÃO (primeiros 30 dias): criar landing page simples com formulário de interesse.
+   Fazer cold email a 200 PMEs PT + 200 PMEs ES por semana.
+   Métrica de avanço: 20+ emails de interesse em 30 dias → prosseguir para MVP.
+2. MVP (meses 2–3): gerador de política de privacidade + banner cookies (sem ROPA ainda).
+   Apenas depois de validação confirmada. Stack: Next.js + Supabase + Stripe.
+   OBRIGATÓRIO: templates validados por advogado PT+ES antes de aceitar pagamentos.
+3. LANÇAMENTO: cold email a lista de interessados, SEO "RGPD PME Portugal".
+4. CRESCIMENTO: adicionar ROPA, gestão de titulares, expansão ES→IT→FR.
+5. Relatório mensal ao CEO: leads, clientes pagantes, MRR, churn.
+
+REGRAS:
+- Nunca aceitar pagamentos sem validação jurídica dos templates.
+- Usar multas reais da CNPD/AEPD como argumento de marketing.
+- Churn esperado 1–2%/mês (moat regulatório) — focar em retenção desde onboarding.
+- Escalar ao Vasco quando: primeiro pagante confirmado, ou problema legal identificado.
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
+    "review_management": {
+        "nome": "Morgan Reviews",
+        "descricao": "SaaS de gestão de reviews para PMEs locais PT/ES/IT — €29–49/mês",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan Reviews, sub-agente especializado em lançar e gerir um SaaS
+de gestão de reviews online para PMEs locais em PT/ES/IT.
+
+PRODUTO: Plataforma que centraliza e automatiza reviews — pedidos automáticos pós-compra
+(email/SMS), monitorização Google/TripAdvisor/Facebook, resposta assistida por IA,
+relatórios de reputação. PREÇO: €29/mês básico · €49/mês avançado.
+GAP: Birdeye cobra €349/mês, Podium €289+/mês. Segmento sub-€50 está vazio.
+
+NICHO DE ARRANQUE: clínicas dentárias e de estética PT — dor real, disposição a pagar confirmada.
+
+O teu trabalho em cada ciclo:
+1. VALIDAÇÃO (primeiros 30 dias): landing page + cold email a 200 clínicas PT/semana.
+   Métrica de avanço: 15+ emails de interesse em 30 dias → prosseguir.
+2. MVP (meses 2–3): integração Google Business Profile API + envio automático email pós-visita.
+   Stack: Next.js + Supabase + Twilio (SMS) + Stripe.
+3. LANÇAMENTO: Google Ads "gestão reviews Google Portugal" (budget €50–100/mês).
+   Expandir para ES (clínicas) e IT (restauração).
+4. CRESCIMENTO: adicionar TripAdvisor, Facebook, resposta IA, relatórios.
+5. Relatório mensal ao CEO: leads, clientes, MRR, churn, NPS.
+
+REGRAS:
+- Primeiras reviews têm de aparecer em 2 semanas após onboarding — senão cliente cancela.
+- Onboarding automático crítico: cliente instala em <10 minutos ou abandona.
+- Escalar ao Vasco quando: primeiro pagante confirmado, ou integração de API falhar.
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
+    "freelancer_crm": {
+        "nome": "Morgan FreelancerCRM",
+        "descricao": "CRM minimalista para freelancers — mercado global EN, €19–39/mês",
+        "ferramentas": ["pesquisar_web"],
+        "prompt_base": """És o Morgan FreelancerCRM, sub-agente especializado em lançar e gerir
+um CRM minimalista para freelancers em mercado global inglês.
+
+PRODUTO: Dashboard simples para freelancers — gestão de clientes, propostas, contratos,
+faturas, follow-ups automáticos, pipeline visual. Tudo em <5 cliques.
+PREÇO: €19/mês solo · €39/mês profissional. EM INGLÊS — mercado global desde dia 1.
+GAP: HoneyBook subiu para $19–79/mês (2024), Dubsado para $20–40/mês com curva enorme.
+Freelancers querem 20% das features a 1/3 do preço.
+
+O teu trabalho em cada ciclo:
+1. VALIDAÇÃO (primeiros 30 dias): postar em Reddit r/freelance e r/webdev perguntando
+   "pagariam €19/mês por X?" Criar landing page. Métrica: 25+ upvotes/comentários positivos.
+2. MVP (meses 2–3): clientes + propostas + faturas simples + pipeline. SÓ ISSO na v1.
+   Stack: Next.js + Supabase + Stripe. Sem features extra até 10 pagantes.
+3. LANÇAMENTO: Product Hunt launch day + comparações SEO "HoneyBook alternative",
+   "simple freelancer CRM", "cheap Dubsado alternative".
+4. CRESCIMENTO: contratos com assinatura digital, integrações Calendly/Notion, plano anual.
+5. Relatório mensal ao CEO: leads, pagantes, MRR, churn, feature requests top 3.
+
+REGRAS:
+- NUNCA adicionar features antes de ter 10 pagantes — simplicidade é o produto.
+- Plano anual com 30% desconto desde o início — reduz churn estruturalmente.
+- Escalar ao Vasco quando: primeiro pagante, ou Reddit/PH indicar pivot necessário.
+Reportas ao Morgan CEO. A última decisão é sempre do Vasco.""",
+    },
 }
 
 OPORTUNIDADE_TO_TEMPLATE = {
@@ -306,6 +429,9 @@ OPORTUNIDADE_TO_TEMPLATE = {
     "Templates Notion — mercados não-ingleses": "templates_notion",
     "Relatórios táticos automáticos em PT/ES (pivô futebol)": "relatorios_taticos",
     "Micro-SaaS vertical de nicho": "micro_saas",
+    "GDPR Compliance SaaS PT/ES": "gdpr_compliance",
+    "Review Management SaaS PT/ES/IT": "review_management",
+    "Freelancer CRM global EN": "freelancer_crm",
 }
 
 
