@@ -316,6 +316,7 @@ def reddit_trending() -> str:
 def google_trends(termos: list) -> str:
     """Analisa tendências de interesse via Tavily (pytrends arquivado em Abril 2025)."""
     try:
+        from tavily import TavilyClient
         client = TavilyClient(api_key=TAVILY_API_KEY)
         termos = termos[:5]
         linhas = ["**Tendências de mercado — análise via web:**\n"]
