@@ -78,15 +78,36 @@ def get_system_prompt(query: str = "") -> str:
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
 
-    # Memória semântica de longo prazo via Qdrant
+    # Camada 3 — memória semântica (Qdrant: vasco + colectiva)
     contexto = memoria
-    if query:
-        try:
-            mem_semantica = mem0_get("vasco", query, limit=8)
-            if mem_semantica:
-                contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
-        except Exception:
-            pass
+    try:
+        from mem0_service import get_agent_context
+        mem_semantica = get_agent_context("ceo", query or "Morgan CEO decisões Vasco BC Industries")
+        if mem_semantica:
+            contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
+    except Exception:
+        if query:
+            try:
+                mem_semantica = mem0_get("vasco", query, limit=8)
+                if mem_semantica:
+                    contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
+            except Exception:
+                pass
+
+    # Camada 2 — contexto episódico recente (últimos 10 eventos do sistema)
+    try:
+        from episodic_memory import get_eventos_recentes
+        eventos = get_eventos_recentes(limite=10)
+        if eventos:
+            linhas = []
+            for ev in reversed(eventos):
+                ts = ev.get("ts", "")[:10]
+                ag = ev.get("agente", "?")
+                conteudo = ev.get("conteudo", "")[:100]
+                linhas.append(f"[{ts}] {ag}: {conteudo}")
+            contexto += "\n\n[Histórico recente do sistema]\n" + "\n".join(linhas)
+    except Exception:
+        pass
 
     return f"""És o Morgan, assistente pessoal do Vasco Botelho da Costa.
 Data e hora atual: {agora}
@@ -358,6 +379,14 @@ def _chat_ceo(user_text: str) -> str:
     conversation_history.append({"role": "assistant", "content": reply})
     # Guardar no Mem0 apenas trocas com decisões ou factos novos (poupar quota)
     _mem0_guardar_se_relevante(user_text, reply)
+
+    # Camada 2 — episódica
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("ceo", "conversa", f"Q: {user_text[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
+
     return reply
 
 # Agente ativo por sessão desktop

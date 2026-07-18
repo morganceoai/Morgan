@@ -1,0 +1,29 @@
+{
+  "eventos": [
+    {
+      "ts": "2026-07-18T15:05:04.400743+00:00",
+      "agente": "coach",
+      "tema": "moreirense_briefing",
+      "conteudo": "Próximo jogo: Moreirense vs FC Porto, Sábado 20h.",
+      "hash": "56a386a54ccc5640"
+    },
+    {
+      "ts": "2026-07-18T15:05:04.401102+00:00",
+      "agente": "coach",
+      "tema": "moreirense_briefing",
+      "conteudo": "Alexandre Parsemain assinou pelo Moreirense. Próximo jogo: vs FC Porto, Sábado 20h.",
+      "hash": "1469a7b7e994ba43"
+    },
+    {
+      "ts": "2026-07-18T15:32:32.395457+00:00",
+      "agente": "test_agente_novo",
+      "tema": "bootstrap_completo",
+      "conteudo": "bootstrap em 2026-07-18 — 2 eventos lidos",
+      "hash": "fead3597d8281aa0"
+    }
+  ],
+  "ultimo_hash": {
+    "coach:moreirense_briefing": "1469a7b7e994ba43",
+    "test_agente_novo:bootstrap_completo": "fead3597d8281aa0"
+  }
+}

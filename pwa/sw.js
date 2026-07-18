@@ -1,5 +1,5 @@
-const CACHE = 'morgan-pwa-v5';
-const OFFLINE_URLS = ['/pwa/', '/pwa/index.html'];
+const CACHE = 'morgan-pwa-v6';
+const OFFLINE_URLS = ['/app/', '/app/index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -32,7 +32,7 @@ self.addEventListener('push', e => {
     vibrate: [200, 100, 200],
     tag:     'morgan-notification',
     renotify: true,
-    data:    { url: data.url || '/pwa/' },
+    data:    { url: data.url || '/app/' },
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
@@ -42,7 +42,7 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
-        if (c.url.includes('/pwa/') && 'focus' in c) return c.focus();
+        if (c.url.includes('/app/') && 'focus' in c) return c.focus();
       }
       return clients.openWindow(e.notification.data.url);
     })

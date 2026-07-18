@@ -227,3 +227,21 @@ def mem0_collective_get(query: str, limit: int = 5) -> str:
 def mem0_mode() -> str:
     _init()
     return _mode
+
+
+def get_agent_context(agente: str, query: str) -> str:
+    """Contexto relevante para um agente antes de responder.
+    Combina memória do utilizador + memória colectiva filtrada por relevância.
+    Retorna string vazia se memória indisponível — nunca bloqueia o agente.
+    """
+    try:
+        mem_vasco  = mem0_get("vasco", query, limit=6)
+        mem_col    = mem0_collective_get(query, limit=4)
+        partes = []
+        if mem_vasco:
+            partes.append(f"[Memória Vasco]\n{mem_vasco}")
+        if mem_col:
+            partes.append(f"[Memória sistema]\n{mem_col}")
+        return "\n\n".join(partes)
+    except Exception:
+        return ""

@@ -217,7 +217,17 @@ def missao_a_oportunidades() -> str:
     """Missão A — domingo 20h: identificar e validar oportunidades de negócio."""
     state = _load_state()
 
-    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT
+    # Camada 3 — memória semântica
+    mem_bloco = ""
+    try:
+        from mem0_service import get_agent_context
+        mem = get_agent_context("scout", "oportunidades negócio aprovadas rejeitadas rendimento passivo")
+        if mem:
+            mem_bloco = f"\n## Memória relevante:\n{mem}\n"
+    except Exception:
+        pass
+
+    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT + mem_bloco
 
     msgs = [{"role": "user", "content": (
         "Inicia a Missão A. Pesquisa, identifica candidatos, e para cada um aplica o Quality Gate. "
@@ -256,7 +266,17 @@ def missao_b_melhorias() -> str:
     except Exception:
         agentes_lista = "CEO, Scout, Coach, CFO, Creator, Solver, Operator, Marketeer"
 
-    system = SCOUT_MISSAO_B_PROMPT
+    # Camada 3 — memória semântica
+    mem_bloco = ""
+    try:
+        from mem0_service import get_agent_context
+        mem = get_agent_context("scout", "melhorias agentes ferramentas APIs sistema Morgan")
+        if mem:
+            mem_bloco = f"\n## Memória relevante:\n{mem}\n"
+    except Exception:
+        pass
+
+    system = SCOUT_MISSAO_B_PROMPT + mem_bloco
     msgs = [{"role": "user", "content": (
         f"Agentes actuais:\n{agentes_lista}\n\n"
         "Pesquisa melhorias. Usa hacker_news_trending e pesquisar_web. "

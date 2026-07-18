@@ -439,6 +439,13 @@ OPORTUNIDADE_TO_TEMPLATE = {
 
 def criar_sub_morgan(oportunidade: str) -> dict:
     """Cria um sub-Morgan para uma oportunidade aprovada pelo Scout."""
+    # Camada 3 — memória semântica antes de criar
+    try:
+        from mem0_service import get_agent_context
+        _mem_ctx = get_agent_context("creator", f"sub-morgan oportunidade {oportunidade[:80]}")
+    except Exception:
+        pass
+
     state = _load_state()
 
     template_key = OPORTUNIDADE_TO_TEMPLATE.get(oportunidade)
@@ -911,7 +918,16 @@ Começa com a docstring do módulo (\"\"\"...\"\"\") e termina com if __name__ =
     if codigo.endswith("```"):
         codigo = codigo[:-3]
 
-    return codigo.strip()
+    codigo = codigo.strip()
+
+    # Camada 2 — registar evento episódico
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("creator", "agente_gerado", f"Agente '{nome}' gerado: {descricao[:150]}")
+    except Exception:
+        pass
+
+    return codigo
 
 
 def escrever_agente(nome: str, codigo: str) -> dict:
