@@ -27,29 +27,6 @@ def _save_coach_log(log: dict):
     COACH_LOG_FILE.write_text(json.dumps(log, ensure_ascii=False, indent=2))
 
 
-# ── Mem0 por Coach ───────────────────────────────────────────────────────────
-
-def _mem0_coach_get(query: str) -> str:
-    try:
-        from mem0 import MemoryClient
-        client = MemoryClient(api_key=os.getenv("MEM0_API_KEY", ""))
-        results = client.search(query, user_id="coach", limit=5)
-        memorias = []
-        for r in results:
-            m = r.get("memory", "") if isinstance(r, dict) else r
-            if m:
-                memorias.append(str(m))
-        return "\n".join(memorias) if memorias else ""
-    except Exception:
-        return ""
-
-def _mem0_coach_add(texto: str):
-    try:
-        from mem0 import MemoryClient
-        client = MemoryClient(api_key=os.getenv("MEM0_API_KEY", ""))
-        client.add(texto, user_id="coach")
-    except Exception:
-        pass
 
 
 # ── System Prompt ─────────────────────────────────────────────────────────────
@@ -86,7 +63,7 @@ Contrato até final da época 2026/27. Cláusula de rescisão: 1,5M€.
 Moreira de Cónegos, Guimarães, Portugal.
 
 {fixtures_str}"""
-    memoria = _mem0_coach_get(contexto) if contexto else ""
+    memoria = ""
     try:
         from mem0_service import get_agent_context
         mem_sistema = get_agent_context("coach", contexto or "futebol Moreirense Vasco")
@@ -305,8 +282,6 @@ def get_coach_reply(user_message: str) -> str:
     reply = _chamar_claude_coach(system, _coach_history)
     _coach_history.append({"role": "assistant", "content": reply})
 
-    # Guardar memória se análise relevante
-    _mem0_coach_add(f"Conversa sobre: {user_message[:100]} — resposta: {reply[:200]}")
 
     # Camada episódica — registar evento
     try:
