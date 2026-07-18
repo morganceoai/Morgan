@@ -21,3 +21,4 @@ memory/sistema_estado.json
 memory/operator_state.json
 memory/solver_fixes.json
 memory/scout_memoria.json
+morgan_server.log
