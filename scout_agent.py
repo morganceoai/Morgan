@@ -271,6 +271,12 @@ def missao_b_melhorias() -> str:
 
 def get_scout_reply(user_message: str) -> str:
     """Resposta directa do Scout quando invocado na conversa."""
+    try:
+        from mem0_service import get_agent_context
+        mem_sistema = get_agent_context("scout", user_message or "oportunidades negócio mercado SaaS rendimento passivo")
+    except Exception:
+        mem_sistema = ""
+    mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n\n" if mem_sistema else ""
     system = (
         "És o Morgan Scout, o agente de inteligência de mercado do império BC Industries.\n"
         "Especialidade: identificar e VALIDAR oportunidades de negócio com dados reais.\n"
@@ -278,6 +284,7 @@ def get_scout_reply(user_message: str) -> str:
         "Cada afirmação tem fonte ou é marcada como estimativa.\n"
         "Responde sempre em PT-PT. Tom: directo, factual, sem hype.\n\n"
         + QUALITY_GATE_PROMPT
+        + mem_bloco
     )
     msgs = [{"role": "user", "content": user_message}]
     return _chamar_claude_scout(system, msgs)

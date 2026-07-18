@@ -345,10 +345,16 @@ def analisar_reits() -> str:
     return "\n".join(linhas)
 
 
-def _build_cfo_system() -> str:
+def _build_cfo_system(contexto: str = "") -> str:
     r = avaliar_risco_trading()
     hoje = datetime.now().strftime("%d de %B de %Y")
-    return f"""És o Morgan CFO, o director financeiro do império BC Industries.
+    try:
+        from mem0_service import get_agent_context
+        mem_sistema = get_agent_context("cfo", contexto or "trading BTC Binance capital PnL finanças")
+    except Exception:
+        mem_sistema = ""
+    mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n" if mem_sistema else ""
+    return f"""És o Morgan CFO, o director financeiro do império BC Industries.{mem_bloco}
 A data de hoje é {hoje}.
 Tom: preciso, direto, números em primeiro lugar. Sempre em português europeu. Sem emojis.
 Reportas ao Morgan CEO. O Vasco pode falar diretamente contigo.
@@ -387,7 +393,7 @@ def get_cfo_reply(user_message: str) -> str:
     """Ponto de entrada para conversa com o CFO."""
     global _cfo_history
 
-    system = _build_cfo_system()
+    system = _build_cfo_system(user_message)
     _cfo_history.append({"role": "user", "content": user_message})
 
     if len(_cfo_history) > 20:

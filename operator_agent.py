@@ -271,6 +271,13 @@ def get_operator_reply(msg: str) -> str:
 
     state = _load_state()
     context = _build_context(state)
+    try:
+        from mem0_service import get_agent_context
+        mem_sistema = get_agent_context("operator", msg or "Etsy PlannerAtlas negócios operações")
+        if mem_sistema:
+            context = f"## Memória relevante:\n{mem_sistema}\n\n{context}"
+    except Exception:
+        pass
 
     needs_weekly = _check_weekly_report_needed(state)
     weekly_hint = ""

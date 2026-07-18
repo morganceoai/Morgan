@@ -470,6 +470,13 @@ def get_marketeer_reply(user_text: str) -> str:
     """Processa uma mensagem e devolve resposta do Marketeer com ferramentas."""
     state = _load_state()
     context = f"\nCampanhas activas: {len([c for c in state['campanhas'] if c.get('status')=='ativa'])}"
+    try:
+        from mem0_service import get_agent_context
+        mem_sistema = get_agent_context("marketeer", user_text or "marketing Etsy Pinterest outreach campanhas SEO")
+        if mem_sistema:
+            context = f"\n## Memória relevante:\n{mem_sistema}\n{context}"
+    except Exception:
+        pass
 
     msgs = [{"role": "user", "content": user_text}]
     for _ in range(5):
