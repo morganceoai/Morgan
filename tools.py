@@ -73,23 +73,44 @@ def _pesquisar_duckduckgo(query: str, num_results: int = 5) -> list[dict]:
         return []
 
 
+def _perplexity(query: str, modelo: str, max_tokens: int = 1500) -> str:
+    """Chamada base à API Perplexity Sonar."""
+    if not PERPLEXITY_API_KEY:
+        return ""
+    try:
+        r = requests.post(
+            "https://api.perplexity.ai/chat/completions",
+            headers={"Authorization": f"Bearer {PERPLEXITY_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": modelo,
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": query}],
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+    except Exception:
+        return ""
+
+
 def pesquisar_web(query: str, modo: str = "auto") -> str:
-    """Pesquisa na web com cascade: Exa → Tavily → Brave → DuckDuckGo.
-    modo='auto': usa o melhor disponível.
-    modo='semantico': força Exa (ideal para análise de mercado).
-    modo='noticias': força Tavily (ideal para informação recente).
-    """
+    """Pesquisa na web com cascade: Perplexity Sonar → Exa → Tavily → Brave → DuckDuckGo."""
     if "2026" not in query and "2025" not in query:
         query = f"{query} 2026"
 
-    resultados: list[dict] = []
+    # Perplexity Sonar como fonte primária (sintetiza + cita fontes)
+    resposta = _perplexity(query, "sonar")
+    if resposta:
+        return f"{resposta}\n\n[Perplexity Sonar]"
 
+    # Fallbacks baseados em resultados brutos
+    resultados: list[dict] = []
     if modo == "semantico":
         resultados = _pesquisar_exa(query)
     elif modo == "noticias":
         resultados = _pesquisar_tavily(query) or _pesquisar_duckduckgo(query)
     else:
-        # Auto: Exa primeiro (melhor qualidade), depois fallbacks
         resultados = (
             _pesquisar_exa(query) or
             _pesquisar_tavily(query) or
@@ -100,40 +121,47 @@ def pesquisar_web(query: str, modo: str = "auto") -> str:
     if not resultados:
         return "Não encontrei resultados para essa pesquisa (todas as fontes indisponíveis)."
 
-    fonte = ""
-    if resultados and EXA_API_KEY and modo != "noticias":
-        fonte = " [Exa]"
-    elif resultados and TAVILY_API_KEY:
-        fonte = " [Tavily]"
-
     output = []
     for r in resultados[:5]:
         if r.get("title") or r.get("content"):
-            output.append(f"**{r['title']}**{fonte}\n{r['content']}\nFonte: {r['url']}")
+            output.append(f"**{r['title']}**\n{r['content']}\nFonte: {r['url']}")
     return "\n\n---\n\n".join(output) if output else "Sem resultados."
 
 
 def pesquisar_mercado(query: str) -> str:
-    """Síntese de mercado via Perplexity (se disponível) ou pesquisa_web em modo semântico.
-    Ideal para o Scout: retorna análise sintetizada com fontes, não resultados crus.
+    """Scout — análise de oportunidades de mercado via Perplexity sonar-pro.
+    Melhor cobertura e síntese que sonar base. Fallback para pesquisar_web.
     """
-    if PERPLEXITY_API_KEY:
-        try:
-            import anthropic as _a
-            client = _a.Anthropic(
-                api_key=PERPLEXITY_API_KEY,
-                base_url="https://api.perplexity.ai"
-            )
-            response = client.messages.create(
-                model="llama-3.1-sonar-large-128k-online",
-                max_tokens=1000,
-                messages=[{"role": "user", "content": f"{query}\n\nResponde com dados concretos, números reais e fontes. Mínimo 3 fontes citadas."}]
-            )
-            return response.content[0].text
-        except Exception:
-            pass
-    # Fallback: pesquisa semântica agregada
-    return pesquisar_web(query, modo="semantico")
+    resposta = _perplexity(
+        f"{query}\n\nResponde com dados concretos, números reais e fontes. Mínimo 3 fontes citadas.",
+        modelo="sonar-pro",
+        max_tokens=2000,
+    )
+    return resposta if resposta else pesquisar_web(query)
+
+
+def pesquisar_oportunidade_profunda(query: str) -> str:
+    """Scout — deep research para oportunidades que passaram o filtro inicial.
+    Usa sonar-deep-research: múltiplas rondas de pesquisa, análise aprofundada.
+    """
+    resposta = _perplexity(
+        f"{query}\n\nFaz uma análise aprofundada: mercado, concorrência, dimensão, tendências, riscos. Cita fontes concretas.",
+        modelo="sonar-deep-research",
+        max_tokens=3000,
+    )
+    return resposta if resposta else pesquisar_mercado(query)
+
+
+def pesquisar_arquitectura(query: str) -> str:
+    """Creator — pesquisa de arquitecturas técnicas e best practices via sonar-reasoning-pro.
+    Raciocínio chain-of-thought para avaliar trade-offs técnicos.
+    """
+    resposta = _perplexity(
+        f"{query}\n\nAnalisa as melhores opções com pros/cons técnicos, casos de uso reais e recomendação final.",
+        modelo="sonar-reasoning-pro",
+        max_tokens=2000,
+    )
+    return resposta if resposta else pesquisar_web(query)
 
 
 def classificacao_primeira_liga() -> str:
