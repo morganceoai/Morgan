@@ -282,6 +282,7 @@ async def say_sentence(text: str):
 
 _ROUTER_SYSTEM = """És um classificador de intenções para o assistente Morgan.
 Analisa a mensagem e responde APENAS com um destes labels (sem mais texto):
+  solver     — erros, bugs, crashes, CI falhou, sistema não arranca, problema técnico, debugging, logs, fix
   cfo        — finanças, trading, BTC, capital, PnL, drawdown, Binance
   coach      — futebol, táticas, treino, Moreirense, adversário, plantel, jogadores
   marketeer  — marketing, outreach, leads, campanhas, Etsy, copywriting, Pinterest, email frio, crescimento
@@ -294,11 +295,10 @@ _haiku_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
 def _classificar_agente(msg: str) -> str:
     """Usa Claude Haiku para classificar para qual agente encaminhar a mensagem."""
-    # Atalhos rápidos para comandos explícitos (zero latência)
     m = msg.lower()
     if any(k in m for k in ["morgan ceo", "volta ao morgan", "morgan principal"]):
         return "ceo"
-    for agente in ("cfo", "coach", "marketeer", "operator", "scout"):
+    for agente in ("solver", "cfo", "coach", "marketeer", "operator", "scout"):
         if m.strip().startswith(agente) or f"[{agente}]" in m:
             return agente
 
@@ -310,12 +310,14 @@ def _classificar_agente(msg: str) -> str:
             messages=[{"role": "user", "content": msg[:400]}],
         )
         label = r.content[0].text.strip().lower().split()[0]
-        if label in ("cfo", "coach", "marketeer", "operator", "scout", "ceo"):
+        if label in ("solver", "cfo", "coach", "marketeer", "operator", "scout", "ceo"):
             return label
     except Exception:
         pass
 
     # Fallback keyword simples se Haiku falhar
+    if any(k in m for k in ["erro", "bug", "crash", "falhou", "não arranca", "fix", "log", "ci "]):
+        return "solver"
     if any(k in m for k in ["btc", "trading", "pnl", "financeiro", "capital"]):
         return "cfo"
     if any(k in m for k in ["moreirense", "treino", "tático", "adversário"]):
@@ -450,6 +452,20 @@ def chat_with_morgan(user_text: str) -> str:
             reply = "[OPERATOR] " + get_operator_reply(user_text)
         except Exception as e:
             reply = f"[OPERATOR] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    # Solver — problemas técnicos, erros, bugs, CI
+    if agente_alvo == "solver":
+        _desktop_agent["current"] = "solver"
+        try:
+            from solver_graph import run_solver
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                reply_body = pool.submit(run_solver, user_text).result(timeout=120)
+        except Exception as e:
+            reply_body = f"[Solver indisponível: {e}]"
+        reply = "[SOLVER] " + reply_body
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -1506,7 +1522,6 @@ async def _run_briefing(hora: int):
             None,
             lambda: get_coach_reply("Resume em 2 linhas: próximo jogo do Moreirense e posição na tabela. Só futebol, sem mais nada.")
         )
-        # Remover prefixo [COACH] se vier
         coach_str = coach_str.replace("[COACH]", "").strip()
     except Exception:
         pass
@@ -1517,27 +1532,51 @@ async def _run_briefing(hora: int):
     aprovadas = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
     oport_top = list(scout_data.get("oportunidades", {}).keys())[:1]
 
+    # Delta reporting — memória episódica
+    # Só inclui secção se o conteúdo mudou desde o último briefing
+    from episodic_memory import registar_evento
+    coach_novidade = registar_evento("coach", "moreirense_briefing", coach_str) if coach_str else False
+    bot_novidade = registar_evento("cfo", "trading_briefing", bot_str) if bot_str else False
+    scout_texto = oport_top[0] if oport_top else ""
+    scout_novidade = registar_evento("scout", "oportunidade_top", scout_texto) if scout_texto else False
+
+    coach_bloco = coach_str if coach_str else "Dados de futebol indisponíveis."
+    if not coach_novidade and coach_str:
+        coach_bloco += "\n[sem alterações desde ontem]"
+
+    bot_bloco = bot_str if bot_str else "Bot indisponível."
+    if not bot_novidade and bot_str:
+        bot_bloco += " [sem alterações]"
+
+    scout_bloco = (
+        f"Oportunidade prioritária: {scout_texto}" if scout_texto else "Sem oportunidades novas."
+    )
+    if scout_texto and not scout_novidade:
+        scout_bloco += " [já reportada]"
+    if aprovadas:
+        scout_bloco += f"\nAprovadas em curso: {', '.join(aprovadas[:2])}"
+
     prompt = f"""És o Morgan CEO. Gera o briefing matinal das 7h para o Vasco Botelho da Costa.
 Data: {agora.strftime('%d/%m/%Y')}.
 {f'Tempo: {meteo}' if meteo else ''}
 
 FUTEBOL (Coach):
-{coach_str if coach_str else 'Dados de futebol indisponíveis.'}
+{coach_bloco}
 
 CFO — TRADING:
-{bot_str if bot_str else 'Bot indisponível.'}
+{bot_bloco}
 
 SCOUT:
-{f'Oportunidade prioritária: {oport_top[0]}' if oport_top else 'Sem oportunidades novas.'}
-{f'Aprovadas em curso: {", ".join(aprovadas[:2])}' if aprovadas else ''}
+{scout_bloco}
 
 MEMÓRIA DO VASCO:
 {load_memory()}
 
 Instruções:
-- Primeira linha: futebol (jogo ou situação na tabela)
-- Segunda linha: trading (CFO — 1 linha, factual)
-- Terceira linha: oportunidade prioritária ou negócio em curso
+- Primeira linha: futebol (jogo ou situação na tabela) — omite se [sem alterações desde ontem]
+- Segunda linha: trading (CFO — 1 linha, factual) — omite se [sem alterações]
+- Terceira linha: oportunidade prioritária ou negócio em curso — omite se [já reportada]
+- Se não há novidades em nenhuma área, diz isso directamente numa linha
 - Tom de braço direito a falar ao chefe de manhã
 - Máximo 5 linhas. Sem emojis. Português europeu."""
 
