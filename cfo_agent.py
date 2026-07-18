@@ -1,5 +1,5 @@
 """
-Morgan CFO — Agente financeiro do império BC Industries.
+Morgan CFO — Agente financeiro do império BCVertex.
 Supervisiona: trading bot, PnL, drawdown, relatórios financeiros, alertas de risco.
 Reporta ao Morgan CEO. A última decisão é sempre do Vasco.
 """
@@ -209,7 +209,7 @@ _cfo_history: list = []
 def analisar_reits() -> str:
     """
     Análise estática de REITs e fundos imobiliários PT/ES/IE como alternativa
-    de rendimento passivo para o portfólio BC Industries.
+    de rendimento passivo para o portfólio BCVertex.
     Actualizar quando houver dados em tempo real via API.
     """
     fundos = [
@@ -354,7 +354,7 @@ def _build_cfo_system(contexto: str = "") -> str:
     except Exception:
         mem_sistema = ""
     mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n" if mem_sistema else ""
-    return f"""És o Morgan CFO, o director financeiro do império BC Industries.{mem_bloco}
+    return f"""És o Morgan CFO, o director financeiro do império BCVertex.{mem_bloco}
 A data de hoje é {hoje}.
 Tom: preciso, direto, números em primeiro lugar. Sempre em português europeu. Sem emojis.
 Reportas ao Morgan CEO. O Vasco pode falar diretamente contigo.

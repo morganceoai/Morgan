@@ -2,7 +2,7 @@
 notion_service.py — integração com o Notion para o Morgan.
 
 Cria e gere páginas nas 5 áreas do Espaço de Vasco:
-  BC Industries | Moreirense FC | Lego | Condomínio | Vida Pessoal
+  BCVertex | Moreirense FC | Lego | Condomínio | Vida Pessoal
 
 Variáveis de ambiente:
   NOTION_TOKEN  — token de acesso pessoal (ntn_...)
@@ -124,9 +124,9 @@ def setup_estrutura() -> str:
     ids = _load_ids()
     criados = []
 
-    # 1. BC Industries
+    # 1. BCVertex
     if "bc_industries" not in ids:
-        pid = _criar_pagina_raiz("BC Industries", "🏢")
+        pid = _criar_pagina_raiz("BCVertex", "🏢")
         ids["bc_industries"] = pid
         # Sub-páginas
         ids["bc_oportunidades"] = _criar_pagina(pid, "Pipeline de Oportunidades", "🔍", [
@@ -143,7 +143,7 @@ def setup_estrutura() -> str:
             _bloco_titulo("Lego Arbitrage"),
             _bloco_titulo("Prompt Packs"),
         ])
-        ids["bc_financas"] = _criar_pagina(pid, "Finanças BC Industries", "💰", [
+        ids["bc_financas"] = _criar_pagina(pid, "Finanças BCVertex", "💰", [
             _bloco_titulo("Receitas mensais"),
             _bloco_titulo("Despesas (APIs, serviços)"),
             _bloco_titulo("Binance Trading"),
@@ -154,7 +154,7 @@ def setup_estrutura() -> str:
             _bloco_titulo("Concluídos"),
             _bloco_titulo("Pendentes"),
         ])
-        criados.append("BC Industries")
+        criados.append("BCVertex")
 
     # 2. Lego
     if "lego" not in ids:
@@ -209,7 +209,7 @@ def setup_estrutura() -> str:
         ids["pessoal"] = pid
         ids["pessoal_objetivos"] = _criar_pagina(pid, "Objectivos", "🎯", [
             _bloco_titulo("2026"),
-            _bloco_paragrafo("€10.000/mês de rendimento passivo via BC Industries"),
+            _bloco_paragrafo("€10.000/mês de rendimento passivo via BCVertex"),
         ])
         ids["pessoal_notas"] = _criar_pagina(pid, "Notas Rápidas", "📝")
         criados.append("Vida Pessoal")

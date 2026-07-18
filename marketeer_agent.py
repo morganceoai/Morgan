@@ -1,5 +1,5 @@
 """
-Morgan Marketeer — Agente de outreach e crescimento do império BC Industries.
+Morgan Marketeer — Agente de outreach e crescimento do império BCVertex.
 Identifica leads, redige mensagens personalizadas, monitoriza canais de aquisição.
 Reporta ao Morgan CEO. A última decisão é sempre do Vasco.
 """
@@ -20,7 +20,7 @@ MARKETEER_FILE = MEMORY_DIR / "marketeer_state.json"
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
-SYSTEM_PROMPT = """És o Morgan Marketeer, o agente de marketing e crescimento do império BC Industries.
+SYSTEM_PROMPT = """És o Morgan Marketeer, o agente de marketing e crescimento do império BCVertex.
 
 O teu papel:
 - Identificar oportunidades de outreach (leads que procuram um serviço que oferecemos)

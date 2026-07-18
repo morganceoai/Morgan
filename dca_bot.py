@@ -1,5 +1,5 @@
 """
-BC Industries — DCA Bot (SOL/USDT)
+BCVertex — DCA Bot (SOL/USDT)
 Estratégia: Compra metade do capital disponível quando SOL cai ≥5%.
 Vende tudo quando sobe ≥8% desde o último ponto de referência.
 Backtest 18m: +$54, 14 trades, sem leverage, sem liquidação.

@@ -1,4 +1,4 @@
-# Histórico do Império — BC Industries
+# Histórico do Império — BCVertex
 *Arquivo de ações passadas. Consultado pelos agentes apenas quando necessário.*
 
 ## 2026-W26 (01–07 Julho 2026)

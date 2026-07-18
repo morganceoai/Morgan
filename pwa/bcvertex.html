@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BC Industries</title>
-  <meta name="description" content="BC Industries — Autonomous digital businesses built to generate passive income at scale.">
+  <title>BCVertex</title>
+  <meta name="description" content="BCVertex — Autonomous digital businesses built to generate passive income at scale.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -622,7 +622,7 @@
   <nav>
     <a class="logo" href="/">
       <div class="logo-mark">BC</div>
-      <span class="logo-text">BC Industries</span>
+      <span class="logo-text">BCVertex</span>
     </a>
     <div class="nav-right">
       <a class="nav-link" href="#ventures">Ventures</a>
@@ -643,7 +643,7 @@
         <span class="line-2">that run themselves.</span>
       </h1>
       <p class="hero-sub">
-        BC Industries builds, launches, and operates independent digital businesses — directories, digital products, and systematic capital. Designed to generate value with minimal ongoing effort.
+        BCVertex builds, launches, and operates independent digital businesses — directories, digital products, and systematic capital. Designed to generate value with minimal ongoing effort.
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#ventures">
@@ -770,7 +770,7 @@
   <footer>
     <div class="footer-left">
       <div class="footer-logo-mark">BC</div>
-      <span class="footer-name">BC Industries</span>
+      <span class="footer-name">BCVertex</span>
     </div>
     <div class="footer-right">© 2026 · Portugal · Building autonomously.</div>
   </footer>
@@ -849,33 +849,55 @@
   reveals.forEach(r => observer.observe(r));
 
   // ── Counter animation ──
-  const STATS = [
-    { val: 4,   prefix: '',  suffix: '' },
-    { val: 3,   prefix: '',  suffix: '' },
-    { val: 0,   prefix: '€', suffix: '' },
-    { val: 100, prefix: '',  suffix: '%' },
-  ];
+  function animateCounter(el, target, suffix = '') {
+    const duration = 1500;
+    const start = performance.now();
+    const isInt = Number.isInteger(target);
+    function tick(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      const val = target * ease;
+      el.textContent = (isInt ? Math.round(val) : val.toFixed(0)) + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
 
   const statsObserver = new IntersectionObserver(entries => {
     entries.forEach(e => {
       if (e.isIntersecting) {
-        const els = e.target.querySelectorAll('.stat-val');
-        els.forEach((el, i) => {
-          const { val, prefix, suffix } = STATS[i];
-          const duration = 1200;
-          const startTime = performance.now();
-          function tick(now) {
-            const t = Math.min((now - startTime) / duration, 1);
-            const ease = 1 - Math.pow(1 - t, 3);
-            el.textContent = prefix + Math.round(val * ease) + suffix;
-            if (t < 1) requestAnimationFrame(tick);
+        const vals = e.target.querySelectorAll('.stat-val');
+        const data = [4, 3, 0, 100];
+        const suffixes = ['', '', '', '%'];
+        const prefixes = ['', '', '€', ''];
+        vals.forEach((v, i) => {
+          const orig = v.textContent;
+          if (prefixes[i]) {
+            v.textContent = prefixes[i] + '0' + suffixes[i];
+            const duration = 1200;
+            const start = performance.now();
+            function tick(now) {
+              const t = Math.min((now - start) / duration, 1);
+              v.textContent = prefixes[i] + Math.round(data[i] * t) + suffixes[i];
+              if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          } else {
+            const duration = 1200;
+            const start = performance.now();
+            function tick(now) {
+              const t = Math.min((now - start) / duration, 1);
+              const ease = 1 - Math.pow(1-t, 3);
+              v.textContent = Math.round(data[i] * ease) + suffixes[i];
+              if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
           }
-          requestAnimationFrame(tick);
         });
         statsObserver.unobserve(e.target);
       }
     });
-  }, { threshold: 0.3 });
+  }, { threshold: 0.5 });
 
   const strip = document.querySelector('.stats-strip');
   if (strip) statsObserver.observe(strip);

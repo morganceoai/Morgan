@@ -164,7 +164,7 @@ def executar_oportunidade_aprovada(oportunidade: str, descricao: str) -> str:
     1. Regista no sistema central
     2. Marca como aprovada no Scout
     3. Creator cria sub-Morgan automaticamente
-    4. Regista no Notion (BC Industries > Pipeline)
+    4. Regista no Notion (BCVertex > Pipeline)
     """
     from sistema_service import registar_negocio
     from scout_memory import aprovar_oportunidade as _aprova
@@ -209,7 +209,7 @@ def executar_oportunidade_aprovada(oportunidade: str, descricao: str) -> str:
     try:
         from notion_service import registar_oportunidade
         registar_oportunidade(oportunidade, descricao, estado="Aprovada")
-        linhas.append("Notion: oportunidade registada em BC Industries > Pipeline")
+        linhas.append("Notion: oportunidade registada em BCVertex > Pipeline")
     except Exception as e:
         linhas.append(f"Notion (erro): {e}")
 

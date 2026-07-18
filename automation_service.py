@@ -153,7 +153,7 @@ def criar_conta_plataforma(plataforma: str, url_registo: str, email: str, passwo
     Abre a página de registo e preenche o formulário.
     Requer playwright instalado: pip install playwright && playwright install chromium
 
-    dados_extra: dict com campos adicionais (ex: {"nome": "Morgan CEO", "empresa": "BC Industries"})
+    dados_extra: dict com campos adicionais (ex: {"nome": "Morgan CEO", "empresa": "BCVertex"})
     Não automatiza 2FA — avisa o Vasco se for necessário.
     """
     if not _playwright_disponivel():

@@ -82,7 +82,7 @@ def get_system_prompt(query: str = "") -> str:
     contexto = memoria
     try:
         from mem0_service import get_agent_context
-        mem_semantica = get_agent_context("ceo", query or "Morgan CEO decisões Vasco BC Industries")
+        mem_semantica = get_agent_context("ceo", query or "Morgan CEO decisões Vasco BCVertex")
         if mem_semantica:
             contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
     except Exception:
@@ -1018,7 +1018,7 @@ def _contexto_para_hume() -> str:
 
     # Camada 1 — Mem0: memória semântica de longo prazo
     try:
-        mem_vasco = mem0_get("vasco", "Morgan BC Industries negócios trading Moreirense Vasco", limit=15)
+        mem_vasco = mem0_get("vasco", "Morgan BCVertex negócios trading Moreirense Vasco", limit=15)
         mem_col = mem0_collective_get("decisões importantes negócios agentes", limit=5)
         if mem_vasco:
             partes.append(f"=== MEMÓRIA DE LONGO PRAZO (tudo o que o Morgan sabe sobre o Vasco) ===\n{mem_vasco}")
@@ -1706,7 +1706,7 @@ Sê específico e realista. Português europeu. Máximo 400 palavras."""
         lambda: claude.messages.create(
             model="claude-opus-4-8",
             max_tokens=1200,
-            system="És o Scout do BC Industries. Analisas oportunidades de negócio com dados reais. Directo, concreto, sem hype.",
+            system="És o Scout do BCVertex. Analisas oportunidades de negócio com dados reais. Directo, concreto, sem hype.",
             messages=[{"role": "user", "content": prompt}]
         )
     )

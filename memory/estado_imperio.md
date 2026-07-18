@@ -1,4 +1,4 @@
-# Estado do Império — BC Industries
+# Estado do Império — BCVertex
 *Actualizado pelo Morgan CEO · Última actualização: 07/07/2026*
 
 ## Agentes ativos

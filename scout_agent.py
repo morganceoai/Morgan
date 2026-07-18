@@ -1,5 +1,5 @@
 """
-Morgan Scout — Agente de inteligência de mercado do império BC Industries.
+Morgan Scout — Agente de inteligência de mercado do império BCVertex.
 Missão A (domingo 20h): identifica e valida oportunidades de negócio.
 Missão B (quarta 20h): melhorias ao ecossistema de agentes.
 
@@ -310,7 +310,7 @@ def get_scout_reply(user_message: str) -> str:
         mem_sistema = ""
     mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n\n" if mem_sistema else ""
     system = (
-        "És o Morgan Scout, o agente de inteligência de mercado do império BC Industries.\n"
+        "És o Morgan Scout, o agente de inteligência de mercado do império BCVertex.\n"
         "Especialidade: identificar e VALIDAR oportunidades de negócio com dados reais.\n"
         "Nunca propões hipóteses sem dados. Nunca exageras potencial. "
         "Cada afirmação tem fonte ou é marcada como estimativa.\n"

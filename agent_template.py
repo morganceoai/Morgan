@@ -74,7 +74,7 @@ def agent_bootstrap(nome_agente: str, verbose: bool = False) -> str:
     # 2. Memória semântica Qdrant
     try:
         from mem0_service import get_agent_context
-        ctx = get_agent_context(nome_agente, "contexto geral Morgan BC Industries Vasco agentes")
+        ctx = get_agent_context(nome_agente, "contexto geral Morgan BCVertex Vasco agentes")
         if ctx:
             resumo_partes.append(f"=== MEMÓRIA SEMÂNTICA ===\n{ctx}")
     except Exception:

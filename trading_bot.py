@@ -1,5 +1,5 @@
 """
-BC Industries — Trading Bot (Supertrend ATR10×3)
+BCVertex — Trading Bot (Supertrend ATR10×3)
 Estratégia: Supertrend 4h, BTC/USDT spot, SL 3%, TP 9%.
 Backtest 18m: +$48, win rate 66.7%, drawdown máx 4.3%.
 """

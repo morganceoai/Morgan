@@ -530,3 +530,4 @@ INFO:     127.0.0.1:58206 - "GET / HTTP/1.1" 200 OK
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
+[BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt

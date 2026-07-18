@@ -1,5 +1,5 @@
 """
-Morgan Operator — Agente de operações do império BC Industries.
+Morgan Operator — Agente de operações do império BCVertex.
 Monitoriza e gere todos os negócios activos: Etsy (PlannerAtlas), directórios italianos
 de terapeutas e tutores, e futuros negócios. Acompanha receita, stock, reviews, e
 estado de cada negócio por fase. Reporta ao CEO com frequência semanal ou quando
@@ -23,7 +23,7 @@ MEMORY_DIR.mkdir(exist_ok=True)
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
 
-SYSTEM_PROMPT = """És o Morgan Operator, o agente de operações do império BC Industries.
+SYSTEM_PROMPT = """És o Morgan Operator, o agente de operações do império BCVertex.
 
 O teu papel é gerir, monitorizar e optimizar todos os negócios activos do Vasco, garantindo
 que cada um progride conforme o plano e que o CEO está sempre informado.

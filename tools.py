@@ -1287,7 +1287,7 @@ TOOLS = [
     },
     {
         "name": "consultar_historico_imperio",
-        "description": "Consulta o histórico de ações passadas do império BC Industries. Usa quando precisas de contexto histórico — decisões antigas, semanas anteriores do Scout, arquitectura explicada. Não carregado por defeito — só consulta quando relevante.",
+        "description": "Consulta o histórico de ações passadas do império BCVertex. Usa quando precisas de contexto histórico — decisões antigas, semanas anteriores do Scout, arquitectura explicada. Não carregado por defeito — só consulta quando relevante.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
