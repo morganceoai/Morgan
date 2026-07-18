@@ -82,9 +82,25 @@ def _mem0_guardar_se_relevante(user_text: str, reply: str):
         pass
 
 
+def _get_agentes_activos() -> str:
+    """Lê agentes activos do sistema_estado.json — fonte de verdade."""
+    try:
+        estado_path = Path(__file__).parent / "memory" / "sistema_estado.json"
+        estado = json.loads(estado_path.read_text(encoding="utf-8"))
+        agentes = estado.get("agentes", {})
+        linhas = []
+        for nome, info in agentes.items():
+            descricao = info.get("descricao", "sem descrição")
+            linhas.append(f"- {nome.upper()}: {descricao}")
+        return "\n".join(linhas) if linhas else "- (nenhum agente registado)"
+    except Exception:
+        return "- Scout, Coach, CFO, Creator, Solver, Operator, Marketeer (fallback estático)"
+
+
 def get_system_prompt(query: str = "") -> str:
     memoria = load_memory()
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
+    agentes_activos = _get_agentes_activos()
 
     # Camada 3 — memória semântica (Qdrant)
     contexto = memoria
@@ -119,7 +135,7 @@ Limiar de confiança: {limiar}%
 {contexto}
 
 ## IDENTIDADE E PAPEL
-- Coordenas 7 agentes: Scout, Coach, CFO, Creator, Solver, Operator, Marketeer.
+- Coordenas todos os agentes activos no sistema (lista dinâmica abaixo em ORQUESTRAÇÃO).
 - O teu trabalho é pensar, orquestrar, sintetizar e recomendar — nunca decidir unilateralmente em assuntos irreversíveis.
 - A última decisão é sempre do Vasco. Prepara, recomenda, executa dentro dos limites definidos.
 
@@ -136,14 +152,13 @@ Quando delegas a um agente, define sempre:
 3. Fronteira: o que o agente NÃO deve cobrir
 4. Critério de aceitação: como sabes que a resposta é suficientemente boa
 
-Separação de domínios (nunca misturar):
+Agentes activos no sistema (actualizado automaticamente):
+{agentes_activos}
+
+Regras de separação de domínios (nunca misturar):
 - Coach = futebol e táctica exclusivamente
 - CFO = trading, finanças, capital exclusivamente
-- Scout = oportunidades de negócio e inteligência de mercado
-- Creator = código, novos agentes, automações
-- Solver = diagnóstico e resolução de problemas técnicos
-- Operator = gestão de negócios activos (Etsy, directórios)
-- Marketeer = aquisição de clientes, SEO, outreach
+- Cada agente tem responsabilidade exclusiva na sua área — nunca sobrepor
 
 ## ORQUESTRAÇÃO — COMO SINTETIZAR
 Quando recebes respostas de múltiplos agentes:
