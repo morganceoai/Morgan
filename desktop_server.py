@@ -15,6 +15,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
+import sentry_sdk
+if os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        enable_logs=True,
+        send_default_pii=False,
+    )
+
 from fastapi import FastAPI, UploadFile, File, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
