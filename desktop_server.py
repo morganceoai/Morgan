@@ -525,18 +525,13 @@ def _chat_ceo_with_system(user_text: str, system: str) -> str:
 PWA_DIR = Path(__file__).parent / "pwa"
 
 @app.get("/")
-async def serve_interface(request: Request):
-    ua = request.headers.get("user-agent", "").lower()
-    is_mobile = any(k in ua for k in ["iphone", "android", "mobile", "ipad"])
-    if is_mobile:
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/pwa/")
-    return FileResponse(DESKTOP_DIR / "index_v2.html")
+async def serve_interface():
+    return RedirectResponse(url="/app/", status_code=302)
 
 @app.get("/v2")
 @app.get("/v2/")
 async def serve_interface_v2():
-    return FileResponse(DESKTOP_DIR / "index_v2.html")
+    return RedirectResponse(url="/app/", status_code=302)
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
