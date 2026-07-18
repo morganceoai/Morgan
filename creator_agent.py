@@ -533,7 +533,7 @@ def activar_sub_morgan(oportunidade: str, mensagem: str) -> str:
 
     while True:
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-fable-5",
             max_tokens=2048,
             system=[{"type": "text", "text": template["prompt_base"],
                       "cache_control": {"type": "ephemeral"}}],
@@ -761,7 +761,7 @@ Formato directo, sem rodeios. Português europeu."""
 
     client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
     r = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-fable-5",
         max_tokens=800,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -801,7 +801,7 @@ Tom: inspiracional, produtivo, minimalista. Público-alvo: estudantes e profissi
 
     client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
     r = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-fable-5",
         max_tokens=600,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -903,7 +903,7 @@ Começa com a docstring do módulo (\"\"\"...\"\"\") e termina com if __name__ =
 
     client = _a.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-fable-5",
         max_tokens=4096,
         system=SYSTEM_PROMPT_META_CREATOR,
         messages=[{"role": "user", "content": prompt}]

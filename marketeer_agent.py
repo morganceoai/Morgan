@@ -303,7 +303,7 @@ Máximo 400 palavras. Português europeu. Directo e accionável."""
 
     try:
         r = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-fable-5",
             max_tokens=1000,
             system="És o Morgan Marketeer. Analisas estratégias de crescimento em redes sociais com foco em conversão e autoridade.",
             messages=[{"role": "user", "content": prompt}],
@@ -481,7 +481,7 @@ def get_marketeer_reply(user_text: str) -> str:
     msgs = [{"role": "user", "content": user_text}]
     for _ in range(5):
         r = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-fable-5",
             max_tokens=1500,
             system=SYSTEM_PROMPT + context,
             tools=TOOLS,

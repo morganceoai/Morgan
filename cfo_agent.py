@@ -401,7 +401,7 @@ def get_cfo_reply(user_message: str) -> str:
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-opus-4-8",
         max_tokens=1024,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=_cfo_history,
