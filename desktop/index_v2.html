@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morgan — BC Industries</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:     #050c18;
+    --cyan:   #00d4ff;
+    --green:  #00ff9d;
+    --amber:  #f5a623;
+    --violet: #9b6dff;
+    --red:    #ff3355;
+    --dim:    rgba(0,212,255,0.35);
+  }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: radial-gradient(ellipse at 52% 46%, #0a1e3a 0%, #061228 35%, #030a14 70%, #020709 100%);
+    font-family: 'SF Mono', 'Courier New', monospace;
+    color: var(--cyan);
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  /* ── TITLEBAR ── */
+  .titlebar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 28px; z-index: 100;
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px;
+    -webkit-app-region: drag;
+  }
+  .tb {
+    width: 11px; height: 11px; border-radius: 50%;
+    border: none; cursor: pointer;
+    -webkit-app-region: no-drag;
+    transition: filter .15s;
+  }
+  .tb:hover { filter: brightness(1.5); }
+  .tb-x { background: #8b3a38; }
+  .tb-y { background: #8b6f28; }
+  .tb-g { background: #1e6b2e; }
+
+  /* ── CANVAS ── */
+  #cv {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+  }
+
+  /* ── SIDEBAR LEFT ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 210px; padding: 36px 0 0;
+    display: flex; flex-direction: column;
+    pointer-events: none; z-index: 10;
+  }
+  .s-block {
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(0,212,255,0.06);
+  }
+  .s-label {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(0,212,255,0.28); margin-bottom: 6px;
+  }
+  .s-value { font-size: 13px; color: rgba(0,212,255,0.7); letter-spacing: .5px; }
+  .s-sub   { font-size: 11px;  color: rgba(0,212,255,0.35); margin-top: 2px; }
+  .s-weather-temp { font-size: 26px; font-weight: 200; color: var(--cyan); letter-spacing: 2px; }
+
+  .s-stream {
+    font-size: 8px; color: rgba(0,212,255,0.18);
+    letter-spacing: .5px; line-height: 1.7;
+    word-break: break-all; height: 50px; overflow: hidden;
+  }
+  .s-stream span { color: rgba(0,212,255,0.45); }
+
+  /* ── HIERARQUIA ── */
+  .hier-root {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .hier-vasco {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 0 6px;
+  }
+  .hier-vasco-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.7);
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(255,255,255,0.4);
+  }
+  .hier-vasco-name { font-size: 10px; letter-spacing: .8px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+  .hier-connector {
+    margin-left: 3px;
+    border-left: 1px solid rgba(0,212,255,0.12);
+    padding-left: 14px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .hier-ceo {
+    display: flex; align-items: center; gap: 7px;
+    padding: 3px 0 5px; position: relative;
+  }
+  .hier-ceo::before {
+    content: ''; position: absolute; left: -14px; top: 50%;
+    width: 10px; height: 1px; background: rgba(0,212,255,0.12);
+  }
+  .hier-ceo-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: rgba(190,150,10,0.15);
+    border: 1.5px solid rgba(190,150,10,0.85);
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(190,150,10,0.5);
+  }
+  .hier-ceo-name { font-size: 10px; letter-spacing: 1px; color: rgba(190,150,10,0.85); }
+  .hier-children {
+    margin-left: 4px;
+    border-left: 1px solid rgba(0,212,255,0.08);
+    padding-left: 12px;
+    display: flex; flex-direction: column; gap: 1px;
+    padding-bottom: 2px;
+  }
+  .hier-node {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 0; position: relative;
+  }
+  .hier-node::before {
+    content: ''; position: absolute; left: -12px; top: 50%;
+    width: 8px; height: 1px; background: rgba(0,212,255,0.08);
+  }
+  .h-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0; border: 1px solid currentColor;
+  }
+  .h-name { font-size: 10px; letter-spacing: .8px; flex: 1; }
+  .h-role { font-size: 8px; letter-spacing: .5px; opacity: .45; }
+  .h-status {
+    font-size: 8px; letter-spacing: .5px; margin-left: auto;
+    white-space: nowrap;
+  }
+  .h-online  { color: #00ff9d; }
+  .h-standby { color: rgba(0,212,255,0.4); }
+  .h-inativo { color: rgba(110,120,140,0.5); }
+  .h-section {
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(0,212,255,0.2); margin: 6px 0 3px -12px; padding-left: 12px;
+    border-top: 1px solid rgba(0,212,255,0.05); padding-top: 5px;
+  }
+
+  /* ── HEADER TOP RIGHT ── */
+  .hdr {
+    position: fixed; top: 0; right: 0;
+    padding: 10px 22px; text-align: right;
+    z-index: 10; pointer-events: none;
+  }
+  .hdr-time { font-size: 22px; font-weight: 200; color: var(--cyan); letter-spacing: 4px; }
+  .hdr-date { font-size: 8px; color: rgba(0,212,255,0.4); letter-spacing: 2px; margin-top: 2px; text-transform: uppercase; }
+  .hdr-name { font-size: 9px; color: rgba(0,212,255,0.5); letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
+
+  /* ── BOTTOM OVERLAY ── */
+  .bottom {
+    position: fixed; bottom: 0; left: 210px; right: 200px;
+    padding: 0 30px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    z-index: 10;
+  }
+  .waveform { display: flex; align-items: center; gap: 2px; height: 16px; }
+  .w-bar {
+    width: 2px; border-radius: 1px; background: var(--cyan);
+    height: 2px; opacity: .1;
+  }
+  body.listening .w-bar { opacity:.7; animation: wl .8s ease-in-out infinite; }
+  body.speaking  .w-bar { opacity:.9; animation: ws .3s ease-in-out infinite; }
+  body.thinking  .w-bar { opacity:.3; animation: wt 1.2s ease-in-out infinite; }
+  .w-bar:nth-child(1){animation-delay:.00s} .w-bar:nth-child(2){animation-delay:.08s}
+  .w-bar:nth-child(3){animation-delay:.16s} .w-bar:nth-child(4){animation-delay:.06s}
+  .w-bar:nth-child(5){animation-delay:.14s} .w-bar:nth-child(6){animation-delay:.02s}
+  .w-bar:nth-child(7){animation-delay:.10s} .w-bar:nth-child(8){animation-delay:.18s}
+  @keyframes wl { 0%,100%{height:2px} 50%{height:14px} }
+  @keyframes ws { 0%,100%{height:2px} 50%{height:16px} }
+  @keyframes wt { 0%,100%{height:2px} 50%{height:6px}  }
+
+  .state-lbl {
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(0,212,255,0.25); min-height: 13px; transition: color .3s;
+  }
+  body.listening .state-lbl { color: var(--green); }
+  body.thinking  .state-lbl { color: var(--amber); }
+  body.speaking  .state-lbl { color: var(--cyan); }
+
+  .transcript { max-width: 520px; text-align: center; min-height: 32px; }
+  .t-user   { font-size: 9px;  color: rgba(0,212,255,0.3); margin-bottom: 3px; letter-spacing: .5px; }
+  .t-morgan { font-size: 12px; color: rgba(0,212,255,0.75); line-height: 1.7; font-family: system-ui, sans-serif; }
+
+  .input-row { display: flex; gap: 8px; max-width: 440px; width: 100%; }
+  .inp {
+    flex: 1; background: rgba(0,212,255,0.03);
+    border: 1px solid rgba(0,212,255,0.1); border-radius: 2px;
+    color: var(--cyan); font-family: inherit; font-size: 11px;
+    letter-spacing: .5px; padding: 8px 14px; outline: none;
+    transition: border-color .2s;
+  }
+  .inp::placeholder { color: rgba(0,212,255,0.15); }
+  .inp:focus { border-color: rgba(0,212,255,0.25); }
+  .inp-btn {
+    background: transparent; border: 1px solid rgba(0,212,255,0.12);
+    color: rgba(0,212,255,0.4); font-family: inherit; font-size: 9px;
+    letter-spacing: 1.5px; padding: 0 14px; cursor: pointer;
+    border-radius: 2px; text-transform: uppercase; transition: all .2s;
+    -webkit-app-region: no-drag;
+  }
+  .inp-btn:hover { color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+
+  /* ── BOOT ── */
+  #boot {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; z-index: 999; transition: opacity .8s;
+  }
+  #boot.fade { opacity: 0; pointer-events: none; }
+  .bl { font-size: 11px; letter-spacing: 2px; color: rgba(0,212,255,0); transition: color .3s; }
+  .bl.on { color: rgba(0,212,255,0.6); }
+  .boot-bar-wrap { width: 160px; height: 1px; background: rgba(0,212,255,0.08); margin-top: 8px; opacity: 0; transition: opacity .3s; }
+  .boot-bar-wrap.on { opacity: 1; }
+  .boot-bar { height: 1px; background: var(--cyan); width: 0; transition: width .1s; box-shadow: 0 0 6px var(--cyan); }
+
+  /* ── BC INDUSTRIES ── */
+  .brand {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    font-size: 19px; font-weight: 200; letter-spacing: 10px; text-transform: uppercase;
+    color: rgba(0,212,255,0.65); pointer-events: none; z-index: 20;
+    white-space: nowrap;
+  }
+  .brand::before, .brand::after {
+    content: '—'; margin: 0 12px; opacity: .3;
+  }
+
+  /* ── SIDEBAR DIREITA ── */
+  .sidebar-right {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 200px; padding: 36px 0 0;
+    display: flex; flex-direction: column;
+    pointer-events: none; z-index: 10;
+  }
+  .sr-block {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0,212,255,0.06);
+  }
+  .sr-label {
+    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(0,212,255,0.28); margin-bottom: 7px;
+  }
+  /* Objetivo */
+  .goal-track {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 5px;
+  }
+  .goal-val { font-size: 20px; font-weight: 200; color: rgba(0,255,157,0.85); letter-spacing: 2px; }
+  .goal-max { font-size: 11px; color: rgba(0,212,255,0.3); }
+  .goal-bar-wrap {
+    height: 2px; background: rgba(0,212,255,0.08); border-radius: 1px; overflow: hidden;
+  }
+  .goal-bar {
+    height: 100%; background: linear-gradient(90deg, rgba(0,255,157,0.6), rgba(0,212,255,0.6));
+    border-radius: 1px; transition: width 1s;
+  }
+  .goal-sub { font-size: 9px; color: rgba(0,212,255,0.25); margin-top: 4px; letter-spacing: .5px; }
+  /* Scout oportunidades */
+  .op-row {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 5px;
+  }
+  .op-score {
+    font-size: 11px; font-weight: 600; color: rgba(190,150,10,0.8);
+    min-width: 28px; letter-spacing: .5px;
+  }
+  .op-name { font-size: 10px; color: rgba(0,212,255,0.55); letter-spacing: .5px; flex: 1; line-height: 1.3; }
+  .op-empty { font-size: 10px; color: rgba(0,212,255,0.2); letter-spacing: .5px; }
+  /* Feed de ações */
+  .feed-item {
+    display: flex; flex-direction: column; gap: 1px; margin-bottom: 6px;
+  }
+  .feed-action { font-size: 10px; color: rgba(0,212,255,0.6); letter-spacing: .3px; line-height: 1.4; }
+  .feed-time   { font-size: 8px; color: rgba(0,212,255,0.22); letter-spacing: .5px; }
+
+  /* ── AGENT BADGE ── */
+  .agent-badge {
+    font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 2px 8px; border: 1px solid rgba(190,150,10,0.3);
+    color: rgba(190,150,10,0.7); border-radius: 2px; margin-bottom: 2px;
+    transition: all .3s; pointer-events: none;
+  }
+  .agent-badge.coach  { color: rgba(0,255,157,0.7); border-color: rgba(0,255,157,0.3); }
+  .agent-badge.cfo    { color: rgba(110,130,160,0.7); border-color: rgba(110,130,160,0.3); }
+  .agent-badge.scout  { color: rgba(190,150,10,0.7); border-color: rgba(190,150,10,0.3); }
+  .agent-badge.solver { color: rgba(155,109,255,0.7); border-color: rgba(155,109,255,0.3); }
+  .agent-badge.creator{ color: rgba(190,150,10,0.7); border-color: rgba(190,150,10,0.3); }
+
+  /* ── BOT STATUS ── */
+  .bot-pnl-pos { color: rgba(0,255,157,0.85); }
+  .bot-pnl-neg { color: rgba(255,51,85,0.85); }
+
+  /* ── FOOTER ── */
+  .footer {
+    position: fixed; bottom: 0; left: 0; width: 210px;
+    padding: 8px 18px; font-size: 9px;
+    color: rgba(0,212,255,0.2); letter-spacing: 1.5px;
+    text-transform: uppercase; pointer-events: none; z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="bl" id="bl0">BC Industries</div>
+  <div class="bl" id="bl1">Morgan System v2.0</div>
+  <div class="bl" id="bl2">Neural core online</div>
+  <div class="bl" id="bl3">Connecting agents</div>
+  <div class="boot-bar-wrap" id="bbw"><div class="boot-bar" id="bb"></div></div>
+  <div class="bl" id="bl4" style="margin-top:6px">Ready</div>
+</div>
+
+<!-- BC INDUSTRIES -->
+<div class="brand">BC Industries</div>
+
+<!-- TITLEBAR -->
+<div class="titlebar">
+  <button class="tb tb-x" onclick="window.pywebview?.api?.close_app()"></button>
+  <button class="tb tb-y" onclick="window.pywebview?.api?.sleep_app()"></button>
+  <button class="tb tb-g"></button>
+</div>
+
+<!-- CANVAS -->
+<canvas id="cv"></canvas>
+
+<!-- SIDEBAR LEFT -->
+<aside class="sidebar">
+  <div class="s-block">
+    <div class="s-label">Tempo</div>
+    <div class="s-weather-temp" id="wTemp">--°</div>
+    <div class="s-sub" id="wDesc">Moreira de Cónegos</div>
+  </div>
+  <div class="s-block">
+    <div class="s-label">Próximo Jogo</div>
+    <div class="s-value" id="nextGame">--</div>
+    <div class="s-sub" id="nextDate"></div>
+  </div>
+  <div class="s-block">
+    <div class="s-label">Último Resultado</div>
+    <div class="s-value" id="lastGame">--</div>
+  </div>
+
+  <!-- HIERARQUIA -->
+  <div class="s-block" style="flex:1; overflow:hidden">
+    <div class="s-label">Hierarquia</div>
+    <div class="hier-root">
+
+      <!-- Vasco -->
+      <div class="hier-vasco">
+        <div class="hier-vasco-dot"></div>
+        <div class="hier-vasco-name">Vasco Botelho<br>da Costa</div>
+      </div>
+
+      <div class="hier-connector">
+        <!-- CEO -->
+        <div class="hier-ceo">
+          <div class="hier-ceo-dot"></div>
+          <span class="hier-ceo-name">Morgan CEO</span>
+        </div>
+
+        <div class="hier-children">
+          <!-- C-suite -->
+          <div class="h-section">C-suite</div>
+
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgb(190,150,10);background:rgba(190,150,10,0.12)"></div>
+            <span class="h-name" style="color:rgba(190,150,10,0.8)">Scout</span>
+            <span class="h-status h-online">● online</span>
+          </div>
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgb(0,255,157);background:rgba(0,255,157,0.12)"></div>
+            <span class="h-name" style="color:rgba(0,255,157,0.8)">Coach</span>
+            <span class="h-status h-online">● online</span>
+          </div>
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgb(110,130,160);background:rgba(110,130,160,0.08)"></div>
+            <span class="h-name" style="color:rgba(110,130,160,0.5)">CFO</span>
+            <span class="h-status h-inativo">○ inativo</span>
+          </div>
+
+          <!-- Operações -->
+          <div class="h-section">Operações</div>
+
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgb(155,109,255);background:rgba(155,109,255,0.12)"></div>
+            <span class="h-name" style="color:rgba(155,109,255,0.8)">Solver</span>
+            <span class="h-status h-standby">◌ standby</span>
+          </div>
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgb(190,150,10);background:rgba(190,150,10,0.12)"></div>
+            <span class="h-name" style="color:rgba(190,150,10,0.8)">Creator</span>
+            <span class="h-status h-standby">◌ standby</span>
+          </div>
+
+          <!-- Infra -->
+          <div class="h-section">Infraestrutura</div>
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgba(0,180,220,0.6);background:rgba(0,180,220,0.08)"></div>
+            <span class="h-name" style="color:rgba(0,180,220,0.5)">Voz · Web · IA</span>
+            <span class="h-status h-online">● ativo</span>
+          </div>
+          <div class="hier-node">
+            <div class="h-dot" style="color:rgba(0,180,220,0.6);background:rgba(0,180,220,0.08)"></div>
+            <span class="h-name" style="color:rgba(0,180,220,0.5)">Telegram · PWA</span>
+            <span class="h-status h-online">● ativo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-label">Canal</div>
+    <div class="s-stream" id="dataStream"></div>
+  </div>
+</aside>
+
+<!-- SIDEBAR DIREITA -->
+<aside class="sidebar-right">
+  <!-- Objetivo -->
+  <div class="sr-block">
+    <div class="sr-label">Objetivo — Rendimento Passivo</div>
+    <div class="goal-track">
+      <div class="goal-val" id="goalVal">€0</div>
+      <div class="goal-max">/ €10.000 / mês</div>
+    </div>
+    <div class="goal-bar-wrap"><div class="goal-bar" id="goalBar" style="width:0%"></div></div>
+    <div class="goal-sub" id="goalSub">0% do objetivo · nenhum negócio ativo</div>
+  </div>
+
+  <!-- Trading Bot -->
+  <div class="sr-block">
+    <div class="sr-label">Trading Bot — BTC/USDT</div>
+    <div class="goal-track">
+      <div class="goal-val" id="botPnl" style="font-size:16px">+0.0000</div>
+      <div class="goal-max">USDT</div>
+    </div>
+    <div class="goal-sub" id="botStatus">A carregar...</div>
+    <div class="goal-sub" id="botSignal">Último sinal: --</div>
+  </div>
+
+  <!-- Scout -->
+  <div class="sr-block">
+    <div class="sr-label">Scout — Top Oportunidades</div>
+    <div id="scoutOps">
+      <div class="op-empty">Sem dados — Scout corre domingo</div>
+    </div>
+  </div>
+
+  <!-- Feed de ações -->
+  <div class="sr-block" style="flex:1; overflow:hidden">
+    <div class="sr-label">Últimas Ações</div>
+    <div id="actionFeed">
+      <div class="op-empty">A carregar...</div>
+    </div>
+  </div>
+
+  <!-- Data stream -->
+  <div class="sr-block">
+    <div class="sr-label">Sistema</div>
+    <div class="goal-sub">Mac Mini · online · PT-EU</div>
+    <div class="goal-sub" id="sysModel">claude-sonnet-4-6</div>
+  </div>
+</aside>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-time" id="clock">--:--:--</div>
+  <div class="hdr-date" id="dateLabel">--</div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom">
+  <div class="waveform">
+    <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+    <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+    <div class="w-bar"></div><div class="w-bar"></div>
+  </div>
+  <div class="state-lbl" id="stateLbl"></div>
+  <div class="agent-badge" id="agentBadge">CEO</div>
+  <div class="transcript" id="transcript"></div>
+  <div class="input-row">
+    <input class="inp" id="inp" type="text" placeholder="Escreve ao Morgan..."
+      onkeydown="if(event.key==='Enter')sendText()">
+    <button class="inp-btn" onclick="startMorgan()" id="startBtn">Voz</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">BC Industries · Morgan v2</div>
+
+<script>
+// ─── NODES ───────────────────────────────────────────────────────────────────
+
+const NODES = [
+  // Vasco — mais próximo do CEO
+  { id:'vasco',   label:'Vasco Botelho da Costa', role:'', color:'255,255,255', ring: 240, angle:-Math.PI/2, size:11, isVasco:true },
+  // C-suite — anel intermédio
+  { id:'scout',   label:'Scout',   role:'inteligência',  color:'190,150,10',  ring: 295, angle:-0.52, size:7 },
+  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 285, angle: 0.58, size:7 },
+  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'110,130,160', ring: 280, angle:-2.55, size:7, inactive:true },
+  // Operações — anel exterior médio
+  { id:'solver',   label:'Solver',   role:'manutenção',  color:'155,109,255', ring: 400, angle: 2.65, size:7 },
+  { id:'creator',  label:'Creator',  role:'meta-tool',   color:'255,170,0',   ring: 405, angle: 1.62, size:7 },
+  { id:'operator', label:'Operator', role:'operações',   color:'0,200,130',   ring: 410, angle:-1.80, size:7 },
+  { id:'marketeer',label:'Marketeer',role:'crescimento', color:'180,100,255', ring: 395, angle:-2.20, size:7 },
+  // Infraestrutura — anel exterior
+  { id:'memoria', label:'Memória', role:'',              color:'0,212,255',   ring: 510, angle:-0.85, size:6 },
+  { id:'voz',     label:'Voz',     role:'',              color:'0,212,255',   ring: 500, angle:-0.15, size:6 },
+  { id:'web',     label:'Web',     role:'',              color:'0,212,255',   ring: 520, angle: 0.22, size:6 },
+  { id:'futebol', label:'Futebol', role:'',              color:'0,212,255',   ring: 510, angle: 0.95, size:6 },
+  { id:'ia',      label:'IA',      role:'',              color:'0,212,255',   ring: 525, angle: 1.30, size:6 },
+  { id:'app',     label:'App',     role:'',              color:'0,180,220',   ring: 495, angle: 2.00, size:6 },
+  { id:'desktop', label:'Desktop', role:'',              color:'0,180,220',   ring: 485, angle: 2.40, size:6 },
+  { id:'pwa',     label:'PWA',     role:'',              color:'0,180,220',   ring: 505, angle:-1.20, size:6 },
+];
+
+// ─── CANVAS STATE ─────────────────────────────────────────────────────────────
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W, H, CX, CY, t = 0;
+let morganState = 'idle';
+
+// Swap state: qual agente está no centro (null = CEO)
+const AGENT_IDS = ['scout','coach','cfo','creator','operator','marketeer','solver'];
+let centeredId  = null;   // agente atualmente no centro
+let swapProgress = 1;     // 0→1: animação de swap
+let swapFrom = null;      // id do agente que entrou/saiu
+// Cor atual da esfera (lerp entre CEO amarelo e cor do agente)
+let sphereRGB = [190, 150, 10];
+
+function parseRGB(s) { return s.split(',').map(Number); }
+function lerpRGB(a, b, k) { return a.map((v,i) => Math.round(v + (b[i]-v)*k)); }
+const CEO_RGB = [190, 150, 10];
+
+// CEO sphere particles
+const CEO_N = 5000, CEO_R = 155;
+let ceoRotY = 0;
+const ceoPts = Array.from({length: CEO_N}, () => {
+  const theta = Math.random() * Math.PI * 2;
+  const phi   = Math.acos(2 * Math.random() - 1);
+  const dist  = CEO_R * Math.pow(Math.random(), 0.2);
+  return {
+    ox: dist * Math.sin(phi) * Math.cos(theta),
+    oy: dist * Math.sin(phi) * Math.sin(theta),
+    oz: dist * Math.cos(phi),
+    sz: 0.2 + Math.random() * 0.9,
+    ba: 0.35 + Math.random() * 0.65,
+  };
+});
+
+// Comet tails on lines
+const TAIL_LEN = 16;
+const TAIL_GAP = 0.028;
+const lineTails = NODES.map((_, i) => ({
+  t: Math.random(), speed: 0.0008 + Math.random() * 0.0006,
+  phase: Math.random() * Math.PI * 2,
+  waveFreq: 0.18 + Math.random() * 0.12,
+}));
+
+function resize() {
+  W = cv.width  = window.innerWidth;
+  H = cv.height = window.innerHeight;
+  CX = W * 0.52;
+  CY = H * 0.46;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function nodePos(n) {
+  return {
+    x: CX + n.ring * Math.cos(n.angle),
+    y: CY + n.ring * Math.sin(n.angle),
+  };
+}
+
+// ─── DRAW CEO SPHERE ─────────────────────────────────────────────────────────
+
+function drawCeoSphere(breathe) {
+  // Lerp cor da esfera
+  const targetRGB = centeredId
+    ? parseRGB(NODES.find(n => n.id === centeredId).color)
+    : CEO_RGB;
+  sphereRGB = lerpRGB(sphereRGB, targetRGB, 0.04);
+  const sc = sphereRGB.join(',');
+
+  ceoRotY += 0.0008;
+  const cos = Math.cos(ceoRotY), sin = Math.sin(ceoRotY);
+  const fov = 900;
+  const proj = ceoPts.map(p => {
+    const x = p.ox * cos + p.oz * sin;
+    const z = -p.ox * sin + p.oz * cos;
+    const s = fov / (fov + z + CEO_R);
+    const d3 = Math.sqrt(p.ox*p.ox + p.oy*p.oy + p.oz*p.oz) / CEO_R;
+    const cb = Math.pow(Math.max(0, 1 - d3), 1.5);
+    return {
+      px: CX + x*s, py: CY + p.oy*s, z,
+      sz: Math.max(0.3, p.sz*s*(1+breathe*0.06)*(1+cb*0.8)),
+      a:  Math.min(0.95, p.ba*(0.3+cb*0.9)*s),
+    };
+  }).sort((a,b) => a.z - b.z);
+
+  proj.forEach(p => {
+    ctx.fillStyle = `rgba(${sc},${p.a})`;
+    ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Anel único exterior
+  const ringR2 = CEO_R * (1.32 + breathe * 0.02);
+  ctx.beginPath();
+  ctx.arc(CX, CY, ringR2, 0, Math.PI*2);
+  ctx.strokeStyle = `rgba(${sc},${0.55 + breathe*0.1})`;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = `rgba(${sc},0.7)`;
+  ctx.shadowBlur = 14;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Label centro: nome do agente centrado ou "MORGAN CEO"
+  const centerLabel = centeredId
+    ? NODES.find(n => n.id === centeredId).label.toUpperCase()
+    : 'MORGAN CEO';
+  ctx.textAlign = 'center';
+  ctx.font = "9px 'SF Mono', monospace";
+  ctx.fillStyle = `rgba(${sc},${0.35 + breathe*0.05})`;
+  ctx.fillText(centerLabel, CX, CY + CEO_R + 20);
+  ctx.font = "7px 'SF Mono', monospace";
+  ctx.fillStyle = `rgba(${sc},0.18)`;
+  ctx.fillText(centeredId ? NODES.find(n=>n.id===centeredId).role : 'braço direito', CX, CY + CEO_R + 32);
+}
+
+// ─── DRAW CONNECTIONS ─────────────────────────────────────────────────────────
+
+function drawConnections() {
+  NODES.forEach((n, i) => {
+    if (n.isVasco) return;
+    if (n.inactive) return;
+    // Agente centrado é a esfera — não tem linha própria
+    if (centeredId && n.id === centeredId) return;
+    const p = nodePos(n);
+    const alpha = n.size >= 12 ? 0.55 : 0.28;
+    const lt = lineTails[i];
+    lt.t += lt.speed;
+    if (lt.t > 1) lt.t = 0;
+
+    // Perpendicular direction para onda
+    const dx = p.x - CX, dy = p.y - CY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const px = -dy / dist, py = dx / dist; // vetor perpendicular unitário
+    const waveAmp = n.size >= 12 ? 65 : 40;
+
+    // Controlo da onda: o ponto de controlo da bezier oscila
+    const waveOffset = Math.sin(t * lt.waveFreq + lt.phase) * waveAmp;
+    const mx = (CX + p.x) / 2 + px * waveOffset;
+    const my = (CY + p.y) / 2 + py * waveOffset;
+
+    // Glow pass (suave)
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.quadraticCurveTo(mx, my, p.x, p.y);
+    ctx.strokeStyle = `rgba(${n.color},${alpha * 0.07})`;
+    ctx.lineWidth = n.size >= 12 ? 10 : 5;
+    ctx.stroke();
+    // Core line
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.quadraticCurveTo(mx, my, p.x, p.y);
+    ctx.strokeStyle = `rgba(${n.color},${alpha * 0.35})`;
+    ctx.lineWidth = n.size >= 12 ? 1.4 : 0.7;
+    ctx.stroke();
+
+    // Cauda de luz: stroke com gradiente do invisível ao brilhante
+    const STEPS = 28;
+    const tailStart = Math.max(0, lt.t - TAIL_LEN * TAIL_GAP);
+    const tailEnd   = lt.t;
+    // Amostrar pontos ao longo da bezier entre tailStart e tailEnd
+    const pts = [];
+    for (let s = 0; s <= STEPS; s++) {
+      const tt = tailStart + (tailEnd - tailStart) * (s / STEPS);
+      pts.push({
+        x: (1-tt)*(1-tt)*CX + 2*(1-tt)*tt*mx + tt*tt*p.x,
+        y: (1-tt)*(1-tt)*CY + 2*(1-tt)*tt*my + tt*tt*p.y,
+      });
+    }
+    const hx = pts[STEPS].x, hy = pts[STEPS].y;
+    const tx = pts[0].x,     ty = pts[0].y;
+    const grad = ctx.createLinearGradient(tx, ty, hx, hy);
+    grad.addColorStop(0,    `rgba(${n.color},0)`);
+    grad.addColorStop(0.55, `rgba(${n.color},0.15)`);
+    grad.addColorStop(1,    `rgba(${n.color},1)`);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let s = 1; s <= STEPS; s++) ctx.lineTo(pts[s].x, pts[s].y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = n.size >= 12 ? 3.5 : 2;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // Ponto brilhante na cabeça
+    const hglow = ctx.createRadialGradient(hx, hy, 0, hx, hy, n.size >= 12 ? 14 : 8);
+    hglow.addColorStop(0, `rgba(${n.color},1)`);
+    hglow.addColorStop(0.3, `rgba(${n.color},0.6)`);
+    hglow.addColorStop(1, `rgba(${n.color},0)`);
+    ctx.fillStyle = hglow;
+    ctx.beginPath(); ctx.arc(hx, hy, n.size >= 12 ? 14 : 8, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Vasco connection
+  const vp = nodePos(NODES.find(n => n.isVasco));
+  ctx.beginPath();
+  ctx.moveTo(CX, CY - CEO_R);
+  ctx.lineTo(vp.x, vp.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+}
+
+// ─── DRAW NODES ──────────────────────────────────────────────────────────────
+
+function drawSingleNode(p, r, color, label, role, isVasco, isCeoProxy) {
+  // Halo exterior difuso
+  const halo = ctx.createRadialGradient(p.x, p.y, r * 0.8, p.x, p.y, r * 4);
+  halo.addColorStop(0, `rgba(${color},0.18)`);
+  halo.addColorStop(1, `rgba(${color},0)`);
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, Math.PI*2); ctx.fill();
+
+  // Núcleo escuro
+  ctx.fillStyle = `rgba(5,12,24,0.75)`;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+
+  // Anel (tracejado e dim se for CEO proxy ou inativo)
+  const ringW = r >= 11 ? 3 : 1.8;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+  if (isCeoProxy) ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = `rgba(${color},${isCeoProxy ? 0.38 : 0.95})`;
+  ctx.lineWidth = ringW;
+  ctx.shadowColor = `rgba(${color},0.8)`;
+  ctx.shadowBlur = isCeoProxy ? 0 : (r >= 11 ? 18 : 8);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.setLineDash([]);
+
+  // Label
+  const fs = r >= 11 ? 9 : 8;
+  ctx.font = `${fs}px 'SF Mono', monospace`;
+  ctx.letterSpacing = '1px';
+  if (isVasco) {
+    // Por cima da bola
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(label, p.x, p.y - r - 20);
+  } else {
+    const lx = p.x + (p.x > CX ? 1 : -1) * (r + 10);
+    ctx.textAlign = p.x > CX ? 'left' : 'right';
+    ctx.fillStyle = isCeoProxy ? `rgba(${color},0.7)` : `rgba(${color},0.55)`;
+    ctx.fillText(label, lx, p.y + 3);
+    if (role) {
+      ctx.font = "7px 'SF Mono', monospace";
+      ctx.fillStyle = `rgba(${color},0.28)`;
+      ctx.fillText(role, lx, p.y + 13);
+    }
+  }
+}
+
+function drawNodes() {
+  NODES.forEach(n => {
+    // Agente centrado não aparece na posição normal — é a esfera
+    if (centeredId && n.id === centeredId) return;
+
+    const p = nodePos(n);
+    drawSingleNode(p, n.size, n.color, n.label, n.role, n.isVasco, !!n.inactive);
+  });
+
+  // Nó CEO proxy: aparece no lugar do agente centrado
+  if (centeredId) {
+    const agentNode = NODES.find(n => n.id === centeredId);
+    const p = nodePos(agentNode);
+    drawSingleNode(p, 7, CEO_RGB.join(','), 'CEO', 'morgan', false, true);
+  }
+}
+
+// ─── DRAW STARS ──────────────────────────────────────────────────────────────
+
+let stars = [];
+function buildStars() {
+  let seed = 42;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed-1)/2147483646; };
+  stars = Array.from({length: 300}, () => ({
+    x: rng()*W, y: rng()*H,
+    r: rng()*1.2 + 0.4,
+    baseA: rng()*0.35 + 0.15,
+    a: 0,
+    twinklePhase: rng()*Math.PI*2,
+    twinkleSpeed: 1.5 + rng()*2.0,
+  }));
+}
+buildStars();
+
+// ─── MAIN LOOP ────────────────────────────────────────────────────────────────
+
+function draw() {
+  t += 0.004;
+  const breathe = Math.sin(t);
+  ctx.clearRect(0, 0, W, H);
+
+  // Stars
+  stars.forEach(s => {
+    s.a = s.baseA * (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.twinkleSpeed + s.twinklePhase)));
+    ctx.fillStyle = `rgba(180,220,255,${s.a})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Ambient CEO glow
+  const ag = ctx.createRadialGradient(CX, CY, 0, CX, CY, CEO_R * 2.5);
+  ag.addColorStop(0, `rgba(190,150,10,${0.04 + breathe*0.01})`);
+  ag.addColorStop(1, 'rgba(190,150,10,0)');
+  ctx.fillStyle = ag;
+  ctx.beginPath(); ctx.arc(CX, CY, CEO_R*2.5, 0, Math.PI*2); ctx.fill();
+
+  drawConnections();
+  drawCeoSphere(breathe);
+  drawNodes();
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ─── CLICK / SWAP ─────────────────────────────────────────────────────────────
+
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Clique no centro → volta ao CEO
+  const dCenter = Math.hypot(mx - CX, my - CY);
+  if (dCenter < CEO_R * 1.3 && centeredId) {
+    centeredId = null;
+    setAgent('ceo');
+    return;
+  }
+
+  // Clique num nó agente
+  for (const n of NODES) {
+    if (!AGENT_IDS.includes(n.id)) continue;
+    if (n.inactive) continue; // CFO inativo não é clicável
+    if (centeredId === n.id) continue; // já está no centro
+    const p = nodePos(n);
+    const d = Math.hypot(mx - p.x, my - p.y);
+    if (d < n.size * 4) {
+      centeredId = n.id;
+      setAgent(n.id);
+      return;
+    }
+  }
+
+  // Clique no nó CEO proxy → volta ao CEO
+  if (centeredId) {
+    const agentNode = NODES.find(n => n.id === centeredId);
+    const p = nodePos(agentNode);
+    const d = Math.hypot(mx - p.x, my - p.y);
+    if (d < 7 * 4) { centeredId = null; setAgent('ceo'); return; }
+  }
+});
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+
+function tick() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+}
+tick(); setInterval(tick, 1000);
+
+// ─── DATA STREAM ─────────────────────────────────────────────────────────────
+
+const streamEl = document.getElementById('dataStream');
+const chars = '01アイウエオABCDEF0123456789';
+function updateStream() {
+  let h = '';
+  for (let i = 0; i < 90; i++) {
+    const c = chars[Math.floor(Math.random()*chars.length)];
+    h += Math.random() > 0.85 ? `<span>${c}</span>` : c;
+  }
+  streamEl.innerHTML = h;
+}
+setInterval(updateStream, 130); updateStream();
+
+// ─── WIDGETS ─────────────────────────────────────────────────────────────────
+
+async function loadWidgets() {
+  try {
+    const d = await fetch('/api/widgets').then(r => r.json());
+    if (d.date) document.getElementById('dateLabel').textContent = d.date;
+    if (d.weather) {
+      document.getElementById('wTemp').textContent = d.weather.temp || '--°';
+      document.getElementById('wDesc').textContent = d.weather.desc || '';
+    }
+    const pj = d.proximo_jogo;
+    if (pj?.adversario && pj.adversario !== '--') {
+      document.getElementById('nextGame').textContent = 'vs ' + pj.adversario;
+      document.getElementById('nextDate').textContent = pj.data || '';
+    }
+    const ur = d.ultimo_resultado;
+    if (ur?.adversario && ur.adversario !== '--') {
+      document.getElementById('lastGame').textContent = `${ur.adversario}  ${ur.resultado}`;
+    }
+    // Sidebar direita — Scout oportunidades
+    if (d.scout?.top?.length) {
+      const el = document.getElementById('scoutOps');
+      el.innerHTML = d.scout.top.map(op => `
+        <div class="op-row">
+          <span class="op-score">${op.score}%</span>
+          <span class="op-name">${op.nome}</span>
+        </div>`).join('');
+    }
+    // Rendimento passivo (futuro: d.receita)
+    const receita = d.receita || 0;
+    const pct = Math.min(100, (receita / 10000) * 100);
+    document.getElementById('goalVal').textContent = `€${receita.toLocaleString('pt-PT')}`;
+    document.getElementById('goalBar').style.width = pct + '%';
+    document.getElementById('goalSub').textContent = pct === 0
+      ? '0% do objetivo · nenhum negócio ativo'
+      : `${pct.toFixed(1)}% do objetivo`;
+  } catch(e) {}
+}
+loadWidgets(); setInterval(loadWidgets, 60000);
+
+// ─── TRADING BOT ─────────────────────────────────────────────────────────────
+
+async function loadBotStatus() {
+  try {
+    const d = await fetch('/api/bot').then(r => r.json());
+    const pnl = d.pnl_today || 0;
+    const pnlEl = document.getElementById('botPnl');
+    pnlEl.textContent = (pnl >= 0 ? '+' : '') + pnl.toFixed(4);
+    pnlEl.className = 'goal-val ' + (pnl >= 0 ? 'bot-pnl-pos' : 'bot-pnl-neg');
+    const pos = d.position ? `${d.position.side.toUpperCase()} @ ${d.position.entry?.toFixed(0)}` : 'sem posição';
+    const active = d.active ? '🟢' : '🔴';
+    document.getElementById('botStatus').textContent =
+      `${active} ${d.active ? 'Ativo' : 'Pausado'} · ${pos} · ${d.trades || 0} trades`;
+    document.getElementById('botSignal').textContent =
+      `Último sinal: ${d.last_signal || '--'} · PnL total: ${(d.pnl_total||0).toFixed(4)} USDT`;
+  } catch(e) {}
+}
+loadBotStatus(); setInterval(loadBotStatus, 30000);
+
+// ─── ACTION FEED ─────────────────────────────────────────────────────────────
+
+async function loadActivity() {
+  try {
+    const d = await fetch('/api/activity?n=15').then(r => r.json());
+    const lines = (d.lines || []).filter(l => l.trim()).reverse();
+    if (!lines.length) return;
+    const feed = document.getElementById('actionFeed');
+    feed.innerHTML = lines.slice(0, 6).map(line => {
+      const parts = line.split(' | ');
+      const ts = parts[0]?.slice(11, 16) || '';
+      const agent = parts[1] || '';
+      const msg = parts.slice(2).join(' ') || line;
+      return `<div class="feed-item">
+        <span class="feed-action">${msg.slice(0, 50)}</span>
+        <span class="feed-time">${agent ? agent + ' · ' : ''}${ts}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+loadActivity(); setInterval(loadActivity, 30000);
+
+// ─── AGENT BADGE ─────────────────────────────────────────────────────────────
+
+async function loadAgentBadge() {
+  try {
+    const d = await fetch('/api/agent').then(r => r.json());
+    const badge = document.getElementById('agentBadge');
+    badge.textContent = (d.agent || 'ceo').toUpperCase();
+    badge.className = 'agent-badge ' + (d.agent || 'ceo');
+  } catch(e) {}
+}
+loadAgentBadge(); setInterval(loadAgentBadge, 5000);
+
+async function setAgent(agentId) {
+  try {
+    await fetch('/api/agent', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({agent: agentId}),
+    });
+    loadAgentBadge();
+  } catch(e) {}
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+
+async function runBoot() {
+  const lines = ['bl0','bl1','bl2','bl3'];
+  for (let i = 0; i < lines.length; i++) {
+    await delay(i === 0 ? 60 : 260);
+    document.getElementById(lines[i]).classList.add('on');
+  }
+  await delay(200);
+  const bw = document.getElementById('bbw'); bw.classList.add('on');
+  const bb = document.getElementById('bb');
+  let pct = 0;
+  await new Promise(res => {
+    const iv = setInterval(() => {
+      pct = Math.min(100, pct + Math.random()*14 + 3);
+      bb.style.width = pct + '%';
+      if (pct >= 100) { clearInterval(iv); res(); }
+    }, 55);
+  });
+  await delay(180);
+  document.getElementById('bl4').classList.add('on');
+  await delay(500);
+  const boot = document.getElementById('boot');
+  boot.classList.add('fade');
+  setTimeout(() => boot.remove(), 900);
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+runBoot();
+
+// Auto-start desativado — carrega Voz para iniciar
+
+// ─── MORGAN API ───────────────────────────────────────────────────────────────
+
+function setState(s) {
+  morganState = s;
+  document.body.className = s;
+  const L = { listening:'A ouvir', thinking:'A pensar', speaking:'A falar' };
+  document.getElementById('stateLbl').textContent = L[s] || '';
+}
+
+function showTranscript(u, m) {
+  const el = document.getElementById('transcript');
+  el.innerHTML = '';
+  if (u) { const d=document.createElement('div'); d.className='t-user'; d.textContent=u; el.appendChild(d); }
+  if (m) { const d=document.createElement('div'); d.className='t-morgan'; d.textContent=m; el.appendChild(d); }
+}
+
+async function sendText() {
+  const inp = document.getElementById('inp');
+  const txt = inp.value.trim(); if (!txt) return;
+  inp.value = '';
+  showTranscript(txt, '');
+  setState('thinking');
+  try {
+    const r = await fetch('/api/chat-stream', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message: txt}),
+    });
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let full = '';
+    setState('speaking');
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      full += dec.decode(value, {stream: true});
+      showTranscript(txt, full);
+    }
+    setState('idle');
+  } catch { showTranscript(txt, 'Erro de ligação.'); setState('idle'); }
+}
+
+// ─── VOZ ──────────────────────────────────────────────────────────────────────
+
+// ── HUME EVI ──────────────────────────────────────────────────────────────────
+let humeWS=null, audioCtx, micStream, scriptProc, playbackCtx, playbackQueue=[], isPlaying=false;
+
+function stopMorgan() {
+  if (humeWS) { try { humeWS.close(1000, 'utilizador desligou'); } catch(e){} humeWS = null; }
+  stopCapture();
+  clearInactivityTimer();
+  document.getElementById('startBtn').textContent = 'Voz';
+  setState('idle');
+}
+
+let inactivityTimer = null;
+function resetInactivityTimer() {
+  clearInactivityTimer();
+  // Desliga automaticamente após 3 minutos sem voz
+  inactivityTimer = setTimeout(() => { if (humeWS) stopMorgan(); }, 3 * 60 * 1000);
+}
+function clearInactivityTimer() {
+  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
+}
+
+async function startMorgan() {
+  const btn = document.getElementById('startBtn');
+  // Toggle — se já estiver ligado, desliga
+  if (humeWS && humeWS.readyState === WebSocket.OPEN) { stopMorgan(); return; }
+  if (humeWS) { try { humeWS.close(); } catch(e){} humeWS = null; }
+  if (scriptProc) { stopCapture(); }
+  btn.textContent = 'A ligar...';
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+    playbackCtx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+
+    const wsUrl = `ws://${location.host}/ws/hume`;
+    humeWS = new WebSocket(wsUrl);
+    humeWS.binaryType = 'arraybuffer';
+
+    humeWS.onopen = () => {
+      setState('listening');
+      btn.textContent = 'Desligar';
+      startCapture();
+      resetInactivityTimer();
+    };
+
+    humeWS.onmessage = ev => {
+      if (ev.data instanceof ArrayBuffer) {
+        // Áudio PCM 16kHz 16-bit do Hume — tocar
+        queueAudio(ev.data);
+        return;
+      }
+      try {
+        const d = JSON.parse(ev.data);
+        if (d.type === 'user')  { showTranscript(d.text, ''); setState('thinking'); resetInactivityTimer(); }
+        if (d.type === 'agent') { showTranscript('', d.text); setState('speaking'); }
+        if (d.type === 'done')  { setTimeout(() => setState('listening'), 600); resetInactivityTimer(); }
+        if (d.type === 'error') { console.error('Hume erro:', d.text); }
+      } catch(e) {}
+    };
+
+    humeWS.onclose = (ev) => {
+      stopCapture();
+      clearInactivityTimer();
+      humeWS = null;
+      btn.textContent = 'Voz';
+      setState('idle');
+      if (ev.code !== 1000) console.warn('[HUME] ligação fechada, code=', ev.code, ev.reason);
+    };
+    humeWS.onerror = (e) => { console.error('[HUME] erro WS', e); btn.textContent = 'Voz'; setState('idle'); };
+
+  } catch(e) { console.error('startMorgan erro:', e); btn.textContent = 'Voz'; }
+}
+
+function startCapture() {
+  if (scriptProc) return;
+  const micSrc = audioCtx.createMediaStreamSource(micStream);
+  scriptProc = audioCtx.createScriptProcessor(4096, 1, 1);
+  micSrc.connect(scriptProc);
+  scriptProc.connect(audioCtx.destination);
+  scriptProc.onaudioprocess = e => {
+    if (!humeWS || humeWS.readyState !== 1) return;
+    const inp = e.inputBuffer.getChannelData(0);
+    const out = new Int16Array(inp.length);
+    for (let i = 0; i < inp.length; i++)
+      out[i] = Math.max(-32768, Math.min(32767, Math.round(inp[i] * 32767)));
+    humeWS.send(out.buffer);
+  };
+}
+
+function stopCapture() {
+  if (scriptProc) { scriptProc.disconnect(); scriptProc = null; }
+}
+
+function queueAudio(buffer) {
+  playbackQueue.push(buffer);
+  if (!isPlaying) playNext();
+}
+
+async function playNext() {
+  if (!playbackQueue.length) { isPlaying = false; return; }
+  isPlaying = true;
+  const buf = playbackQueue.shift();
+  try {
+    // Tenta decodificar como áudio (MP3/WAV/etc via Web Audio API)
+    const decoded = await playbackCtx.decodeAudioData(buf.slice(0));
+    const src = playbackCtx.createBufferSource();
+    src.buffer = decoded;
+    src.connect(playbackCtx.destination);
+    src.onended = playNext;
+    src.start();
+  } catch(e) {
+    // Fallback: tratar como PCM 16-bit 16kHz
+    try {
+      const int16 = new Int16Array(buf);
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+      const audioBuf = playbackCtx.createBuffer(1, float32.length, 16000);
+      audioBuf.copyToChannel(float32, 0);
+      const src = playbackCtx.createBufferSource();
+      src.buffer = audioBuf;
+      src.connect(playbackCtx.destination);
+      src.onended = playNext;
+      src.start();
+    } catch(e2) { playNext(); }
+  }
+}
+</script>
+</body>
+</html>
