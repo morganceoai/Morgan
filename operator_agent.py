@@ -307,6 +307,13 @@ def get_operator_reply(msg: str) -> str:
     _parse_and_update_state(state, reply, msg)
     _save_state(state)
 
+    # Camada episódica — registar evento
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("operator", "conversa", f"Q: {msg[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
+
     return reply
 
 

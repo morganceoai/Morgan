@@ -236,6 +236,12 @@ def missao_a_oportunidades() -> str:
     state["missoes_completadas"] = state.get("missoes_completadas", 0) + 1
     _save_state(state)
 
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "missao_a", relatorio[:400])
+    except Exception:
+        pass
+
     return relatorio
 
 
@@ -266,6 +272,12 @@ def missao_b_melhorias() -> str:
     state["ultima_missao_b"] = hoje
     _save_state(state)
 
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "missao_b", relatorio[:400])
+    except Exception:
+        pass
+
     return relatorio
 
 
@@ -287,7 +299,15 @@ def get_scout_reply(user_message: str) -> str:
         + mem_bloco
     )
     msgs = [{"role": "user", "content": user_message}]
-    return _chamar_claude_scout(system, msgs)
+    reply = _chamar_claude_scout(system, msgs)
+
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "conversa", f"Q: {user_message[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
+
+    return reply
 
 
 def estado_scout() -> dict:

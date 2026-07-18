@@ -87,7 +87,17 @@ Moreira de Cónegos, Guimarães, Portugal.
 
 {fixtures_str}"""
     memoria = _mem0_coach_get(contexto) if contexto else ""
-    mem_bloco = f"\n## Memória relevante:\n{memoria}" if memoria else ""
+    try:
+        from mem0_service import get_agent_context
+        mem_sistema = get_agent_context("coach", contexto or "futebol Moreirense Vasco")
+    except Exception:
+        mem_sistema = ""
+    mem_bloco = ""
+    if memoria or mem_sistema:
+        partes = []
+        if memoria: partes.append(memoria)
+        if mem_sistema: partes.append(mem_sistema)
+        mem_bloco = f"\n## Memória relevante:\n" + "\n\n".join(partes)
 
     return f"""És o Morgan Coach, o assistente especializado em análise tática e apoio à profissão do Vasco Botelho da Costa como treinador de futebol.
 
@@ -297,6 +307,13 @@ def get_coach_reply(user_message: str) -> str:
 
     # Guardar memória se análise relevante
     _mem0_coach_add(f"Conversa sobre: {user_message[:100]} — resposta: {reply[:200]}")
+
+    # Camada episódica — registar evento
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("coach", "conversa", f"Q: {user_message[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
 
     return reply
 

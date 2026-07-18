@@ -861,6 +861,10 @@ def gerar_codigo_agente(nome: str, descricao: str, capacidades: list[str]) -> st
     referencias = "\n\n".join(refs)
     caps_str = "\n".join(f"- {c}" for c in capacidades)
 
+    # Template base com todas as camadas de memória
+    from agent_template import gerar_codigo_agente_base
+    template_base = gerar_codigo_agente_base(nome, descricao)
+
     prompt = f"""Cria o ficheiro Python completo para um novo agente Morgan chamado '{nome}_agent.py'.
 
 DESCRIÇÃO DO AGENTE:
@@ -869,18 +873,23 @@ DESCRIÇÃO DO AGENTE:
 CAPACIDADES OBRIGATÓRIAS:
 {caps_str}
 
+TEMPLATE BASE OBRIGATÓRIO (adapta e expande, nunca removes as camadas de memória):
+{template_base}
+
 AGENTES EXISTENTES COMO REFERÊNCIA DE PADRÕES:
 {referencias}
 
-REQUISITOS TÉCNICOS:
+REQUISITOS TÉCNICOS OBRIGATÓRIOS:
 1. Função principal: get_{nome}_reply(msg: str) -> str
 2. System prompt em português europeu detalhado, com regras claras
 3. Integração com Claude claude-sonnet-4-6 via anthropic SDK
-4. Se precisar de ferramentas externas, usar TOOLS/TOOL_FUNCTIONS de tools.py
-5. Se precisar de estado persistente, usar memory/{nome}_state.json
-6. Logging com logger = logging.getLogger(__name__)
-7. Docstring no topo do ficheiro a explicar o propósito
-8. Código limpo, sem comentários desnecessários, sem emojis
+4. OBRIGATÓRIO: agent_bootstrap('{nome}') chamado na importação (primeira tarefa do agente)
+5. OBRIGATÓRIO: get_agent_context('{nome}', ...) antes de cada resposta (camada semântica)
+6. OBRIGATÓRIO: registar_evento('{nome}', ...) após cada resposta (camada episódica)
+7. Se precisar de ferramentas externas, usar TOOLS/TOOL_FUNCTIONS de tools.py
+8. Se precisar de estado persistente, usar memory/{nome}_state.json
+9. Logging com logger = logging.getLogger(__name__)
+10. Código limpo, sem comentários desnecessários, sem emojis
 
 Devolve APENAS o código Python completo, sem explicações antes ou depois.
 Começa com a docstring do módulo (\"\"\"...\"\"\") e termina com if __name__ == \"__main__\":"""

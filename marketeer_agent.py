@@ -500,4 +500,13 @@ def get_marketeer_reply(user_text: str) -> str:
         msgs.append({"role": "assistant", "content": r.content})
         msgs.append({"role": "user", "content": tool_results})
 
-    return next((b.text for b in r.content if hasattr(b, "text")), "Sem resposta.")
+    reply = next((b.text for b in r.content if hasattr(b, "text")), "Sem resposta.")
+
+    # Camada episódica — registar evento
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("marketeer", "conversa", f"Q: {user_text[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
+
+    return reply

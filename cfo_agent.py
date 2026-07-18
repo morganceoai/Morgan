@@ -409,6 +409,14 @@ def get_cfo_reply(user_message: str) -> str:
 
     reply = response.content[0].text
     _cfo_history.append({"role": "assistant", "content": reply})
+
+    # Camada episódica — registar evento
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("cfo", "conversa", f"Q: {user_message[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
+
     return reply
 
 
