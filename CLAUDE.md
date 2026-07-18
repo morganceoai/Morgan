@@ -145,11 +145,27 @@ Quando Scout detecta oportunidade:
 ## Preferências de trabalho do Vasco
 
 - **Respostas em PT-PT**, directas e curtas — sem sumários no final, sem rodeios
-- Quando há opções: **máximo 3**, com recomendação clara e o principal trade-off
-- **Confirmar abordagem antes de implementar** — não avançar sem alinhamento
-- **Nunca implementar loops frequentes** sem confirmação (ex: removido loop 2h para menções de nome)
+- Quando há opções: **máximo 3**, com recomendação clara, trade-off principal, 3 pontos fortes, 3 pontos fracos, análise de custos e rendimentos
 - **Guardar em memória** tudo o que for relevante — não esperar que Vasco peça
 - **Ler o ficheiro antes de assumir** — quando há dúvida sobre estado do código
 - Para explorar questões abertas ("o que fazemos sobre X?"): resposta em 2-3 frases com recomendação, não plano completo
 - Para tarefas simples: executar directamente sem narrar o processo
 - Dar contexto rápido quando muda de direcção ou encontra algo importante — uma frase chega
+
+## Níveis de confirmação antes de implementar
+
+**Nível 0 — Implementar sem pedir:**
+typos, logs, semear memória, formatação sem alterar lógica
+
+**Nível 1 — Apresentar plano em 2 linhas, avançar sem objecção:**
+bug óbvio com causa identificada, alteração a system prompt (só texto), campo novo em JSON de estado
+
+**Nível 2 — Plano estruturado + aguardar "sim" explícito:**
+funções ou ficheiros novos, lógica de briefings/scheduling, integrações com APIs externas, arquitectura de memória, mudanças em 2+ agentes em simultâneo.
+Formato obrigatório: `O que muda / Porque / Ficheiros afectados / Risco (Baixo/Médio/Alto + o que pode correr mal) / Reversível (Sim/Não + como reverter)`
+
+**Nível 3 — Nunca sem "sim" explícito do Vasco:**
+apagar ficheiros ou funções, lógica do trading bot, scripts de deploy/CI/CD, migrações de dados/memória, mudanças em todos os agentes, alterações ao `.env`
+
+**Proibido em qualquer circunstância:**
+executar trades, enviar emails sem confirmação, apagar dados de produção, push para git sem autorização, alterar credenciais de acesso
