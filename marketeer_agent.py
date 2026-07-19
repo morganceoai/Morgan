@@ -35,30 +35,68 @@ MODOS DE RESPOSTA:
 
 NEGÓCIOS A MARKETEERS (apenas estes):
 - PlannerAtlas (Etsy): planners digitais PT/ES/DE — produtividade, bullet journal, organização
-  → Canais: Pinterest, Etsy SEO, Instagram, TikTok (criação de conteúdo em DE/ES/PT)
+  → Canais: Pinterest, Etsy SEO, Instagram, TikTok
 - Novos negócios aprovados pelo Scout quando introduzidos pelo CEO
 
 NÃO é da tua responsabilidade: trading bot, futebol, infra técnica.
 
-RESPONSABILIDADES:
-- SEO Etsy: títulos, tags, descrições optimizadas por mercado
-- Pinterest: pins semanais por produto/idioma com descrições e hashtags
-- Outreach: mensagens personalizadas para leads identificados (máx 50 emails/dia)
-- Análise de concorrência: detectar lacunas de mercado e nichos subexplorados
-- Conteúdo social: Pinterest + Instagram + TikTok por produto e idioma
+SEO ETSY 2026 — REGRAS OBRIGATÓRIAS:
+- Keyword principal nos primeiros 40 chars do título (corte mobile — crítico)
+- Título: 70-120 chars total com keywords naturais (não stuffing)
+- 13 tags obrigatórias: frases longas que as pessoas escrevem ("birthday gift for sister"), nunca genéricas ("gift")
+- Semantic search activo desde 2025: optimizar para linguagem natural, não só match exacto
+- ChatGPT Shopping gera +20% de tráfego referral para Etsy — optimizar títulos para LLMs
+- Métricas que o algoritmo Etsy penaliza/premia: CTR, add-to-cart rate, dwell time, favorites
+
+PINTEREST 2026 — REGRAS OBRIGATÓRIAS:
+- Fresh pin = nova IMAGEM (não só novo título) para o mesmo URL — criar 5 variantes por listing
+- Frequência: 3-5 fresh pins/dia de forma consistente; qualidade > quantidade
+- Engagement window: primeiras 48h após publicação determinam distribuição — publicar no melhor timing
+- Timing óptimo: Sáb/Dom 20h-23h; Sex à noite; Seg-Sex 8h-11h (segunda melhor janela)
+- Nunca repostar a mesma imagem — o algoritmo trata como spam
+- Cada pin deve destacar um use case diferente do mesmo produto
+
+CONTENT PILLARS (usar rotação semanal — evita drift de IA):
+1. Use case demonstração (como se usa o planner)
+2. Before/After (antes/depois de usar o template)
+3. Seasonal/trending (ex: "Schulplaner September", "Agenda Septiembre")
+4. Behind the scenes / processo de criação
+5. Review visual (screenshot de avaliação + produto)
+6. Comparação (porque é melhor que alternativas)
+
+LOOP FECHADO DE APRENDIZAGEM:
+- Analisar os 20% de pins/listings que geram 80% dos cliques
+- Gerar variações dos formatos vencedores
+- Medir engagement window (48h) antes de decidir amplificar ou descartar
+
+OUTREACH:
+- Máximo 50 emails/dia — proteger reputação do domínio
+- Personalização obrigatória: referenciar algo específico do lead (artigo publicado, produto que vende)
+- Intent signals: contactar quando lead publicou algo recente sobre o nicho
+- NUNCA enviar sem confirmação explícita do Vasco
 
 CONFIANÇA POR TIPO DE DECISÃO:
-- Proposta de keywords/tags: sempre, com dados de pesquisa
-- Recomendação de novo nicho: só com evidência de procura (pesquisa web)
-- Envio de outreach: NUNCA sem confirmação explícita do Vasco
+- Propostas SEO/keywords: sempre, com dados de pesquisa
+- Novo nicho: só com evidência de procura (Etsy search volume ou Tavily)
+- Outreach: NUNCA sem "sim" explícito do Vasco
+- Mudança de estratégia Pinterest: só após 4 semanas de dados
 
 REGRAS:
 - PT-PT sempre
-- Números e dados concretos — nunca "pode resultar bem"
-- Outreach: curto, personalizado, com valor real — nunca spam genérico
-- Nunca comprar listas de emails
+- Números concretos — nunca "pode resultar bem"
+- Outreach curto, personalizado, com valor real — nunca spam
 - A última decisão é sempre do Vasco
 """
+
+# Content pillars rotação
+CONTENT_PILLARS = [
+    "use_case",       # demonstração de uso
+    "before_after",   # transformação
+    "seasonal",       # sazonal/trending
+    "behind_scenes",  # processo
+    "review_visual",  # prova social
+    "comparison",     # diferenciação
+]
 
 
 # ── Estado persistente ────────────────────────────────────────────────────────
@@ -223,23 +261,27 @@ def otimizar_listings_etsy(nicho: str = "planners digitais") -> str:
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=600,
-            system="És o Marketeer do Morgan. Especializas-te em SEO para Etsy. Geras títulos e tags de alta conversão.",
+            max_tokens=800,
+            system="És o Marketeer do Morgan. Especializas-te em SEO para Etsy 2026. Geras títulos e tags de alta conversão.",
             messages=[{"role": "user", "content": f"""Nicho: {nicho}
 Dados de pesquisa SEO:
 {dados_seo}
 
-Gera 3 propostas de optimização para listings Etsy:
-1. Título optimizado (max 140 chars, keywords à frente)
-2. 13 tags (separadas por vírgula)
-3. Primeira frase da descrição (gancho de 1 linha)
+REGRAS SEO ETSY 2026 OBRIGATÓRIAS:
+- Keyword principal nos PRIMEIROS 40 CHARS do título (corte mobile)
+- Título: 70-120 chars, linguagem natural (semantic search activo)
+- 13 tags obrigatórias: frases longas e específicas ("weekly planner for students"), nunca termos genéricos
+- Optimizar para ser encontrado via ChatGPT Shopping (linguagem conversacional)
+- CTR e add-to-cart são sinais directos no algoritmo — título e foto determinam CTR
 
-Formato para cada proposta:
-TÍTULO: ...
-TAGS: ...
-DESCRIÇÃO: ...
+Gera 3 propostas por mercado (DE, ES, PT):
+MERCADO: [DE/ES/PT]
+TÍTULO: ... (keyword principal nos primeiros 40 chars assinalada com [*])
+TAGS: tag1, tag2, ... (13 tags obrigatórias)
+GANCHO: ... (primeira frase da descrição — 1 linha)
+CTR_ESPERADO: alto/médio/baixo (justifica em 5 palavras)
 
-PT-PT. Sem emojis."""}]
+Sem emojis. Linguagem nativa de cada mercado."""}]
         )
         return resp.content[0].text
     except Exception as e:
@@ -363,6 +405,123 @@ Tom: inspiracional, produtivo, minimalista. Público: estudantes e profissionais
         return r.content[0].text if r.content else "Conteúdo indisponível."
     except Exception as e:
         return f"Erro ao gerar conteúdo: {e}"
+
+
+def gerar_variantes_pin(produto: str, listing_url: str = "", idioma: str = "de", n: int = 5) -> str:
+    """
+    Gera N variantes de descrição de pin para o mesmo listing (fresh pin strategy).
+    Cada variante usa um content pillar diferente para maximizar alcance orgânico.
+    """
+    idiomas_map = {"de": "alemão", "es": "espanhol", "pt": "português europeu", "en": "inglês"}
+    lang_name = idiomas_map.get(idioma, idioma)
+    pillars_usados = CONTENT_PILLARS[:n]
+
+    prompt = f"""Produto Etsy: {produto}
+URL do listing: {listing_url or 'https://www.etsy.com/shop/PlannerAtlas'}
+Idioma: {lang_name}
+
+Cria {n} variantes de pin Pinterest, cada uma usando um ângulo diferente:
+{chr(10).join(f"{i+1}. Ângulo '{p}'" for i, p in enumerate(pillars_usados))}
+
+Para cada variante:
+- TÍTULO: máx 100 chars (keyword principal à frente)
+- DESCRIÇÃO: máx 150 chars + 5-8 hashtags relevantes em {lang_name}
+- TIMING: melhor dia/hora para publicar (Sáb/Dom 20h-23h como referência)
+- IMAGEM: sugestão do visual (texto overlay, cor de fundo, elemento central)
+
+Regras: fresh pins = imagens diferentes para o mesmo URL. Cada variante é uma nova imagem, não só texto diferente.
+{lang_name.capitalize()} correcto e natural. Sem emojis excessivos."""
+
+    try:
+        r = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        resultado = r.content[0].text if r.content else "Variantes indisponíveis."
+    except Exception as e:
+        return f"Erro ao gerar variantes: {e}"
+
+    # Guardar no histórico de pins para loop de aprendizagem
+    state = _load_state()
+    pins_hist = state.setdefault("pins_history", [])
+    pins_hist.append({
+        "data": datetime.now().isoformat()[:16],
+        "produto": produto,
+        "idioma": idioma,
+        "variantes_geradas": n,
+        "status": "gerado",  # → publicado → medido
+        "engagement": None,  # preenchido após engagement window 48h
+    })
+    state["pins_history"] = pins_hist[-500:]
+    _save_state(state)
+
+    return resultado
+
+
+def analisar_top_performers(semanas: int = 4) -> str:
+    """
+    Loop fechado de aprendizagem: analisa histórico de pins/listings,
+    identifica os 20% que geram mais engagement, e sugere variações dos vencedores.
+    """
+    state = _load_state()
+    pins_hist = state.get("pins_history", [])
+    campanhas = state.get("campanhas", [])
+
+    if not pins_hist and not campanhas:
+        return "Sem histórico suficiente para análise. Publica pins durante 4 semanas para activar o loop de aprendizagem."
+
+    from datetime import timedelta
+    limite = datetime.now() - timedelta(weeks=semanas)
+
+    pins_recentes = [
+        p for p in pins_hist
+        if p.get("engagement") is not None
+        and datetime.fromisoformat(p["data"]) >= limite
+    ]
+
+    if not pins_recentes:
+        return (
+            f"Sem dados de engagement nos últimos {semanas} semanas. "
+            "Quando tiveres pins publicados, actualiza o engagement em marketeer_state.json "
+            "para activar o loop de aprendizagem."
+        )
+
+    pins_ordenados = sorted(pins_recentes, key=lambda p: p.get("engagement", 0), reverse=True)
+    top_20pct = pins_ordenados[:max(1, len(pins_ordenados) // 5)]
+    bottom_80pct = pins_ordenados[max(1, len(pins_ordenados) // 5):]
+
+    top_resumo = "\n".join(
+        f"- {p['produto']} ({p['idioma']}) — engagement: {p['engagement']} — data: {p['data']}"
+        for p in top_20pct
+    )
+    bottom_resumo = f"{len(bottom_80pct)} pins com baixo engagement"
+
+    prompt = f"""Análise de performance de pins Pinterest — últimas {semanas} semanas.
+
+TOP PERFORMERS (20%):
+{top_resumo}
+
+BAIXO ENGAGEMENT: {bottom_resumo}
+
+Com base nestes dados:
+1. Que padrões distinguem os top performers? (produto, idioma, timing, tipo de conteúdo)
+2. Que variações dos top performers devo criar esta semana?
+3. Que produtos/idiomas devo priorizar ou abandonar?
+4. 3 acções concretas para a próxima semana.
+
+Máximo 15 linhas. PT-PT. Números concretos."""
+
+    try:
+        r = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=600,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return r.content[0].text if r.content else "Análise indisponível."
+    except Exception as e:
+        return f"Erro na análise: {e}"
 
 
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
@@ -491,6 +650,31 @@ TOOLS = [
         }
     },
     {
+        "name": "gerar_variantes_pin",
+        "description": "Gera N variantes de pin Pinterest para o mesmo listing (fresh pin strategy — cada variante é uma imagem diferente com um ângulo diferente: use case, before/after, seasonal, etc.).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "produto": {"type": "string", "description": "Nome/descrição do produto Etsy"},
+                "listing_url": {"type": "string", "description": "URL do listing Etsy (opcional)"},
+                "idioma": {"type": "string", "description": "Idioma: 'de' (alemão), 'es' (espanhol), 'pt' (português)", "default": "de"},
+                "n": {"type": "integer", "description": "Número de variantes a gerar (default: 5)", "default": 5}
+            },
+            "required": ["produto"]
+        }
+    },
+    {
+        "name": "analisar_top_performers",
+        "description": "Loop fechado de aprendizagem: analisa os 20% de pins/listings com mais engagement e sugere variações dos vencedores para a próxima semana.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "semanas": {"type": "integer", "description": "Janela de análise em semanas (default: 4)", "default": 4}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "enviar_outreach_email",
         "description": "Envia um email de outreach personalizado via PurelyMail. Limite: 50 emails/dia. Requer confirmação do Vasco antes de enviar.",
         "input_schema": {
@@ -517,6 +701,8 @@ TOOL_MAP = {
     "enviar_outreach_email": lambda a: enviar_outreach_email(**a),
     "analisar_instagram_referencia": lambda a: analisar_instagram_referencia(**a),
     "gerar_conteudo_social_planneratlas": lambda a: gerar_conteudo_social_planneratlas(**a),
+    "gerar_variantes_pin": lambda a: gerar_variantes_pin(**a),
+    "analisar_top_performers": lambda a: analisar_top_performers(**a),
 }
 
 

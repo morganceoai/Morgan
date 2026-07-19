@@ -37,46 +37,72 @@ MODOS DE RESPOSTA:
 - Análise profunda: só quando o Vasco pede explicitamente ("analisa", "explica", "detalha").
 
 CONFIANÇA POR TIPO DE DECISÃO:
-- Alertas operacionais (queda de vendas, review negativa): reportar sempre, mesmo com dados parciais
-- Recomendações de produto/preço: só com dados de pelo menos 2 semanas
-- Mudança de fase do negócio: só quando 3+ métricas confirmam a transição
+- Alertas operacionais: reportar sempre, mesmo com dados parciais — é melhor falso positivo que silêncio
+- Recomendações de produto/preço: só com dados de ≥14 dias
+- Mudança de fase: só quando ≥3 métricas confirmam simultaneamente a transição
+- Circuit breaker Etsy Ads: ROAS < 2.0 por 3 dias consecutivos → propor pausa imediata
 
 NEGÓCIOS ACTIVOS:
 
 1. PlannerAtlas (Etsy) — fase: lançamento
    - 8 listings activos, planners digitais PT/ES/DE
-   - Métricas chave: vendas semanais, receita, reviews, tráfego, conversão
-   - Alertas: queda vendas >20%, review <4★, 0 visitas em 48h
+   - Métricas primárias: receita semanal, vendas, CTR, conversion rate, add-to-cart rate
+   - Métricas secundárias: favorites/views ratio, traffic source breakdown, revenue per listing
+   - Algoritmo Etsy 2026: CTR e add-to-cart são sinais directos de ranking — monitorizar semanalmente
+   - Alertas estáticos (sempre críticos): zero vendas >14 dias, review ≤2★, CTR <0.5%
+   - Alertas dinâmicos: queda >40% vs. baseline rolling 28 dias em qualquer métrica primária
 
 2. Futuros Negócios (aprovados pelo Scout)
    - Registas quando o CEO introduz um novo negócio aprovado
-   - Fases: validação → MVP → lançamento → crescimento → escala
+   - Cada negócio tem fase com critérios numéricos de transição (ver abaixo)
+
+GESTÃO DE FASES — critérios numéricos obrigatórios:
+
+Validação (0-30 dias):
+- KPI único: procura confirmada? (vendas orgânicas sem ads)
+- Transição → MVP: ≥5 vendas orgânicas + CTR >2% + ≥1 review
+- Trigger de abandono: 0 vendas após 30 dias → rever produto ou pivotaR
+
+MVP (30-90 dias):
+- KPIs: conversion rate >2%, AOV, review rate
+- Transição → Lançamento: >30 vendas/mês + CR >2% + ≥10 reviews (4.5★+)
+- Acções desta fase: Etsy Ads $1-3/dia, expandir tags, testar preço
+
+Lançamento (>90 dias):
+- KPIs: revenue velocity, ROAS Etsy Ads, traffic source breakdown
+- Transição → Crescimento: >100 vendas/mês + ROAS >2.0 + tráfego orgânico >60%
+
+Crescimento:
+- KPIs: CAC, LTV, repeat customer rate, revenue per listing
+- Acções: Pinterest activo, outreach, bundles, upsell
+
+Regressão de fase (crítico): se vendas caem >50% durante 2 semanas → regredir automaticamente uma fase
 
 RESPONSABILIDADES:
-- Monitorizar PlannerAtlas: vendas, receita, reviews, tráfego, stock de variantes
-- Detectar e reportar anomalias imediatamente (não esperar relatório semanal)
-- Propor 1-3 acções correctivas concretas quando há queda de desempenho
-- Relatório semanal com KPIs + top 3 prioridades + alertas activos
-- Registar novos negócios e acompanhar progressão de fase
+- Monitorizar PlannerAtlas com as métricas acima — diário se há dados, semanal se não há
+- Detectar anomalias com baseline dinâmica (rolling 28 dias) + thresholds absolutos
+- Propor 1-3 acções correctivas com dados concretos quando detecta queda
+- Relatório semanal: KPIs + fase actual + top 3 prioridades + alertas
+- Registar e acompanhar novos negócios por fase com critérios numéricos
 
 FORMATO DOS RELATÓRIOS:
 
 Relatório Semanal (máximo 15 linhas):
-[negócio] receita | vendas | reviews | fase | tendência ↑↓
-Top 3 esta semana: [acções prioritárias]
-Alertas: [se existirem]
+PlannerAtlas | €[receita] | [vendas] vendas | CTR [x]% | CR [x]% | fase: [fase] [↑↓]
+Top 3: [acções prioritárias numeradas]
+Alertas: [se existirem, com urgência ALTA/MÉDIA/BAIXA]
 
 Alerta Imediato:
-⚠ [negócio] — [métrica]: [valor] ([variação%])
-Causa provável: [1 linha]
-Acção: [1 acção concreta]
+⚠ [negócio] — [métrica]: [valor actual] vs. baseline [valor baseline] ([variação%])
+Causa provável: [1 linha com evidência]
+Acção: [1 acção concreta e executável]
 Urgência: ALTA/MÉDIA/BAIXA
 
 REGRAS:
 - PT-PT sempre
 - Números concretos — nunca "as vendas caíram um pouco"
-- Se não tens dados, diz exactamente o que falta e porquê
-- Nunca inventas métricas
+- Se não tens dados suficientes, diz exactamente o que falta e como obtê-lo
+- Nunca inventas métricas — se não sabes, dizes que precisas dos dados
 - A última decisão é sempre do Vasco
 """
 
@@ -122,6 +148,132 @@ def _add_report(state: dict, report: dict):
 def _add_alert(state: dict, alert: dict):
     state["alerts_history"].append(alert)
     state["alerts_history"] = state["alerts_history"][-200:]
+
+
+def _calcular_baseline(historico: list[dict], metrica: str, janela_dias: int = 28) -> float | None:
+    """Baseline dinâmica rolling N dias para uma métrica. Retorna média ou None se sem dados."""
+    from datetime import timedelta
+    limite = datetime.now() - timedelta(days=janela_dias)
+    valores = []
+    for snapshot in historico:
+        try:
+            ts = datetime.fromisoformat(snapshot.get("timestamp", ""))
+            if ts >= limite:
+                v = snapshot.get(metrica)
+                if v is not None and isinstance(v, (int, float)):
+                    valores.append(float(v))
+        except Exception:
+            continue
+    return sum(valores) / len(valores) if valores else None
+
+
+def _detectar_anomalias(state: dict) -> list[dict]:
+    """
+    Detecta anomalias nos negócios usando baseline dinâmica (rolling 28d) +
+    thresholds absolutos. Retorna lista de alertas com severidade.
+    """
+    alertas = []
+    historico = state.get("metrics_history", [])
+
+    for biz_key, biz in state.get("businesses", {}).items():
+        metrics = biz.get("metrics", {})
+        nome = biz.get("name", biz_key)
+
+        # --- Thresholds absolutos (sempre críticos) ---
+        sales = metrics.get("weekly_sales", 0)
+        last_sale_days = metrics.get("days_since_last_sale", 0)
+        avg_review = metrics.get("avg_review", 0)
+        ctr = metrics.get("ctr_pct", None)
+
+        if last_sale_days > 14 and metrics.get("total_sales", 0) > 0:
+            alertas.append({
+                "negocio": nome, "metrica": "vendas",
+                "mensagem": f"Zero vendas há {last_sale_days} dias (histórico activo)",
+                "urgencia": "ALTA", "tipo": "absoluto"
+            })
+        if avg_review > 0 and avg_review <= 2.0:
+            alertas.append({
+                "negocio": nome, "metrica": "reviews",
+                "mensagem": f"Review média {avg_review:.1f}★ — abaixo de 2★",
+                "urgencia": "ALTA", "tipo": "absoluto"
+            })
+        if ctr is not None and ctr < 0.5:
+            alertas.append({
+                "negocio": nome, "metrica": "CTR",
+                "mensagem": f"CTR {ctr:.2f}% — abaixo de 0.5% (sinal de título/foto fraco)",
+                "urgencia": "MÉDIA", "tipo": "absoluto"
+            })
+
+        # --- Thresholds dinâmicos (vs. baseline rolling 28d) ---
+        for metrica_chave in ["weekly_sales", "weekly_revenue", "ctr_pct"]:
+            baseline = _calcular_baseline(
+                [s for s in historico if s.get("biz_key") == biz_key],
+                metrica_chave
+            )
+            valor_atual = metrics.get(metrica_chave)
+            if baseline and baseline > 0 and valor_atual is not None:
+                variacao = (valor_atual - baseline) / baseline
+                if variacao < -0.40:
+                    alertas.append({
+                        "negocio": nome, "metrica": metrica_chave,
+                        "mensagem": f"{metrica_chave}: {valor_atual:.2f} vs baseline {baseline:.2f} ({variacao*100:.0f}%)",
+                        "urgencia": "ALTA" if variacao < -0.60 else "MÉDIA",
+                        "tipo": "dinamico"
+                    })
+
+    return alertas
+
+
+def _avaliar_transicao_fase(biz: dict) -> str | None:
+    """
+    Avalia se um negócio deve transitar de fase com base em critérios numéricos.
+    Retorna a nova fase se critérios cumpridos, None caso contrário.
+    """
+    fase_atual = biz.get("phase", "validação")
+    m = biz.get("metrics", {})
+    vendas_mes = m.get("monthly_sales", 0)
+    cr = m.get("conversion_rate_pct", 0)
+    ctr = m.get("ctr_pct", 0)
+    reviews = m.get("review_count", 0)
+    avg_rev = m.get("avg_review", 0)
+    vendas_total = m.get("total_sales", 0)
+    roas = m.get("roas", 0)
+    trafego_organico_pct = m.get("organic_traffic_pct", 0)
+
+    if fase_atual == "validação":
+        if vendas_total >= 5 and ctr > 2.0 and reviews >= 1:
+            return "mvp"
+        if m.get("days_active", 0) > 30 and vendas_total == 0:
+            return "abandonar"
+
+    elif fase_atual == "mvp":
+        if vendas_mes >= 30 and cr > 2.0 and reviews >= 10 and avg_rev >= 4.5:
+            return "lançamento"
+
+    elif fase_atual == "lançamento":
+        if vendas_mes >= 100 and roas > 2.0 and trafego_organico_pct > 60:
+            return "crescimento"
+        # Regressão de fase: queda >50% em 2 semanas consecutivas
+        if m.get("consecutive_down_weeks", 0) >= 2 and m.get("weekly_sales_drop_pct", 0) > 50:
+            return "mvp"
+
+    elif fase_atual == "crescimento":
+        if m.get("consecutive_down_weeks", 0) >= 2 and m.get("weekly_sales_drop_pct", 0) > 50:
+            return "lançamento"
+
+    return None
+
+
+def _snapshot_metricas(state: dict):
+    """Guarda snapshot das métricas actuais no histórico para baseline dinâmica."""
+    historico = state.setdefault("metrics_history", [])
+    ts = datetime.now().isoformat()
+    for biz_key, biz in state.get("businesses", {}).items():
+        snap = {"biz_key": biz_key, "timestamp": ts}
+        snap.update(biz.get("metrics", {}))
+        historico.append(snap)
+    # Manter máximo 365 snapshots (1 por dia = 1 ano)
+    state["metrics_history"] = historico[-365:]
 
 
 def _etsy_dados_reais() -> str:
@@ -242,10 +394,13 @@ def get_operator_reply(msg: str) -> str:
     if needs_weekly:
         weekly_hint = "\n[SISTEMA: Já passaram 7 dias desde o último relatório semanal. Considera incluir um relatório semanal completo na tua resposta se for adequado.]"
 
+    metrics_ctx = _build_metrics_context(state)
+    metrics_bloco = f"\n\n{metrics_ctx}" if metrics_ctx else ""
+
     messages = [
         {
             "role": "user",
-            "content": f"{context}\n{weekly_hint}\n\nMensagem do CEO:\n{msg}",
+            "content": f"{context}{metrics_bloco}\n{weekly_hint}\n\nMensagem do CEO:\n{msg}",
         }
     ]
 
@@ -266,6 +421,29 @@ def get_operator_reply(msg: str) -> str:
     _save_state(state)
 
     return reply
+
+
+def _build_metrics_context(state: dict) -> str:
+    """Constrói bloco de métricas avançadas + anomalias para injectar no contexto."""
+    linhas = []
+
+    # Anomalias detectadas
+    anomalias = _detectar_anomalias(state)
+    if anomalias:
+        linhas.append("ANOMALIAS DETECTADAS:")
+        for a in anomalias:
+            linhas.append(f"  [{a['urgencia']}] {a['negocio']} — {a['mensagem']}")
+
+    # Avaliação de fase
+    for biz_key, biz in state.get("businesses", {}).items():
+        nova_fase = _avaliar_transicao_fase(biz)
+        if nova_fase:
+            if nova_fase == "abandonar":
+                linhas.append(f"  ⚠ {biz['name']}: critérios de abandono atingidos — propor ao Vasco.")
+            else:
+                linhas.append(f"  → {biz['name']}: critérios para transição para fase '{nova_fase}' cumpridos.")
+
+    return "\n".join(linhas)
 
 
 def monitorizar_negocios() -> str:
@@ -330,7 +508,13 @@ def monitorizar_negocios() -> str:
 
     # Actualizar estado
     state["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    _snapshot_metricas(state)
     _save_state(state)
+
+    # Anomaly detection
+    anomalias = _detectar_anomalias(state)
+    for a in anomalias:
+        alertas.append(f"{a['negocio']} [{a['urgencia']}]: {a['mensagem']}")
 
     output = "OPERATOR — Monitorização autónoma\n" + "=" * 40 + "\n"
     output += "\n\n".join(resumo)
