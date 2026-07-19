@@ -303,7 +303,7 @@ Máximo 400 palavras. Português europeu. Directo e accionável."""
 
     try:
         r = client.messages.create(
-            model="claude-fable-5",
+            model="claude-sonnet-4-6",
             max_tokens=1000,
             system="És o Morgan Marketeer. Analisas estratégias de crescimento em redes sociais com foco em conversão e autoridade.",
             messages=[{"role": "user", "content": prompt}],
@@ -320,6 +320,35 @@ Máximo 400 palavras. Português europeu. Directo e accionável."""
     )
 
     return plano
+
+
+def gerar_conteudo_social_planneratlas(produto: str, idioma: str = "de") -> str:
+    """Gera conteúdo Pinterest/Instagram/TikTok para um produto PlannerAtlas."""
+    idiomas_map = {"de": "alemão", "es": "espanhol", "pt": "português europeu"}
+    lang_name = idiomas_map.get(idioma, idioma)
+
+    prompt = f"""Gera conteúdo de marketing para redes sociais para o seguinte produto Etsy:
+
+Produto: {produto}
+Idioma de saída: {lang_name}
+Loja: PlannerAtlas (planners digitais GoodNotes/Notability no Etsy)
+
+Cria:
+1. Pinterest (2 descrições de pin — curta ~50 palavras, longa ~150 palavras)
+2. Instagram (caption, máximo 150 palavras + 20 hashtags em {lang_name})
+3. TikTok (hook inicial 3 segundos + texto do vídeo ~100 palavras)
+
+Tom: inspiracional, produtivo, minimalista. Público: estudantes e profissionais 18-35 anos."""
+
+    try:
+        r = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return r.content[0].text if r.content else "Conteúdo indisponível."
+    except Exception as e:
+        return f"Erro ao gerar conteúdo: {e}"
 
 
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
@@ -424,6 +453,18 @@ TOOLS = [
         }
     },
     {
+        "name": "gerar_conteudo_social_planneratlas",
+        "description": "Gera conteúdo de marketing (Pinterest, Instagram, TikTok) para um produto PlannerAtlas.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "produto": {"type": "string", "description": "Nome/descrição do produto Etsy"},
+                "idioma": {"type": "string", "description": "Idioma do conteúdo: 'de' (alemão), 'es' (espanhol), 'pt' (português)", "default": "de"}
+            },
+            "required": ["produto"]
+        }
+    },
+    {
         "name": "analisar_instagram_referencia",
         "description": "Analisa o Instagram de uma conta de referência e compara com a conta do Vasco para identificar estratégias de crescimento.",
         "input_schema": {
@@ -461,6 +502,7 @@ TOOL_MAP = {
     "plano_pinterest_semanal": lambda a: plano_pinterest_semanal(**a),
     "enviar_outreach_email": lambda a: enviar_outreach_email(**a),
     "analisar_instagram_referencia": lambda a: analisar_instagram_referencia(**a),
+    "gerar_conteudo_social_planneratlas": lambda a: gerar_conteudo_social_planneratlas(**a),
 }
 
 
@@ -470,18 +512,11 @@ def get_marketeer_reply(user_text: str) -> str:
     """Processa uma mensagem e devolve resposta do Marketeer com ferramentas."""
     state = _load_state()
     context = f"\nCampanhas activas: {len([c for c in state['campanhas'] if c.get('status')=='ativa'])}"
-    try:
-        from mem0_service import get_agent_context
-        mem_sistema = get_agent_context("marketeer", user_text or "marketing Etsy Pinterest outreach campanhas SEO")
-        if mem_sistema:
-            context = f"\n## Memória relevante:\n{mem_sistema}\n{context}"
-    except Exception:
-        pass
 
     msgs = [{"role": "user", "content": user_text}]
     for _ in range(5):
         r = client.messages.create(
-            model="claude-fable-5",
+            model="claude-sonnet-4-6",
             max_tokens=1500,
             system=SYSTEM_PROMPT + context,
             tools=TOOLS,

@@ -74,24 +74,77 @@ def avaliar_risco_trading() -> dict:
     perdas = [t for t in trades_mes if t.get("pnl", 0) < 0]
     win_rate = len(ganhos) / len(trades_mes) * 100 if trades_mes else 0
 
+    # Profit factor e expectancy
+    gross_profit = sum(t["pnl"] for t in ganhos)
+    gross_loss = abs(sum(t["pnl"] for t in perdas))
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
+    avg_win = gross_profit / len(ganhos) if ganhos else 0
+    avg_loss = gross_loss / len(perdas) if perdas else 0
+    rr_ratio = avg_win / avg_loss if avg_loss > 0 else float("inf")
+    expectancy = (win_rate / 100 * avg_win) - ((1 - win_rate / 100) * avg_loss)
+
+    # Streak de perdas consecutivas (todos os trades, não só do mês)
+    streak_perdas = 0
+    for t in reversed(trades):
+        if t.get("pnl", 0) < 0:
+            streak_perdas += 1
+        else:
+            break
+
+    # Dias sem trades
+    trades_com_data = [t for t in trades if t.get("closed_at")]
+    if trades_com_data:
+        ultima_data_str = sorted(trades_com_data, key=lambda t: t["closed_at"])[-1]["closed_at"][:10]
+        try:
+            ultima_data = date.fromisoformat(ultima_data_str)
+            dias_sem_trades = (date.today() - ultima_data).days
+        except Exception:
+            dias_sem_trades = 0
+    else:
+        dias_sem_trades = 0
+
     # Alertas
     alertas = []
     nivel_risco = "verde"
 
     if drawdown_dia_pct >= DRAWDOWN_DAY_LIMITE:
-        alertas.append(f"DRAWDOWN DIA: -{drawdown_dia_pct*100:.1f}% — limite atingido ({DRAWDOWN_DAY_LIMITE*100:.0f}%)")
+        alertas.append(f"DRAWDOWN DIA: -{drawdown_dia_pct*100:.1f}% (limite {DRAWDOWN_DAY_LIMITE*100:.0f}%)")
         nivel_risco = "vermelho"
 
     if drawdown_total_pct >= DRAWDOWN_TOTAL_LIMITE:
-        alertas.append(f"DRAWDOWN TOTAL: -{drawdown_total_pct*100:.1f}% — bot deve parar ({DRAWDOWN_TOTAL_LIMITE*100:.0f}%)")
+        alertas.append(f"DRAWDOWN TOTAL: -{drawdown_total_pct*100:.1f}% — recomendar paragem (limite {DRAWDOWN_TOTAL_LIMITE*100:.0f}%)")
         nivel_risco = "vermelho"
     elif drawdown_total_pct >= DRAWDOWN_TOTAL_LIMITE * 0.7:
-        alertas.append(f"DRAWDOWN TOTAL: -{drawdown_total_pct*100:.1f}% — atenção (70% do limite)")
+        alertas.append(f"DRAWDOWN TOTAL: -{drawdown_total_pct*100:.1f}% — 70% do limite, atenção")
         nivel_risco = "amarelo"
+
+    if streak_perdas >= 10:
+        alertas.append(f"STREAK: {streak_perdas} perdas consecutivas — raro para WR de {win_rate:.0f}%, rever estratégia")
+        nivel_risco = "vermelho"
+    elif streak_perdas >= 7:
+        alertas.append(f"STREAK: {streak_perdas} perdas consecutivas — monitorizar")
+        if nivel_risco == "verde":
+            nivel_risco = "amarelo"
+
+    if len(trades_mes) >= 20 and profit_factor < 1.2:
+        alertas.append(f"PROFIT FACTOR: {profit_factor:.2f} — abaixo do mínimo saudável (ref: >1.5)")
+        if nivel_risco == "verde":
+            nivel_risco = "amarelo"
+
+    if len(trades_mes) >= 30 and win_rate < 35:
+        alertas.append(f"WIN RATE: {win_rate:.0f}% com {len(trades_mes)} trades — abaixo do esperado para EMA 9/21")
+        if nivel_risco == "verde":
+            nivel_risco = "amarelo"
+
+    if dias_sem_trades >= 10:
+        alertas.append(f"INACTIVIDADE: {dias_sem_trades} dias sem trades — verificar bot")
+        if nivel_risco == "verde":
+            nivel_risco = "amarelo"
 
     if not active:
         alertas.append("Bot parado — requer verificação")
-        nivel_risco = "amarelo"
+        if nivel_risco == "verde":
+            nivel_risco = "amarelo"
 
     return {
         "active": active,
@@ -106,7 +159,14 @@ def avaliar_risco_trading() -> dict:
         "win_rate": round(win_rate, 1),
         "ganhos_mes": len(ganhos),
         "perdas_mes": len(perdas),
-        "pnl_mes": sum(t.get("pnl", 0) for t in trades_mes),
+        "pnl_mes": round(sum(t.get("pnl", 0) for t in trades_mes), 4),
+        "profit_factor": round(profit_factor, 2) if profit_factor != float("inf") else None,
+        "expectancy": round(expectancy, 4),
+        "rr_ratio": round(rr_ratio, 2) if rr_ratio != float("inf") else None,
+        "avg_win": round(avg_win, 4),
+        "avg_loss": round(avg_loss, 4),
+        "streak_perdas": streak_perdas,
+        "dias_sem_trades": dias_sem_trades,
         "nivel_risco": nivel_risco,
         "alertas": alertas,
         "ultimo_sinal": state.get("last_signal", ""),
@@ -135,6 +195,10 @@ def relatorio_financeiro_diario() -> str:
         f"  Trades: {r['trades_mes']} ({r['ganhos_mes']} ganhos / {r['perdas_mes']} perdas)",
         f"  Win rate: {r['win_rate']:.0f}%",
         f"  PnL mês: {'+'if r['pnl_mes']>=0 else ''}{r['pnl_mes']:.2f} USDT",
+        f"  Profit factor: {r['profit_factor'] if r['profit_factor'] else 'N/A (dados insuf.)'}",
+        f"  Expectancy: {r['expectancy']:+.4f} USDT/trade",
+        f"  R:R ratio: {r['rr_ratio'] if r['rr_ratio'] else 'N/A'}",
+        f"  Streak perdas: {r['streak_perdas']}",
     ]
 
     if r["position_aberta"] and r["position"]:
@@ -348,45 +412,75 @@ def analisar_reits() -> str:
 def _build_cfo_system(contexto: str = "") -> str:
     r = avaliar_risco_trading()
     hoje = datetime.now().strftime("%d de %B de %Y")
-    try:
-        from mem0_service import get_agent_context
-        mem_sistema = get_agent_context("cfo", contexto or "trading BTC Binance capital PnL finanças")
-    except Exception:
-        mem_sistema = ""
-    mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n" if mem_sistema else ""
-    return f"""És o Morgan CFO, o director financeiro do império BCVertex.{mem_bloco}
-A data de hoje é {hoje}.
-Tom: preciso, direto, números em primeiro lugar. Sempre em português europeu. Sem emojis.
-Reportas ao Morgan CEO. O Vasco pode falar diretamente contigo.
-Para voltar ao Morgan CEO, o Vasco diz "volta ao Morgan".
 
-## Estado atual do Trading Bot:
-Capital: ${r['capital_atual']:.2f} USDT | PnL total: {r['pnl_total']:+.2f} USDT
-PnL hoje: {r['pnl_hoje']:+.2f} USDT | Drawdown: {r['drawdown_total_pct']:.1f}%
-Win rate (mês): {r['win_rate']:.0f}% | Trades mês: {r['trades_mes']}
-Estado: {'ATIVO' if r['active'] else 'PARADO'} | Risco: {r['nivel_risco'].upper()}
-{('Alertas: ' + ' | '.join(r['alertas'])) if r['alertas'] else 'Sem alertas.'}
+    pf_str = f"{r['profit_factor']}" if r['profit_factor'] else "N/A (<20 trades)"
+    rr_str = f"{r['rr_ratio']}" if r['rr_ratio'] else "N/A"
+    amostra_nota = f" (⚠ amostra pequena: {r['trades_mes']} trades)" if r['trades_mes'] < 30 else ""
 
-## As tuas responsabilidades:
-1. Supervisionar o trading bot BTC/USDT (EMA 9/21, 30m) — capital de $100 USDT
-2. Monitorizar PnL diário e total, drawdown, win rate
-3. Alertar o CEO quando drawdown >5% dia ou >15% total
-4. Produzir relatórios financeiros diários e mensais
-5. Quando o império crescer: supervisionar receitas dos sub-Morgans, balanços, impostos
-6. Avaliar viabilidade financeira de novos negócios antes de aprovação
-7. Aconselhar sobre REITs e fundos imobiliários PT/ES/IE como rendimento passivo complementar (usa analisar_reits() para dados detalhados)
+    return f"""És o Morgan CFO — director financeiro do império BCVertex.
 
-## Regras de risco:
-- Drawdown dia >5%: alerta imediato ao Vasco
-- Drawdown total >15%: recomendar paragem do bot
-- Win rate <40% por 2 semanas consecutivas: revisão de estratégia
-- Nunca executar trades — apenas supervisionar e reportar
+Data: {hoje}
+Língua: sempre PT-PT. Números em primeiro lugar. Sem emojis.
+Reportas ao Morgan CEO. O Vasco pode falar directamente contigo.
+Para voltar ao CEO, o Vasco diz "volta ao Morgan".
 
-## Regra de confiança (obrigatória):
-- Indica sempre a tua confiança (0-100%) quando fazes uma avaliação ou recomendação.
-- Se confiança ≥ 95%: age e reporta. Se < 95%: escala ao Vasco com explicação clara e dados em falta.
-- É dinheiro real. Nunca arredondas para cima a confiança. Nunca ages com dados insuficientes.
-- Formato: "Confiança X% — [análise]" nas respostas que envolvam decisão."""
+## ESTADO DO TRADING BOT (BTC/USDT · EMA 9/21 · 30m)
+Capital: ${r['capital_atual']:.2f} USDT (base: $100) | Estado: {'ATIVO' if r['active'] else 'PARADO'}
+PnL total: {r['pnl_total']:+.2f} USDT | PnL hoje: {r['pnl_hoje']:+.2f} USDT
+Drawdown total: {r['drawdown_total_pct']:.1f}% | Drawdown dia: {r['drawdown_dia_pct']:.1f}%
+
+MÉTRICAS DO MÊS ({r['trades_mes']} trades{amostra_nota}):
+Win rate: {r['win_rate']:.0f}% | Profit factor: {pf_str} | R:R: {rr_str}
+Expectancy: {r['expectancy']:+.4f} USDT/trade
+Streak perdas actual: {r['streak_perdas']} | Dias sem trades: {r['dias_sem_trades']}
+
+RISCO: {r['nivel_risco'].upper()}
+{chr(10).join(r['alertas']) if r['alertas'] else 'Sem alertas.'}
+
+## MODO DE RESPOSTA
+- **Briefing/rotina**: máximo 2 linhas — número principal + estado de risco
+- **Análise pedida**: MÉTRICA → CONTEXTO → ACÇÃO RECOMENDADA
+- **Default**: modo briefing — brevidade é respeito pelo tempo do Vasco
+- Primeira linha é sempre conteúdo, nunca introdução ("Bom dia", "Vou analisar...", etc.)
+- Mostrar sempre valor absoluto E percentagem (ex: "-$3.20 (-3.2%)")
+- Qualificar sempre com amostra: "com {r['trades_mes']} trades, esta métrica é {'indicativa' if r['trades_mes'] < 30 else 'significativa'}"
+
+## RESPONSABILIDADES
+1. Supervisionar trading bot BTC/USDT — capital $100 USDT
+2. Monitorizar PnL, drawdown, profit factor, streak, inactividade
+3. Alertar CEO quando qualquer threshold for atingido
+4. Relatórios financeiros diários (7h) e completos (22h)
+5. Avaliar viabilidade financeira de novos negócios antes de aprovação
+6. Quando império crescer: receitas dos sub-Morgans, balanços, impostos
+7. REITs e fundos PT/ES/IE como rendimento passivo (usa analisar_reits() para detalhes)
+
+## THRESHOLDS DE ALERTA
+| Métrica | Amarelo | Vermelho |
+|---------|---------|---------|
+| Drawdown dia | — | >5% |
+| Drawdown total | >10.5% (70% limite) | >15% |
+| Streak perdas | ≥7 | ≥10 |
+| Profit factor (≥20 trades) | <1.5 | <1.2 |
+| Win rate (≥30 trades) | — | <35% |
+| Inactividade | ≥7 dias | ≥10 dias |
+
+## REGRAS DE AUTONOMIA
+Age sozinho (reporta depois): calcular métricas, arquivar relatório, identificar alertas.
+Escala ao CEO/Vasco: drawdown >15%, streak ≥10, profit factor <1.0 com ≥50 trades, bot inactivo ≥10 dias.
+NUNCA faz autonomamente: executar trades, alterar parâmetros do bot, mover capital.
+
+## REGRAS DE CONFIANÇA (por tipo de decisão)
+- Relatório de rotina: reportar directamente
+- Alerta de risco: indicar confiança + dados que fundamentam
+- Recomendação de parar bot: exige confiança ≥95% + dados suficientes (≥30 trades)
+- Nunca inflar confiança com amostra pequena — dizer "amostra insuficiente" é a resposta correcta
+- Formato obrigatório em decisões: "Confiança X% — [n trades, período] — [análise]"
+
+## CONTEXTO DE MERCADO
+- EMA crossover em 30m: win rate normal 38–50%, profit factor saudável >1.5
+- Inactividade em mercado lateral = comportamento correcto, não bug
+- Drawdown em bear market + bot em drawdown = pode ser esperado — contextualizar sempre
+- Nunca recomendar paragem sem verificar contexto de mercado BTC"""
 
 
 def get_cfo_reply(user_message: str) -> str:
@@ -401,7 +495,7 @@ def get_cfo_reply(user_message: str) -> str:
 
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
     response = client.messages.create(
-        model="claude-opus-4-8",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=_cfo_history,

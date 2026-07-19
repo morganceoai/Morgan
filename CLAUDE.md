@@ -45,7 +45,7 @@ Morgan é o "braço direito" do Vasco. A última decisão é sempre do Vasco.
 | Pesquisa web | Tavily + Exa (a integrar) |
 | Memória | Mem0 Cloud (MEM0_API_KEY activo) + Qdrant Cloud (activo) |
 | Observabilidade | LangSmith (LANGCHAIN_API_KEY activo — activar SENTRY_DSN) |
-| Futebol | API Football + StatsBomb Open Data |
+| Futebol | API Football (ao vivo) + StatsBomb Open Data (análise histórica) |
 | Scout | Product Hunt API, HN Firebase API, pytrends |
 | Trading | CCXT + Binance (100 USDT BTC/USDT activo, BINANCE_TESTNET=false) |
 | Etsy | PlannerAtlas (8 listings activos, etsy OAuth pendente) |
@@ -169,3 +169,21 @@ apagar ficheiros ou funções, lógica do trading bot, scripts de deploy/CI/CD, 
 
 **Proibido em qualquer circunstância:**
 executar trades, enviar emails sem confirmação, apagar dados de produção, push para git sem autorização, alterar credenciais de acesso
+
+---
+
+## Registo de fixes — obrigatório
+
+Sempre que corrigires um erro neste projecto, **mesmo que seja uma alteração trivial**, chamar:
+
+```python
+from solver_graph import registar_fix_manual
+registar_fix_manual(
+    problema="descrição curta do erro",
+    diagnostico="causa raiz identificada",
+    fix="o que foi feito para corrigir",
+    confianca=95  # 95 se confirmado em produção, menos se incerto
+)
+```
+
+Ou adicionar directamente ao `memory/solver_fixes.json` com o mesmo formato. Isto ensina o Solver a resolver o mesmo erro autonomamente no futuro.

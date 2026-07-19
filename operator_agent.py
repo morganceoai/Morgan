@@ -271,13 +271,6 @@ def get_operator_reply(msg: str) -> str:
 
     state = _load_state()
     context = _build_context(state)
-    try:
-        from mem0_service import get_agent_context
-        mem_sistema = get_agent_context("operator", msg or "Etsy PlannerAtlas negócios operações")
-        if mem_sistema:
-            context = f"## Memória relevante:\n{mem_sistema}\n\n{context}"
-    except Exception:
-        pass
 
     needs_weekly = _check_weekly_report_needed(state)
     weekly_hint = ""
@@ -389,6 +382,54 @@ def monitorizar_negocios() -> str:
         output += "\n\nSem alertas activos."
 
     return output
+
+
+def gerar_plano_semana_planneratlas() -> str:
+    """Gera o plano de produtos PlannerAtlas para a semana — corre às segundas de manhã."""
+    from tools import pesquisar_web
+
+    tendencias = ""
+    try:
+        tendencias = pesquisar_web("Etsy digital planner bestseller trending German Spanish 2026 GoodNotes")
+    except Exception:
+        pass
+
+    prompt = f"""Hoje é {datetime.now().strftime('%A, %d de %B de %Y')}.
+Loja PlannerAtlas no Etsy — 8 anúncios activos em PT/ES/DE, objectivo 50+ produtos.
+
+TENDÊNCIAS DETECTADAS:
+{tendencias[:500] if tendencias else 'indisponível'}
+
+CONTEXTO:
+- 5 categorias: planner anual/semanal/diário, objectivos/hábitos, académico, negócios/freelancer, saúde/fitness
+- Mercados prioritários: Alemão (DE/AT/CH), Espanhol (ES/LATAM)
+- Preço alvo: €3-15 por template
+
+Gera o plano para esta semana:
+1. 3 novos produtos a criar (idioma, categoria, título Etsy em alemão ou espanhol)
+2. Keywords SEO para cada produto (5 keywords no idioma do mercado)
+3. Sugestão de imagem de capa
+4. Pinterest: 1 pin por produto (descrição curta, 5 hashtags)
+
+Formato directo. Português europeu."""
+
+    _client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    try:
+        r = _client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        plano = r.content[0].text if r.content else "Plano indisponível."
+    except Exception as e:
+        return f"Erro ao gerar plano: {e}"
+
+    plano_file = MEMORY_DIR / "planneratlas_plano_semana.md"
+    plano_file.write_text(
+        f"# Plano PlannerAtlas — {datetime.now().strftime('%d/%m/%Y')}\n\n{plano}",
+        encoding="utf-8"
+    )
+    return plano
 
 
 def run_operator():

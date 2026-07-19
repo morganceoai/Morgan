@@ -128,18 +128,22 @@ def estado_para_operador() -> str:
 # ── Setup OAuth2 (CLI, uma vez) ───────────────────────────────────────────────
 
 def setup_oauth():
-    """Fluxo PKCE interactivo para obter tokens de acesso Etsy."""
+    """Fluxo PKCE com servidor local para capturar o callback automaticamente."""
     import base64
     import hashlib
     import secrets
     import urllib.parse
-    import requests
+    import urllib.request
+    import webbrowser
+    import threading
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    from datetime import timedelta
 
     if not ETSY_KEYSTRING:
         print("ERRO: ETSY_KEYSTRING não definido no .env")
         return
 
-    REDIRECT = "https://www.example.com/some/location?code=xyz"
+    REDIRECT = "http://localhost:3456/callback"
     SCOPES = "listings_r transactions_r shops_r"
 
     code_verifier = secrets.token_urlsafe(64)
@@ -161,10 +165,34 @@ def setup_oauth():
         })
     )
 
-    print(f"\n1. Abre este URL no browser:\n{auth_url}\n")
-    print("2. Após autorizar, cola aqui o valor do parâmetro 'code' da URL de redireccionamento:")
-    code = input("code: ").strip()
+    captured = {}
 
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            params = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(self.path).query))
+            captured["code"] = params.get("code", "")
+            captured["state"] = params.get("state", "")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"<h2>Autorizado! Podes fechar esta janela.</h2>")
+            threading.Thread(target=self.server.shutdown).start()
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("localhost", 3456), Handler)
+    print(f"\nA abrir browser para autorização Etsy...")
+    webbrowser.open(auth_url)
+    print("Aguarda autorização no browser...\n")
+    server.serve_forever()
+
+    code = captured.get("code", "").strip()
+    if not code:
+        print("ERRO: código não recebido")
+        return
+
+    import requests
     r = requests.post(
         "https://api.etsy.com/v3/public/oauth/token",
         data={
@@ -180,12 +208,10 @@ def setup_oauth():
         return
 
     data = r.json()
-    from datetime import timedelta
     expiry = datetime.now(timezone.utc) + timedelta(seconds=data.get("expires_in", 3600))
     _save_tokens(data["access_token"], data["refresh_token"], expiry)
-    print(f"\nOK — tokens guardados em {TOKENS_FILE}")
+    print(f"OK — tokens guardados em {TOKENS_FILE}")
     print(f"access_token expira: {expiry.isoformat()}")
-    print("O refresh_token tem validade de 90 dias e é renovado automaticamente.")
 
 
 if __name__ == "__main__":

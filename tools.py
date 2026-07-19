@@ -637,7 +637,8 @@ ALLOWED_DIRS = [MORGAN_DIR, MORGAN_DIR / "memory", MORGAN_DIR / "desktop"]
 
 # Comandos de diagnóstico permitidos (read-only, seguros)
 _CMD_WHITELIST = ["ps", "grep", "tail", "head", "cat", "ls", "wc", "df", "free",
-                  "python3", "pip", "git log", "git status", "git diff"]
+                  "git log", "git status", "git diff", "git tag", "systemctl status",
+                  "pgrep", "lsof", "netstat", "curl -s", "ping -c"]
 
 
 def solver_ler_ficheiro(caminho: str) -> str:
@@ -653,10 +654,8 @@ def solver_ler_ficheiro(caminho: str) -> str:
         if not p.exists():
             return f"Ficheiro não encontrado: {caminho}"
         content = p.read_text(encoding="utf-8", errors="replace")
-        # Limita a 8000 chars para não explodir o contexto
         if len(content) > 8000:
-            content = content[-8000:]
-            return f"[Truncado — últimas 8000 chars]\n{content}"
+            return f"[Truncado — primeiras 8000 chars de {len(content)}]\n{content[:8000]}"
         return content
     except Exception as e:
         return f"Erro a ler ficheiro: {e}"
@@ -691,7 +690,7 @@ def solver_verificar_saude() -> str:
 
     # Verifica variáveis de ambiente críticas
     vars_criticas = ["ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY",
-                     "DEEPGRAM_API_KEY", "TAVILY_API_KEY"]
+                     "BINANCE_API_KEY", "TAVILY_API_KEY", "QDRANT_URL", "MEM0_API_KEY"]
     em_falta = [v for v in vars_criticas if not os.getenv(v)]
     if em_falta:
         resultados.append(f"ERRO: Variáveis em falta: {', '.join(em_falta)}")
@@ -780,28 +779,26 @@ def solver_git_diff() -> str:
 
 
 def solver_git_commit_push(mensagem: str) -> str:
-    """Faz git add, commit e push. REQUER confirmação prévia do Vasco."""
-    import os
-    token = os.getenv("GITHUB_TOKEN", "")
-    if not token:
-        return "GITHUB_TOKEN não configurado no Railway. Adiciona a variável de ambiente primeiro."
+    """Faz git add (só .py e .json, nunca .env), commit e push via SSH. REQUER confirmação prévia do Vasco."""
     try:
-        # Configura remote com token para autenticação
-        remote_url = f"https://{token}@github.com/morganceoai/Morgan.git"
         cmds = [
-            f"git remote set-url origin {remote_url}",
             "git config user.email 'solver@morgan.ai'",
             "git config user.name 'Morgan Solver'",
-            "git add -A",
+            # Nunca adicionar .env ou credenciais — só código e configs
+            "git add -- '*.py' '*.json' '*.md' '*.yml' '*.yaml'",
             f"git commit -m '{mensagem}'",
             "git push origin main",
         ]
         for cmd in cmds:
             r = subprocess.run(cmd, shell=True, capture_output=True, text=True,
                                cwd=str(MORGAN_DIR), timeout=60)
-            if r.returncode != 0 and "nothing to commit" not in r.stdout:
-                return f"Erro em '{cmd}':\n{r.stderr or r.stdout}"
-        return "Commit e push concluídos com sucesso."
+            if r.returncode != 0:
+                # "nothing to commit" não é erro
+                combined = (r.stdout + r.stderr).lower()
+                if "nothing to commit" in combined or "nothing added to commit" in combined:
+                    continue
+                return f"Erro em '{cmd}':\n{(r.stderr or r.stdout)[:400]}"
+        return "Commit e push concluídos. GitHub Actions faz deploy automático no Mac Mini."
     except Exception as e:
         return f"Erro: {e}"
 
