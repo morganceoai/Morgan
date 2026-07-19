@@ -509,9 +509,8 @@ def chat_with_morgan(user_text: str) -> str:
     if _m_rejeito:
         nome_op = _m_rejeito.group(1).strip()
         try:
-            from scout_memory import arquivar_oportunidade
-            arquivar_oportunidade(nome_op)
-            reply = f"Oportunidade '{nome_op}' arquivada."
+            from approval_pipeline import rejeitar_oportunidade
+            reply = rejeitar_oportunidade(nome_op)
         except Exception:
             reply = f"Oportunidade '{nome_op}' marcada como rejeitada."
         store_save(DESKTOP_USER_ID, "assistant", reply)

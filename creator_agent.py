@@ -481,7 +481,36 @@ def criar_sub_morgan(oportunidade: str) -> dict:
     })
     _save_state(state)
 
+    # Registar no tool_registry
+    _registar_tool_registry(sub_id, template["nome"], template.get("descricao", ""), template.get("ferramentas", []))
+
     return {"status": "criado", "id": sub_id, "nome": template["nome"]}
+
+
+_TOOL_REGISTRY = Path(__file__).parent / "memory" / "tool_registry.json"
+
+
+def _registar_tool_registry(agente_id: str, nome: str, descricao: str, ferramentas: list):
+    """Regista agente/ferramentas no tool_registry.json — fonte de verdade para assimilação."""
+    try:
+        registry = json.loads(_TOOL_REGISTRY.read_text(encoding="utf-8")) if _TOOL_REGISTRY.exists() else {}
+        registry[agente_id] = {
+            "nome": nome,
+            "descricao": descricao,
+            "ferramentas": ferramentas,
+            "criado_em": datetime.now().strftime("%Y-%m-%d"),
+        }
+        _TOOL_REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def get_tool_registry() -> dict:
+    """Devolve o registo completo de agentes e ferramentas disponíveis."""
+    try:
+        return json.loads(_TOOL_REGISTRY.read_text(encoding="utf-8")) if _TOOL_REGISTRY.exists() else {}
+    except Exception:
+        return {}
 
 
 def listar_sub_morgans() -> list:

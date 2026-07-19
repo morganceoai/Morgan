@@ -757,7 +757,33 @@ def node_relatorio(state: SolverState) -> SolverState:
             f"VERIFICAÇÃO:\n{verificacao_txt}"
         )
 
+    # Monitor pós-fix — reagendar verificação em 15min se resolvido
+    if "RESOLVIDO" in relatorio and "NÃO RESOLVIDO" not in relatorio:
+        _agendar_monitor_pos_fix(state.get("problema", ""), delay_min=15)
+
     return {**state, "relatorio": relatorio}
+
+
+def _agendar_monitor_pos_fix(problema: str, delay_min: int = 15):
+    """Agenda re-verificação do problema após delay_min minutos."""
+    import threading
+
+    def _re_verificar():
+        import time
+        time.sleep(delay_min * 60)
+        try:
+            # Re-executar apenas o nó de diagnóstico para confirmar resolução
+            result = resolver_problema(problema + " [monitor pós-fix]", modo="explain")
+            # Registar resultado na memória episódica
+            from episodic_memory import registar_evento
+            ok = "normal" in result.lower() or "resolvido" in result.lower() or "sem erro" in result.lower()
+            estado = "OK" if ok else "REABERTO"
+            registar_evento("solver", "monitor_pos_fix",
+                            f"{estado}: {problema[:100]} — verificado {delay_min}min após fix")
+        except Exception:
+            pass
+
+    threading.Thread(target=_re_verificar, daemon=True).start()
 
 
 # ── Edges condicionais ────────────────────────────────────────────────────────

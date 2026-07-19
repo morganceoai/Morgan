@@ -263,6 +263,85 @@ def resultados_recentes(equipa: str) -> str:
         return f"Erro ao obter resultados: {e}"
 
 
+def get_stats_jogador(nome_jogador: str, equipa: str = "", temporada: int = 2026) -> str:
+    """Stats individuais de um jogador na Primeira Liga via API Football."""
+    try:
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        # Encontrar jogador
+        params: dict = {"search": nome_jogador, "league": PRIMEIRA_LIGA_ID, "season": temporada}
+        r = requests.get("https://v3.football.api-sports.io/players", headers=headers, params=params, timeout=10)
+        data = r.json()
+        if not data.get("response"):
+            return f"Jogador '{nome_jogador}' não encontrado na Primeira Liga {temporada}."
+        p = data["response"][0]
+        info = p["player"]
+        stats = p["statistics"][0] if p.get("statistics") else {}
+        nome = info.get("name", nome_jogador)
+        clube = stats.get("team", {}).get("name", "?")
+        pos = stats.get("games", {}).get("position", "?")
+        jogos = stats.get("games", {}).get("appearences", 0)
+        golos = stats.get("goals", {}).get("total", 0)
+        assistencias = stats.get("goals", {}).get("assists", 0)
+        rating = stats.get("games", {}).get("rating", "?")
+        duelos_ganhos = stats.get("duels", {}).get("won", 0)
+        passes = stats.get("passes", {}).get("total", 0)
+        precisao_passe = stats.get("passes", {}).get("accuracy", "?")
+        return (
+            f"{nome} ({clube} | {pos})\n"
+            f"Jogos: {jogos} | Golos: {golos} | Assistências: {assistencias} | Rating: {rating}\n"
+            f"Passes: {passes} (precisão {precisao_passe}%) | Duelos ganhos: {duelos_ganhos}"
+        )
+    except Exception as e:
+        return f"Erro ao obter stats de {nome_jogador}: {e}"
+
+
+def analise_adversario_tatico(adversario: str, temporada: int = 2026) -> str:
+    """Análise tática de um adversário: últimos resultados, golos, tendências."""
+    try:
+        headers = {"x-apisports-key": API_FOOTBALL_KEY}
+        # Encontrar equipa
+        r = requests.get("https://v3.football.api-sports.io/teams", headers=headers,
+                         params={"name": adversario, "league": PRIMEIRA_LIGA_ID, "season": temporada}, timeout=10)
+        data = r.json()
+        if not data.get("response"):
+            return f"Equipa '{adversario}' não encontrada."
+        team_id = data["response"][0]["team"]["id"]
+        team_name = data["response"][0]["team"]["name"]
+
+        # Últimos 5 jogos
+        r2 = requests.get("https://v3.football.api-sports.io/fixtures", headers=headers,
+                          params={"team": team_id, "league": PRIMEIRA_LIGA_ID, "season": temporada, "last": 5}, timeout=10)
+        fixtures = r2.json().get("response", [])
+
+        # Estatísticas da equipa
+        r3 = requests.get("https://v3.football.api-sports.io/teams/statistics", headers=headers,
+                          params={"team": team_id, "league": PRIMEIRA_LIGA_ID, "season": temporada}, timeout=10)
+        stats = r3.json().get("response", {})
+
+        linhas = [f"Análise tática — {team_name}\n"]
+
+        if fixtures:
+            linhas.append("Últimos 5 jogos:")
+            for f in fixtures:
+                data_j = f["fixture"]["date"][:10]
+                casa = f["teams"]["home"]["name"]
+                fora = f["teams"]["away"]["name"]
+                g_casa = f["goals"]["home"]
+                g_fora = f["goals"]["away"]
+                linhas.append(f"  {data_j}: {casa} {g_casa}-{g_fora} {fora}")
+
+        if stats:
+            gm = stats.get("goals", {}).get("for", {}).get("total", {}).get("total", "?")
+            gs = stats.get("goals", {}).get("against", {}).get("total", {}).get("total", "?")
+            f_form = stats.get("form", "")
+            linhas.append(f"\nGolos marcados: {gm} | Golos sofridos: {gs}")
+            linhas.append(f"Forma recente: {f_form}")
+
+        return "\n".join(linhas)
+    except Exception as e:
+        return f"Erro análise tática {adversario}: {e}"
+
+
 def hacker_news_trending() -> str:
     """Busca os posts mais relevantes de IA no Hacker News."""
     try:
@@ -1028,6 +1107,31 @@ TOOLS = [
         }
     },
     {
+        "name": "get_stats_jogador",
+        "description": "Stats individuais de um jogador na Primeira Liga (golos, assistências, passes, rating, duelos).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome_jogador": {"type": "string", "description": "Nome do jogador"},
+                "equipa": {"type": "string", "description": "Equipa (opcional, para desambiguar)"},
+                "temporada": {"type": "integer", "description": "Época, ex: 2026"}
+            },
+            "required": ["nome_jogador"]
+        }
+    },
+    {
+        "name": "analise_adversario_tatico",
+        "description": "Análise tática de um adversário: últimos 5 resultados, golos marcados/sofridos, forma recente.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "adversario": {"type": "string", "description": "Nome da equipa adversária"},
+                "temporada": {"type": "integer", "description": "Época, ex: 2026"}
+            },
+            "required": ["adversario"]
+        }
+    },
+    {
         "name": "guardar_facto",
         "description": "Guarda um facto durável sobre o Vasco, as suas preferências, a sua equipa, ou qualquer coisa que deva ser lembrada entre sessões. Usa quando o Vasco te pedir para lembrares algo, ou quando aprenderes algo importante sobre ele.",
         "input_schema": {
@@ -1423,6 +1527,8 @@ TOOL_FUNCTIONS = {
     "classificacao_primeira_liga": classificacao_primeira_liga,
     "proximos_jogos": proximos_jogos,
     "resultados_recentes": resultados_recentes,
+    "get_stats_jogador": get_stats_jogador,
+    "analise_adversario_tatico": analise_adversario_tatico,
     "guardar_facto": lambda facto: save_fact(facto),
     "remover_facto": lambda facto: remove_fact(facto),
     "ver_memoria": list_memory,

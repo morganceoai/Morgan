@@ -213,7 +213,38 @@ def executar_oportunidade_aprovada(oportunidade: str, descricao: str) -> str:
     except Exception as e:
         linhas.append(f"Notion (erro): {e}")
 
+    # Feedback loop — Scout aprende com aprovações
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "feedback_vasco",
+                        f"APROVADO: {oportunidade} — {descricao[:200]}")
+        registar_evento("ceo", "decisao",
+                        f"Vasco aprovou oportunidade: {oportunidade}")
+    except Exception:
+        pass
+
     return (
         f"Oportunidade '{oportunidade}' aprovada.\n"
         + "\n".join(f"  • {l}" for l in linhas)
     )
+
+
+def rejeitar_oportunidade(oportunidade: str, motivo: str = "") -> str:
+    """Rejeita e arquiva oportunidade. Regista feedback no Scout."""
+    from scout_memory import rejeitar_oportunidade as _rejeita
+    try:
+        _rejeita(oportunidade)
+    except Exception:
+        pass
+
+    try:
+        from episodic_memory import registar_evento
+        msg = f"REJEITADO: {oportunidade}"
+        if motivo:
+            msg += f" — motivo: {motivo}"
+        registar_evento("scout", "feedback_vasco", msg)
+        registar_evento("ceo", "decisao", f"Vasco rejeitou oportunidade: {oportunidade}")
+    except Exception:
+        pass
+
+    return f"Oportunidade '{oportunidade}' arquivada."
