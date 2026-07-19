@@ -65,8 +65,8 @@ Moreira de Cónegos, Guimarães, Portugal.
 {fixtures_str}"""
     memoria = ""
     try:
-        from mem0_service import get_agent_context
-        mem_sistema = get_agent_context("coach", contexto or "futebol Moreirense Vasco")
+        from episodic_memory import get_contexto_agente
+        mem_sistema = get_contexto_agente("coach", contexto or "futebol Moreirense Vasco")
     except Exception:
         mem_sistema = ""
     mem_bloco = ""

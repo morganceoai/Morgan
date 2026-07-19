@@ -40,7 +40,7 @@ from marketeer_agent import get_marketeer_reply
 from operator_agent import get_operator_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
-from mem0_service import mem0_get, mem0_add, mem0_collective_get
+from episodic_memory import registar_evento, get_contexto_agente
 from config_service import is_pausado, pausar, retomar, hora_silencio, modelo as cfg_modelo, confianca_limiar
 from morgan_logging import configure as _configure_logging, get_logger as _get_logger
 
@@ -70,12 +70,13 @@ DESKTOP_DIR = Path(__file__).parent / "desktop"
 conversation_history: list[dict] = get_context_messages(DESKTOP_USER_ID)
 
 def _mem0_guardar_se_relevante(user_text: str, reply: str):
-    """Guarda no Qdrant em background. Haiku extrai só os factos relevantes antes de guardar."""
+    """Regista conversa na memória episódica em background."""
     try:
         import threading
+        resumo = f"Vasco: {user_text[:200]} | Morgan: {reply[:300]}"
         threading.Thread(
-            target=mem0_add,
-            args=("vasco", [{"role": "user", "content": user_text}, {"role": "assistant", "content": reply}]),
+            target=registar_evento,
+            args=("ceo", "conversa", resumo),
             daemon=True
         ).start()
     except Exception:
@@ -102,11 +103,10 @@ def get_system_prompt(query: str = "") -> str:
     agora = datetime.now().strftime("%d de %B de %Y, %H:%M")
     agentes_activos = _get_agentes_activos()
 
-    # Camada 3 — memória semântica (Qdrant)
+    # Camada 3 — memória episódica semântica
     contexto = memoria
     try:
-        from mem0_service import get_agent_context
-        mem_semantica = get_agent_context("ceo", query or "Morgan CEO decisões Vasco BCVertex")
+        mem_semantica = get_contexto_agente("ceo", query or "Morgan CEO decisões Vasco BCVertex")
         if mem_semantica:
             contexto = memoria + "\n\n[Memórias relevantes]\n" + mem_semantica
     except Exception:
@@ -1092,14 +1092,11 @@ def _contexto_para_hume() -> str:
     """
     partes = []
 
-    # Camada 1 — Mem0: memória semântica de longo prazo
+    # Camada 1 — memória episódica semântica (CEO + todos os agentes)
     try:
-        mem_vasco = mem0_get("vasco", "Morgan BCVertex negócios trading Moreirense Vasco", limit=15)
-        mem_col = mem0_collective_get("decisões importantes negócios agentes", limit=5)
-        if mem_vasco:
-            partes.append(f"=== MEMÓRIA DE LONGO PRAZO (tudo o que o Morgan sabe sobre o Vasco) ===\n{mem_vasco}")
-        if mem_col:
-            partes.append(f"=== MEMÓRIA COLECTIVA DOS AGENTES ===\n{mem_col}")
+        mem_ceo = get_contexto_agente("ceo", "BCVertex negócios trading Moreirense Vasco decisões", limite=10)
+        if mem_ceo:
+            partes.append(f"=== MEMÓRIA CEO (conversas recentes e relevantes) ===\n{mem_ceo}")
     except Exception:
         pass
 

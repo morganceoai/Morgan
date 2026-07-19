@@ -73,7 +73,7 @@ def agent_bootstrap(nome_agente: str, verbose: bool = False) -> str:
 
     # 2. Memória semântica Qdrant
     try:
-        from mem0_service import get_agent_context
+        from episodic_memory import get_contexto_agente as get_agent_context
         ctx = get_agent_context(nome_agente, "contexto geral Morgan BCVertex Vasco agentes")
         if ctx:
             resumo_partes.append(f"=== MEMÓRIA SEMÂNTICA ===\n{ctx}")
@@ -121,7 +121,7 @@ def agent_bootstrap(nome_agente: str, verbose: bool = False) -> str:
 def _memory_before_reply(nome_agente: str, query: str) -> str:
     """Camada 3 (semântica) — chamar ANTES de gerar resposta."""
     try:
-        from mem0_service import get_agent_context
+        from episodic_memory import get_contexto_agente as get_agent_context
         return get_agent_context(nome_agente, query) or ""
     except Exception:
         return ""
@@ -177,7 +177,7 @@ def get_{NOME}_reply(msg: str) -> str:
     # Camada 3 — memória semântica
     mem = ""
     try:
-        from mem0_service import get_agent_context
+        from episodic_memory import get_contexto_agente as get_agent_context
         mem = get_agent_context("{NOME}", msg or "{QUERY_DEFAULT}") or ""
     except Exception:
         pass

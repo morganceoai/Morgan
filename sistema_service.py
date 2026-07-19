@@ -80,12 +80,12 @@ def registar_agente(chave: str, nome: str, descricao: str, notificar: bool = Tru
     }
     _save(estado)
 
-    # Propagar para Mem0 — CEO, Marketeer, Solver ficam a saber
+    # Propagar para memória episódica — CEO, Marketeer, Solver ficam a saber
     try:
-        from mem0_service import mem0_collective_add
-        mem0_collective_add("ceo", f"Novo agente adicionado ao sistema: {nome} — {descricao}")
-        mem0_collective_add("marketeer", f"Novo agente {nome} criado. Se tiver negócio associado, assumir responsabilidade de marketing.")
-        mem0_collective_add("solver", f"Novo agente {nome} adicionado. Monitorizar saúde e reportar erros no briefing diário.")
+        from episodic_memory import registar_evento
+        registar_evento("ceo", "sistema", f"Novo agente adicionado: {nome} — {descricao}")
+        registar_evento("marketeer", "sistema", f"Novo agente {nome} criado. Se tiver negócio associado, assumir responsabilidade de marketing.")
+        registar_evento("solver", "sistema", f"Novo agente {nome} adicionado. Monitorizar saúde e reportar erros no briefing diário.")
     except Exception:
         pass
 
@@ -119,12 +119,12 @@ def registar_negocio(chave: str, nome: str, tipo: str, plataforma: str, descrica
     _save(estado)
 
     try:
-        from mem0_service import mem0_collective_add
-        mem0_collective_add("ceo", f"Novo negócio no sistema: {nome} ({plataforma}) — {descricao}")
-        mem0_collective_add("marketeer", f"Novo negócio para gerir: {nome} em {plataforma}. Assumir marketing imediatamente.")
-        mem0_collective_add("operator", f"Novo negócio operacional: {nome} em {plataforma}. Monitorizar estado diário.")
-        mem0_collective_add("cfo", f"Novo negócio: {nome}. Incluir nas projeções financeiras mensais.")
-        mem0_collective_add("solver", f"Novo negócio {nome} criado. Monitorizar erros e dependências.")
+        from episodic_memory import registar_evento
+        registar_evento("ceo", "sistema", f"Novo negócio no sistema: {nome} ({plataforma}) — {descricao}")
+        registar_evento("marketeer", "sistema", f"Novo negócio para gerir: {nome} em {plataforma}. Assumir marketing imediatamente.")
+        registar_evento("operator", "sistema", f"Novo negócio operacional: {nome} em {plataforma}. Monitorizar estado diário.")
+        registar_evento("cfo", "sistema", f"Novo negócio: {nome}. Incluir nas projeções financeiras mensais.")
+        registar_evento("solver", "sistema", f"Novo negócio {nome} criado. Monitorizar erros e dependências.")
     except Exception:
         pass
 

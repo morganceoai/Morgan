@@ -248,11 +248,11 @@ def missao_a_oportunidades() -> str:
     """Missão A — domingo 20h: identificar e validar oportunidades de negócio."""
     state = _load_state()
 
-    # Camada 3 — memória semântica
+    # Camada 3 — memória episódica semântica
     mem_bloco = ""
     try:
-        from mem0_service import get_agent_context
-        mem = get_agent_context("scout", "oportunidades negócio aprovadas rejeitadas rendimento passivo")
+        from episodic_memory import get_contexto_agente
+        mem = get_contexto_agente("scout", "oportunidades negócio aprovadas rejeitadas rendimento passivo")
         if mem:
             mem_bloco = f"\n## Memória relevante:\n{mem}\n"
     except Exception:
@@ -297,11 +297,11 @@ def missao_b_melhorias() -> str:
     except Exception:
         agentes_lista = "CEO, Scout, Coach, CFO, Creator, Solver, Operator, Marketeer"
 
-    # Camada 3 — memória semântica
+    # Camada 3 — memória episódica semântica
     mem_bloco = ""
     try:
-        from mem0_service import get_agent_context
-        mem = get_agent_context("scout", "melhorias agentes ferramentas APIs sistema Morgan")
+        from episodic_memory import get_contexto_agente
+        mem = get_contexto_agente("scout", "melhorias agentes ferramentas APIs sistema Morgan")
         if mem:
             mem_bloco = f"\n## Memória relevante:\n{mem}\n"
     except Exception:
@@ -335,8 +335,8 @@ def missao_b_melhorias() -> str:
 def get_scout_reply(user_message: str) -> str:
     """Resposta directa do Scout quando invocado na conversa."""
     try:
-        from mem0_service import get_agent_context
-        mem_sistema = get_agent_context("scout", user_message or "oportunidades negócio mercado SaaS rendimento passivo")
+        from episodic_memory import get_contexto_agente
+        mem_sistema = get_contexto_agente("scout", user_message or "oportunidades negócio mercado SaaS rendimento passivo")
     except Exception:
         mem_sistema = ""
     mem_bloco = f"\n## Memória relevante:\n{mem_sistema}\n\n" if mem_sistema else ""
