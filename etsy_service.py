@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 TOKENS_FILE = Path(__file__).parent / "memory" / "etsy_tokens.json"
 ETSY_KEYSTRING = os.getenv("ETSY_KEYSTRING", "")
+ETSY_SHARED_SECRET = os.getenv("ETSY_SHARED_SECRET", "")
 ETSY_SHOP_ID = os.getenv("ETSY_SHOP_ID", "")
 
 
@@ -45,13 +46,20 @@ def get_api():
         from etsyv3 import EtsyAPI
         data = json.loads(TOKENS_FILE.read_text(encoding="utf-8"))
         expiry = datetime.fromisoformat(data["expiry"])
-        return EtsyAPI(
+        # etsyv3 usa datetime.utcnow() (naive) — remover timezone para compatibilidade
+        if expiry.tzinfo is not None:
+            expiry = expiry.replace(tzinfo=None)
+        api = EtsyAPI(
             keystring=ETSY_KEYSTRING,
             token=data["token"],
             refresh_token=data["refresh_token"],
             expiry=expiry,
             refresh_save=_save_tokens,
         )
+        # Personal Access apps requerem keystring:shared_secret no x-api-key
+        if ETSY_SHARED_SECRET:
+            api.session.headers["x-api-key"] = f"{ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}"
+        return api
     except ImportError:
         logger.warning("etsyv3 não instalado — pip install etsyv3")
         return None
@@ -70,10 +78,10 @@ def obter_vendas(dias: int = 30) -> list:
     if not api:
         return []
     try:
-        receipts = api.getShopReceipts(shop_id=ETSY_SHOP_ID, limit=100)
+        receipts = api.get_shop_receipts(shop_id=ETSY_SHOP_ID, limit=100)
         return receipts.get("results", []) if isinstance(receipts, dict) else []
     except Exception as e:
-        logger.warning(f"etsy: getShopReceipts erro — {e}")
+        logger.warning(f"etsy: get_shop_receipts erro — {e}")
         return []
 
 
@@ -83,10 +91,11 @@ def obter_listings() -> list:
     if not api:
         return []
     try:
-        result = api.getListingsByShop(shop_id=ETSY_SHOP_ID, state="active", limit=100)
+        from etsyv3.etsy_api import ListingState
+        result = api.get_listings_by_shop(shop_id=ETSY_SHOP_ID, state=ListingState.ACTIVE, limit=100)
         return result.get("results", []) if isinstance(result, dict) else []
     except Exception as e:
-        logger.warning(f"etsy: getListingsByShop erro — {e}")
+        logger.warning(f"etsy: get_listings_by_shop erro — {e}")
         return []
 
 
