@@ -1132,6 +1132,40 @@ TOOLS = [
         }
     },
     {
+        "name": "etsy_pausar_listing",
+        "description": "Pausa um listing Etsy (torna-o inactivo). Usar quando CTR baixo ou stock esgotado.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "listing_id": {"type": "integer", "description": "ID do listing Etsy"}
+            },
+            "required": ["listing_id"]
+        }
+    },
+    {
+        "name": "etsy_activar_listing",
+        "description": "Reactiva um listing Etsy pausado.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "listing_id": {"type": "integer", "description": "ID do listing Etsy"}
+            },
+            "required": ["listing_id"]
+        }
+    },
+    {
+        "name": "etsy_actualizar_preco",
+        "description": "Actualiza o preço de um listing Etsy.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "listing_id": {"type": "integer", "description": "ID do listing Etsy"},
+                "preco": {"type": "number", "description": "Novo preço em EUR, ex: 4.99"}
+            },
+            "required": ["listing_id", "preco"]
+        }
+    },
+    {
         "name": "guardar_facto",
         "description": "Guarda um facto durável sobre o Vasco, as suas preferências, a sua equipa, ou qualquer coisa que deva ser lembrada entre sessões. Usa quando o Vasco te pedir para lembrares algo, ou quando aprenderes algo importante sobre ele.",
         "input_schema": {
@@ -1529,6 +1563,9 @@ TOOL_FUNCTIONS = {
     "resultados_recentes": resultados_recentes,
     "get_stats_jogador": get_stats_jogador,
     "analise_adversario_tatico": analise_adversario_tatico,
+    "etsy_pausar_listing": lambda listing_id: "OK" if __import__("etsy_service").pausar_listing(int(listing_id)) else "Erro",
+    "etsy_activar_listing": lambda listing_id: "OK" if __import__("etsy_service").activar_listing(int(listing_id)) else "Erro",
+    "etsy_actualizar_preco": lambda listing_id, preco: "OK" if __import__("etsy_service").actualizar_preco(int(listing_id), float(preco)) else "Erro",
     "guardar_facto": lambda facto: save_fact(facto),
     "remover_facto": lambda facto: remove_fact(facto),
     "ver_memoria": list_memory,

@@ -285,6 +285,27 @@ def _etsy_dados_reais() -> str:
         return ""
 
 
+def etsy_pausar(listing_id: int) -> str:
+    """Pausa um listing Etsy. Requer confirmação do Vasco antes de chamar."""
+    from etsy_service import pausar_listing
+    ok = pausar_listing(listing_id)
+    return f"Listing {listing_id} pausado." if ok else f"Erro ao pausar listing {listing_id}."
+
+
+def etsy_activar(listing_id: int) -> str:
+    """Reactiva um listing Etsy pausado."""
+    from etsy_service import activar_listing
+    ok = activar_listing(listing_id)
+    return f"Listing {listing_id} activado." if ok else f"Erro ao activar listing {listing_id}."
+
+
+def etsy_actualizar_preco(listing_id: int, preco: float) -> str:
+    """Actualiza preço de um listing. Requer confirmação do Vasco antes de chamar."""
+    from etsy_service import actualizar_preco
+    ok = actualizar_preco(listing_id, preco)
+    return f"Preço do listing {listing_id} actualizado para €{preco:.2f}." if ok else f"Erro ao actualizar preço."
+
+
 def _build_context(state: dict) -> str:
     businesses = state.get("businesses", {})
     last_report = state.get("last_weekly_report", "nunca")

@@ -35,37 +35,81 @@ def _save_tokens(token: str, refresh_token: str, expiry):
     logger.info("etsy_tokens: guardados")
 
 
-def get_api():
-    """Retorna instância EtsyAPI com tokens actualizados. None se não configurado."""
-    if not ETSY_KEYSTRING:
-        return None
+def _get_token() -> str:
+    """Devolve access_token válido, fazendo refresh se necessário."""
     if not TOKENS_FILE.exists():
-        logger.warning("etsy_tokens: ficheiro não existe — correr setup")
-        return None
+        return ""
+    data = json.loads(TOKENS_FILE.read_text(encoding="utf-8"))
+    expiry = datetime.fromisoformat(data["expiry"])
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) < expiry:
+        return data["token"]
+    # Refresh
     try:
-        from etsyv3 import EtsyAPI
-        data = json.loads(TOKENS_FILE.read_text(encoding="utf-8"))
-        expiry = datetime.fromisoformat(data["expiry"])
-        # etsyv3 usa datetime.utcnow() (naive) — remover timezone para compatibilidade
-        if expiry.tzinfo is not None:
-            expiry = expiry.replace(tzinfo=None)
-        api = EtsyAPI(
-            keystring=ETSY_KEYSTRING,
-            token=data["token"],
-            refresh_token=data["refresh_token"],
-            expiry=expiry,
-            refresh_save=_save_tokens,
-        )
-        # Personal Access apps requerem keystring:shared_secret no x-api-key
-        if ETSY_SHARED_SECRET:
-            api.session.headers["x-api-key"] = f"{ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}"
-        return api
-    except ImportError:
-        logger.warning("etsyv3 não instalado — pip install etsyv3")
-        return None
+        import requests as _req
+        r = _req.post("https://api.etsy.com/v3/public/oauth/token", data={
+            "grant_type": "refresh_token",
+            "client_id": ETSY_KEYSTRING,
+            "refresh_token": data["refresh_token"],
+        }, timeout=10)
+        if r.status_code == 200:
+            new = r.json()
+            from datetime import timedelta
+            exp = datetime.now(timezone.utc) + timedelta(seconds=new.get("expires_in", 3600))
+            _save_tokens(new["access_token"], new["refresh_token"], exp)
+            return new["access_token"]
     except Exception as e:
-        logger.warning(f"etsy_service: erro ao obter API — {e}")
-        return None
+        logger.warning("etsy: refresh falhou — %s", e)
+    return data["token"]
+
+
+def _etsy_get(path: str, params: dict | None = None) -> dict:
+    """GET autenticado à Etsy API v3. Devolve {} em caso de erro."""
+    import requests as _req
+    token = _get_token()
+    if not token:
+        return {}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "x-api-key": f"{ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}" if ETSY_SHARED_SECRET else ETSY_KEYSTRING,
+    }
+    try:
+        r = _req.get(f"https://openapi.etsy.com/v3/application{path}",
+                     headers=headers, params=params or {}, timeout=10)
+        if r.status_code == 200:
+            return r.json()
+        logger.warning("etsy GET %s → %s %s", path, r.status_code, r.text[:200])
+    except Exception as e:
+        logger.warning("etsy GET %s erro: %s", path, e)
+    return {}
+
+
+def _etsy_patch(path: str, payload: dict) -> dict:
+    """PATCH autenticado à Etsy API v3."""
+    import requests as _req
+    token = _get_token()
+    if not token:
+        return {}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "x-api-key": f"{ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}" if ETSY_SHARED_SECRET else ETSY_KEYSTRING,
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    try:
+        r = _req.patch(f"https://openapi.etsy.com/v3/application{path}",
+                       headers=headers, data=payload, timeout=10)
+        if r.status_code in (200, 204):
+            return r.json() if r.content else {}
+        logger.warning("etsy PATCH %s → %s %s", path, r.status_code, r.text[:200])
+    except Exception as e:
+        logger.warning("etsy PATCH %s erro: %s", path, e)
+    return {}
+
+
+def get_api():
+    """Compatibilidade retroactiva — preferir _etsy_get/_etsy_patch directamente."""
+    return bool(_get_token())
 
 
 def is_configured() -> bool:
@@ -74,29 +118,33 @@ def is_configured() -> bool:
 
 def obter_vendas(dias: int = 30) -> list:
     """Lista vendas dos últimos N dias."""
-    api = get_api()
-    if not api:
-        return []
-    try:
-        receipts = api.get_shop_receipts(shop_id=ETSY_SHOP_ID, limit=100)
-        return receipts.get("results", []) if isinstance(receipts, dict) else []
-    except Exception as e:
-        logger.warning(f"etsy: get_shop_receipts erro — {e}")
-        return []
+    data = _etsy_get(f"/shops/{ETSY_SHOP_ID}/receipts", {"limit": 100, "was_paid": "true"})
+    return data.get("results", [])
 
 
 def obter_listings() -> list:
     """Lista todos os anúncios activos."""
-    api = get_api()
-    if not api:
-        return []
-    try:
-        from etsyv3.etsy_api import ListingState
-        result = api.get_listings_by_shop(shop_id=ETSY_SHOP_ID, state=ListingState.ACTIVE, limit=100)
-        return result.get("results", []) if isinstance(result, dict) else []
-    except Exception as e:
-        logger.warning(f"etsy: get_listings_by_shop erro — {e}")
-        return []
+    data = _etsy_get(f"/shops/{ETSY_SHOP_ID}/listings/active", {"limit": 100})
+    return data.get("results", [])
+
+
+def pausar_listing(listing_id: int) -> bool:
+    """Pausa um listing (state → inactive)."""
+    r = _etsy_patch(f"/shops/{ETSY_SHOP_ID}/listings/{listing_id}", {"state": "inactive"})
+    return bool(r)
+
+
+def activar_listing(listing_id: int) -> bool:
+    """Activa um listing pausado (state → active)."""
+    r = _etsy_patch(f"/shops/{ETSY_SHOP_ID}/listings/{listing_id}", {"state": "active"})
+    return bool(r)
+
+
+def actualizar_preco(listing_id: int, preco: float) -> bool:
+    """Actualiza o preço de um listing (em EUR, sem centavos de arredondamento)."""
+    r = _etsy_patch(f"/shops/{ETSY_SHOP_ID}/listings/{listing_id}",
+                    {"price": str(round(preco, 2))})
+    return bool(r)
 
 
 def resumo_loja() -> dict:
@@ -153,7 +201,7 @@ def setup_oauth():
         return
 
     REDIRECT = "http://localhost:3456/callback"
-    SCOPES = "listings_r transactions_r shops_r"
+    SCOPES = "listings_r listings_w listings_d transactions_r shops_r"
 
     code_verifier = secrets.token_urlsafe(64)
     code_challenge = base64.urlsafe_b64encode(
