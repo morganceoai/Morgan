@@ -2091,6 +2091,47 @@ async def _heartbeat_loop():
                 _dedup_mark(f"scout_melhorias_{agora.strftime('%Y-%W')}")
                 await _run_scout_melhorias()
 
+            # Scout Missão C — saúde de negócios activos (cada 30 dias, qualquer dia)
+            chave_c = f"scout_c_{agora.strftime('%Y-%m-%d')}"
+            if agora.hour == 21 and not _dedup_check(chave_c):
+                _dedup_mark(chave_c)
+                try:
+                    from scout_agent import missao_c_saude_negocios
+                    loop = asyncio.get_event_loop()
+                    rel_c = await loop.run_in_executor(None, missao_c_saude_negocios)
+                    if rel_c and "próxima em" not in rel_c:
+                        send_push(title="Scout — Análise de Saúde dos Negócios", body=rel_c[:200], url="/pwa/")
+                        _log.info("Scout Missão C concluída")
+                except Exception as e:
+                    _log.error("Scout Missão C erro: %s", e)
+
+            # Scout Missão D — estratégia de trading (cada 14 dias, terça-feira 21h)
+            chave_d = f"scout_d_{agora.strftime('%Y-%W')}"
+            if agora.weekday() == 1 and agora.hour == 21 and not _dedup_check(chave_d):
+                _dedup_mark(chave_d)
+                try:
+                    from scout_agent import missao_d_trading_estrategia
+                    loop = asyncio.get_event_loop()
+                    rel_d = await loop.run_in_executor(None, missao_d_trading_estrategia)
+                    if rel_d and "próxima análise" not in rel_d:
+                        send_push(title="Scout — Estratégia Trading", body=rel_d[:200], url="/pwa/")
+                        _log.info("Scout Missão D concluída")
+                except Exception as e:
+                    _log.error("Scout Missão D erro: %s", e)
+
+            # Marketeer → Operator: recomendações diárias às 9h
+            chave_mkt_ops = f"mkt_ops_{agora.strftime('%Y-%m-%d')}"
+            if agora.hour == 9 and not _dedup_check(chave_mkt_ops):
+                _dedup_mark(chave_mkt_ops)
+                try:
+                    from marketeer_agent import escrever_recomendacoes_operator
+                    loop = asyncio.get_event_loop()
+                    res_mkt = await loop.run_in_executor(None, escrever_recomendacoes_operator)
+                    _log.info("Marketeer→Operator: %s", res_mkt)
+                    # Operator lê as recomendações automaticamente via _ler_recomendacoes_marketeer()
+                except Exception as e:
+                    _log.error("Marketeer→Operator erro: %s", e)
+
             # Plano semanal PlannerAtlas — segunda-feira às 8h
             chave_etsy = f"etsy_plano_{agora.strftime('%Y-%W')}"
             if agora.weekday() == 0 and agora.hour == 8 and not _dedup_check(chave_etsy):

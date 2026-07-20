@@ -215,6 +215,20 @@ def relatorio_financeiro_diario() -> str:
     else:
         linhas.append(f"RISCO: VERDE — sem alertas")
 
+    # Etsy revenue
+    try:
+        from etsy_service import resumo_loja
+        etsy = resumo_loja()
+        linhas += [
+            "",
+            "ETSY — PlannerAtlas",
+            f"  Listings activos: {etsy['listings_activos']}",
+            f"  Vendas (30 dias): {etsy['vendas_periodo']}",
+            f"  Receita estimada: €{etsy['receita_estimada']:.2f}",
+        ]
+    except Exception:
+        pass
+
     report_txt = "\n".join(linhas)
 
     # Guardar histórico

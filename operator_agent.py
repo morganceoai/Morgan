@@ -98,6 +98,22 @@ Causa provável: [1 linha com evidência]
 Acção: [1 acção concreta e executável]
 Urgência: ALTA/MÉDIA/BAIXA
 
+FERRAMENTAS DISPONÍVEIS:
+- etsy_listar_listings: ver todos os listings com preços e IDs
+- etsy_pausar_listing(listing_id): PAUSA um listing (usa quando CTR <0.3% por 7 dias)
+- etsy_activar_listing(listing_id): ACTIVA listing pausado
+- pesquisar_web(query): pesquisa de mercado, concorrência, tendências
+
+REGRAS DE AUTONOMIA:
+- Podes pausar/activar listings autonomamente — regista sempre no relatório
+- NUNCA alteras preços sem aprovação explícita do Vasco — propõe sempre, não executa
+- NUNCA apgas listings
+- Para qualquer acção que envolva dinheiro: propõe ao CEO, aguarda confirmação
+
+COLABORAÇÃO:
+- Lê recomendações do Marketeer em memory/marketeer_ops.json antes de cada ciclo
+- Executa recomendações de SEO/título/tags autonomamente; escalona preços ao Vasco
+
 REGRAS:
 - PT-PT sempre
 - Números concretos — nunca "as vendas caíram um pouco"
@@ -404,6 +420,61 @@ def _parse_and_update_state(state: dict, reply: str, msg: str):
                     break
 
 
+def _get_operator_tools() -> list:
+    from tools import TOOLS
+    names = ["etsy_pausar_listing", "etsy_activar_listing", "pesquisar_web"]
+    return [t for t in TOOLS if t["name"] in names]
+
+
+def _run_operator_tool(name: str, inp: dict) -> str:
+    from tools import TOOL_FUNCTIONS
+    func = TOOL_FUNCTIONS.get(name)
+    if not func:
+        return f"Ferramenta {name} não encontrada."
+    try:
+        return str(func(**inp))
+    except Exception as e:
+        return f"Erro em {name}: {e}"
+
+
+def _ler_recomendacoes_marketeer() -> str:
+    """Lê recomendações do Marketeer para este ciclo."""
+    try:
+        f = MEMORY_DIR / "marketeer_ops.json"
+        if not f.exists():
+            return ""
+        data = json.loads(f.read_text(encoding="utf-8"))
+        recs = data.get("recommendations", [])
+        if not recs:
+            return ""
+        linhas = [f"[Marketeer — {data.get('gerado_em','?')}]"]
+        for r in recs[:5]:
+            linhas.append(f"  • {r.get('acao','?')} listing {r.get('listing_id','?')}: {r.get('razao','')}")
+        return "\n".join(linhas)
+    except Exception:
+        return ""
+
+
+def _ler_listings_etsy() -> str:
+    """Injeta listings reais no contexto do Operator."""
+    try:
+        from etsy_service import obter_listings
+        listings = obter_listings()
+        if not listings:
+            return ""
+        linhas = ["[Listings Etsy activos]"]
+        for l in listings[:10]:
+            lid = l.get("listing_id", "?")
+            title = l.get("title", "?")[:45]
+            preco = l.get("price", {}).get("amount", 0) / 100
+            linhas.append(f"  [{lid}] {title}… €{preco:.2f}")
+        if len(listings) > 10:
+            linhas.append(f"  … +{len(listings)-10} mais")
+        return "\n".join(linhas)
+    except Exception:
+        return ""
+
+
 def get_operator_reply(msg: str) -> str:
     logger.info("operator_agent recebeu mensagem: %s", msg[:80])
 
@@ -411,28 +482,45 @@ def get_operator_reply(msg: str) -> str:
     context = _build_context(state)
 
     needs_weekly = _check_weekly_report_needed(state)
-    weekly_hint = ""
-    if needs_weekly:
-        weekly_hint = "\n[SISTEMA: Já passaram 7 dias desde o último relatório semanal. Considera incluir um relatório semanal completo na tua resposta se for adequado.]"
+    weekly_hint = "\n[SISTEMA: Já passaram 7 dias desde o último relatório semanal. Inclui relatório semanal completo.]" if needs_weekly else ""
 
     metrics_ctx = _build_metrics_context(state)
     metrics_bloco = f"\n\n{metrics_ctx}" if metrics_ctx else ""
 
-    messages = [
-        {
-            "role": "user",
-            "content": f"{context}{metrics_bloco}\n{weekly_hint}\n\nMensagem do CEO:\n{msg}",
-        }
-    ]
+    mkt_recs = _ler_recomendacoes_marketeer()
+    mkt_bloco = f"\n\n{mkt_recs}" if mkt_recs else ""
+
+    listings_bloco = "\n\n" + _ler_listings_etsy()
+
+    content = f"{context}{metrics_bloco}{mkt_bloco}{listings_bloco}{weekly_hint}\n\nMensagem do CEO:\n{msg}"
+    messages = [{"role": "user", "content": content}]
+    tools = _get_operator_tools()
 
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            messages=messages,
-        )
-        reply = response.content[0].text
+        while True:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2048,
+                system=SYSTEM_PROMPT,
+                messages=messages,
+                tools=tools,
+            )
+            if response.stop_reason == "tool_use":
+                messages.append({"role": "assistant", "content": response.content})
+                results = []
+                for block in response.content:
+                    if block.type == "tool_use":
+                        result = _run_operator_tool(block.name, block.input)
+                        logger.info("operator tool %s → %s", block.name, result[:80])
+                        results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result,
+                        })
+                messages.append({"role": "user", "content": results})
+            else:
+                reply = next((b.text for b in response.content if hasattr(b, "text")), "")
+                break
         logger.info("operator_agent respondeu com %d caracteres", len(reply))
     except Exception as e:
         logger.error("Erro ao chamar Claude: %s", e)

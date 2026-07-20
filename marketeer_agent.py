@@ -524,6 +524,73 @@ Máximo 15 linhas. PT-PT. Números concretos."""
         return f"Erro na análise: {e}"
 
 
+_MARKETEER_OPS = Path(__file__).parent / "memory" / "marketeer_ops.json"
+
+def escrever_recomendacoes_operator() -> str:
+    """Analisa a loja Etsy e escreve recomendações para o Operator agir."""
+    try:
+        from etsy_service import resumo_loja
+        resumo = resumo_loja()
+    except Exception as e:
+        return f"Erro ao obter dados Etsy: {e}"
+
+    listings = resumo.get("listings", [])
+    vendas = resumo.get("vendas_periodo", 0)
+    receita = resumo.get("receita_estimada", 0.0)
+
+    # Listings sem vendas recentes são candidatos a pausa
+    sem_vendas = [l for l in listings if l.get("quantity", 0) > 0]
+    recomendacoes = []
+
+    prompt = f"""És o Morgan Marketeer. Analisa estes dados da loja Etsy PlannerAtlas e gera recomendações de gestão para o Operator:
+
+Listings activos: {len(listings)}
+Vendas últimos 30 dias: {vendas}
+Receita estimada: €{receita:.2f}
+
+Listings: {json.dumps([{"id": l.get("listing_id"), "titulo": l.get("title","")[:50], "views": l.get("views",0), "quantity": l.get("quantity",0)} for l in listings[:20]], ensure_ascii=False)}
+
+Gera recomendações no formato JSON:
+{{
+  "pausar": [lista de listing_ids a pausar por baixo desempenho],
+  "activar": [lista de listing_ids a reactivar],
+  "investigar": [listing_ids com dados anómalos],
+  "resumo": "1-2 linhas com a situação geral da loja",
+  "prioridade": "alta/media/baixa"
+}}
+
+Apenas responde com o JSON, sem mais texto."""
+
+    try:
+        r = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=500,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        texto = r.content[0].text.strip() if r.content else "{}"
+        # Extrair JSON se vier com markdown
+        if "```" in texto:
+            texto = texto.split("```")[1].lstrip("json").strip()
+        recs = json.loads(texto)
+    except Exception:
+        recs = {"resumo": "Erro ao gerar recomendações", "prioridade": "baixa"}
+
+    # Guardar para o Operator ler
+    dados = {
+        "gerado_em": datetime.now().isoformat()[:16],
+        "resumo_loja": {"vendas": vendas, "receita": receita, "listings_activos": len(listings)},
+        "recomendacoes": recs,
+    }
+    try:
+        _MARKETEER_OPS.parent.mkdir(exist_ok=True)
+        _MARKETEER_OPS.write_text(json.dumps(dados, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
+
+    return f"Recomendações escritas para Operator: {recs.get('resumo','OK')} (prioridade: {recs.get('prioridade','?')})"
+
+
 def registar_campanha(nome: str, canal: str, objetivo: str) -> str:
     """Regista uma nova campanha de marketing."""
     state = _load_state()

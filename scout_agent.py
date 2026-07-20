@@ -332,6 +332,150 @@ def missao_b_melhorias() -> str:
     return relatorio
 
 
+MISSAO_C_INTERVALO_DIAS = 30   # análise de saúde de negócios activos
+MISSAO_D_INTERVALO_DIAS = 14   # pesquisa de estratégias de trading
+
+
+def missao_c_saude_negocios() -> str:
+    """
+    Missão C — corre a cada 30 dias por negócio activo.
+    Analisa se o negócio ainda faz sentido, mercados a explorar/abandonar,
+    alterações recomendadas. Padrão obrigatório para TODOS os negócios aprovados.
+    """
+    state = _load_state()
+    hoje = date.today().strftime("%Y-%m-%d")
+
+    # Ler negócios activos do sistema
+    try:
+        from sistema_service import get_negocios_ativos
+        negocios = get_negocios_ativos()
+    except Exception:
+        negocios = {"planneratlas_etsy": {"nome": "PlannerAtlas (Etsy)", "plataforma": "Etsy", "descricao": "Planners digitais PT/ES/DE"}}
+
+    if not negocios:
+        return "Sem negócios activos para analisar."
+
+    # Verificar quais precisam de análise (30 dias desde última)
+    missoes_c = state.get("missoes_c", {})
+    negocios_a_analisar = []
+    for chave, neg in negocios.items():
+        ultima = missoes_c.get(chave, "")
+        if not ultima:
+            negocios_a_analisar.append((chave, neg))
+        else:
+            from datetime import timedelta
+            dias_passados = (date.today() - date.fromisoformat(ultima)).days
+            if dias_passados >= MISSAO_C_INTERVALO_DIAS:
+                negocios_a_analisar.append((chave, neg))
+
+    if not negocios_a_analisar:
+        return f"Missão C: todos os negócios analisados recentemente (próxima em {MISSAO_C_INTERVALO_DIAS} dias)."
+
+    relatorios = []
+    for chave, neg in negocios_a_analisar:
+        nome = neg.get("nome", chave)
+        plataforma = neg.get("plataforma", "?")
+        descricao = neg.get("descricao", "")
+
+        # Dados reais da plataforma se disponível
+        dados_reais = ""
+        if "etsy" in plataforma.lower():
+            try:
+                from etsy_service import estado_para_operador
+                dados_reais = estado_para_operador()
+            except Exception:
+                pass
+
+        system = f"""És o Morgan Scout. Fazes análise de saúde periódica de negócios activos do império BCVertex.
+Analisa com dados reais. Sem hype. PT-PT. Máximo 20 linhas por negócio.
+
+Para cada negócio responde:
+1. O negócio ainda faz sentido? (sim/não/condicional + dados)
+2. Mercados a expandir (com dados de procura)
+3. Mercados a abandonar ou reduzir
+4. Alterações recomendadas ao produto/preço/posicionamento
+5. Ameaças detectadas (concorrência, algoritmo, sazonalidade)
+6. Próximas 3 acções concretas (ordenadas por impacto)
+7. Score de saúde: 0-10"""
+
+        msgs = [{"role": "user", "content": (
+            f"Negócio: {nome} | Plataforma: {plataforma}\n"
+            f"Descrição: {descricao}\n"
+            f"{f'Dados reais:{chr(10)}{dados_reais}' if dados_reais else ''}\n\n"
+            "Faz a análise de saúde completa. Pesquisa tendências de mercado actuais."
+        )}]
+
+        relatorio = _chamar_claude_scout(system, msgs, max_tokens=1500)
+        relatorios.append(f"=== {nome} ===\n{relatorio}")
+
+        # Registar data da análise
+        missoes_c[chave] = hoje
+        state["missoes_c"] = missoes_c
+
+        # Guardar relatório
+        report_file = SCOUT_REPORTS_DIR / f"missao_c_{chave}_{hoje}.txt"
+        report_file.write_text(relatorio, encoding="utf-8")
+
+        try:
+            from episodic_memory import registar_evento
+            registar_evento("scout", f"missao_c_{chave}", relatorio[:400])
+        except Exception:
+            pass
+
+    _save_state(state)
+    return "\n\n".join(relatorios)
+
+
+def missao_d_trading_estrategia() -> str:
+    """
+    Missão D — corre a cada 14 dias.
+    Pesquisa estratégias de trading na Binance: novas estratégias, backtests publicados,
+    mudanças de mercado, se a estratégia actual (Supertrend 4h BTC/USDT) ainda é válida.
+    """
+    state = _load_state()
+    hoje = date.today().strftime("%Y-%m-%d")
+
+    ultima_d = state.get("ultima_missao_d", "")
+    if ultima_d:
+        from datetime import timedelta
+        dias = (date.today() - date.fromisoformat(ultima_d)).days
+        if dias < MISSAO_D_INTERVALO_DIAS:
+            return f"Missão D: próxima análise de trading em {MISSAO_D_INTERVALO_DIAS - dias} dias."
+
+    system = """És o Morgan Scout a fazer análise de estratégia de trading.
+Pesquisa dados reais. Cita fontes. PT-PT. Máximo 20 linhas.
+
+Responde:
+1. A estratégia Supertrend 4h BTC/USDT ainda é válida? (win rate publicado, condições actuais)
+2. Que alterações de parâmetros têm melhor performance no mercado actual?
+3. Há estratégias alternativas com melhor expectancy para BTC com $100-500 capital?
+4. Condições de mercado actuais (trend, volatilidade, dominance BTC)
+5. Recomendação: manter estratégia / ajustar parâmetros / considerar alternativa
+6. Proposta concreta para o CFO avaliar"""
+
+    msgs = [{"role": "user", "content": (
+        "Analisa a estratégia de trading actual do Morgan (Supertrend BTC/USDT 4h, capital $100 USDT, Binance live). "
+        "Pesquisa resultados recentes publicados desta estratégia e alternativas. "
+        "Contexto: operador com pouco tempo, quer rendimento passivo, não quer monitorizar activamente."
+    )}]
+
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=1500)
+
+    state["ultima_missao_d"] = hoje
+    _save_state(state)
+
+    report_file = SCOUT_REPORTS_DIR / f"missao_d_trading_{hoje}.txt"
+    report_file.write_text(relatorio, encoding="utf-8")
+
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "missao_d_trading", relatorio[:400])
+    except Exception:
+        pass
+
+    return relatorio
+
+
 def get_scout_reply(user_message: str) -> str:
     """Resposta directa do Scout quando invocado na conversa."""
     try:
