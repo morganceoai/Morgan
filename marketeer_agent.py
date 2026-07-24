@@ -274,41 +274,71 @@ REGRAS SEO ETSY 2026 OBRIGATÓRIAS:
 - Optimizar para ser encontrado via ChatGPT Shopping (linguagem conversacional)
 - CTR e add-to-cart são sinais directos no algoritmo — título e foto determinam CTR
 
-Gera 3 propostas por mercado (DE, ES, PT):
-MERCADO: [DE/ES/PT]
+Gera 3 propostas por mercado (DE, EN, ES, PT) — OBRIGATÓRIO cobrir os 4:
+MERCADO: [DE/EN/ES/PT]
 TÍTULO: ... (keyword principal nos primeiros 40 chars assinalada com [*])
 TAGS: tag1, tag2, ... (13 tags obrigatórias)
 GANCHO: ... (primeira frase da descrição — 1 linha)
 CTR_ESPERADO: alto/médio/baixo (justifica em 5 palavras)
 
-Sem emojis. Linguagem nativa de cada mercado."""}]
+Sem emojis. Linguagem nativa de cada mercado. DE em alemão, EN em inglês, ES em espanhol, PT em português."""}]
         )
         return resp.content[0].text
     except Exception as e:
         return f"Erro ao gerar optimizações: {e}"
 
 
-def plano_pinterest_semanal(negocio: str = "PlannerAtlas", nicho: str = "planners digitais") -> str:
-    """Gera um plano de pins Pinterest para a semana — 5 pins com descrições e hashtags."""
+def _detectar_mercados_etsy() -> list[dict]:
+    """Lê os listings activos da Etsy e detecta os mercados/línguas presentes."""
+    LINGUA_MAP = {
+        "DE": {"codigo": "DE", "lingua": "Alemão", "keyword": "Planer PDF zum Ausdrucken", "timing": "Sa/So 20h-22h CET",
+               "signals": ["druckbar", "planer", "vorlage", "ausdrucken", "monatsplaner", "wochenplaner", "tagesplaner", "mahlzeiten", "haushalts"]},
+        "EN": {"codigo": "EN", "lingua": "Inglês", "keyword": "Printable Planner PDF", "timing": "Fri/Sat 8-11pm EST",
+               "signals": ["printable", "planner", "tracker", "monthly", "weekly", "budget", "meal", "habit", "daily"]},
+        "ES": {"codigo": "ES", "lingua": "Espanhol", "keyword": "Planificador Imprimible PDF", "timing": "Sáb/Dom 20h-22h CET",
+               "signals": ["imprimible", "planificador", "planeacion", "mensual", "semanal", "rastreador", "comidas", "control de gastos"]},
+        "PT": {"codigo": "PT", "lingua": "Português", "keyword": "Planeador Imprimível PDF", "timing": "Sáb/Dom 20h-22h WET",
+               "signals": ["imprimível", "planeador", "rastreador", "mensal", "semanal", "refeições", "despesas", "hábitos"]},
+    }
     try:
-        resp = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=500,
-            system="Crias planos de conteúdo Pinterest para lojas Etsy. Foco em pins que convertem em visitas.",
-            messages=[{"role": "user", "content": f"""Negócio: {negocio} — loja Etsy de {nicho}
-Mercados: PT, ES, BR
+        from etsy_service import obter_listings
+        listings = obter_listings()
+        titulos = " ".join(l.get("title", "").lower() for l in listings)
+        mercados_detectados = []
+        for cod, m in LINGUA_MAP.items():
+            if any(s in titulos for s in m["signals"]):
+                mercados_detectados.append(m)
+        return mercados_detectados if mercados_detectados else list(LINGUA_MAP.values())
+    except Exception:
+        # fallback: assumir EN se Etsy não disponível
+        return [LINGUA_MAP["EN"]]
 
-Cria um plano de 5 pins para esta semana:
-- Título do pin (max 100 chars)
-- Descrição (max 200 chars, inclui hashtags relevantes)
-- Tipo de imagem sugerida
 
-Formato: PIN 1: | Título: | Descrição: | Imagem:
-PT-PT. Foco em descoberta orgânica."""}]
-        )
-        return resp.content[0].text
-    except Exception as e:
-        return f"Erro: {e}"
+def plano_pinterest_semanal(negocio: str = "PlannerAtlas", nicho: str = "planners digitais") -> str:
+    """Gera plano de pins Pinterest para a semana — detecta mercados a partir dos listings Etsy activos."""
+    MERCADOS = _detectar_mercados_etsy()
+    resultados = []
+    for m in MERCADOS:
+        try:
+            resp = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=600,
+                system=f"Crias pins Pinterest de alta conversão para lojas Etsy. Escreve SEMPRE em {m['lingua']}. Foco em descoberta orgânica.",
+                messages=[{"role": "user", "content": f"""Negócio: {negocio} — loja Etsy de {nicho}
+Mercado: {m['codigo']} | Língua: {m['lingua']} | Keyword base: {m['keyword']}
+Timing óptimo: {m['timing']}
+
+Cria 3 pins para esta semana (use_case / before_after / seasonal):
+- Título (max 100 chars, keyword nos primeiros 40)
+- Descrição (max 200 chars + hashtags)
+- Sugestão de imagem
+
+Escreve TUDO em {m['lingua']}."""}]
+            )
+            resultados.append(f"\n## MERCADO {m['codigo']} ({m['lingua']})\n{resp.content[0].text}")
+        except Exception as e:
+            resultados.append(f"\n## MERCADO {m['codigo']}: Erro — {e}")
+    return "\n---".join(resultados)
 
 
 def analisar_instagram_referencia(conta_referencia: str = "pepteam", conta_vasco: str = "vascobotelhodacosta") -> str:
@@ -407,30 +437,54 @@ Tom: inspiracional, produtivo, minimalista. Público: estudantes e profissionais
         return f"Erro ao gerar conteúdo: {e}"
 
 
-def gerar_variantes_pin(produto: str, listing_url: str = "", idioma: str = "de", n: int = 5) -> str:
+def gerar_variantes_pin(produto: str, listing_url: str = "", idioma: str = "todos", n: int = 3) -> str:
     """
-    Gera N variantes de descrição de pin para o mesmo listing (fresh pin strategy).
-    Cada variante usa um content pillar diferente para maximizar alcance orgânico.
+    Gera variantes de pin para o mesmo listing — por defeito cobre TODOS os 4 mercados (DE, EN, ES, PT).
+    idioma='todos' gera para os 4 mercados; ou passa 'de'/'en'/'es'/'pt' para um mercado específico.
     """
+    TODOS_MERCADOS = [
+        {"codigo": "DE", "lingua": "alemão"},
+        {"codigo": "EN", "lingua": "inglês"},
+        {"codigo": "ES", "lingua": "espanhol"},
+        {"codigo": "PT", "lingua": "português europeu"},
+    ]
     idiomas_map = {"de": "alemão", "es": "espanhol", "pt": "português europeu", "en": "inglês"}
-    lang_name = idiomas_map.get(idioma, idioma)
+
+    if idioma == "todos":
+        mercados = _detectar_mercados_etsy()
+    else:
+        lang_name = idiomas_map.get(idioma, idioma)
+        mercados = [{"codigo": idioma.upper(), "lingua": lang_name}]
+
+    resultados = []
     pillars_usados = CONTENT_PILLARS[:n]
 
-    prompt = f"""Produto Etsy: {produto}
+    for m in mercados:
+        prompt = f"""Produto Etsy: {produto}
 URL do listing: {listing_url or 'https://www.etsy.com/shop/PlannerAtlas'}
-Idioma: {lang_name}
+Mercado: {m['codigo']} | Idioma: {m['lingua']}
 
-Cria {n} variantes de pin Pinterest, cada uma usando um ângulo diferente:
+Cria {n} variantes de pin Pinterest, cada uma com um ângulo diferente:
 {chr(10).join(f"{i+1}. Ângulo '{p}'" for i, p in enumerate(pillars_usados))}
 
 Para cada variante:
-- TÍTULO: máx 100 chars (keyword principal à frente)
-- DESCRIÇÃO: máx 150 chars + 5-8 hashtags relevantes em {lang_name}
-- TIMING: melhor dia/hora para publicar (Sáb/Dom 20h-23h como referência)
-- IMAGEM: sugestão do visual (texto overlay, cor de fundo, elemento central)
+- TÍTULO: máx 100 chars (keyword principal à frente, em {m['lingua']})
+- DESCRIÇÃO: máx 150 chars + 5-8 hashtags em {m['lingua']}
+- TIMING: melhor dia/hora para publicar
+- IMAGEM: sugestão do visual
 
-Regras: fresh pins = imagens diferentes para o mesmo URL. Cada variante é uma nova imagem, não só texto diferente.
-{lang_name.capitalize()} correcto e natural. Sem emojis excessivos."""
+Escreve TUDO em {m['lingua']}. Fresh pins = imagens diferentes para o mesmo URL."""
+
+        try:
+            r = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=700,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            resultado = r.content[0].text if r.content else "Variantes indisponíveis."
+            resultados.append(f"\n## MERCADO {m['codigo']} ({m['lingua']})\n{resultado}")
+        except Exception as e:
+            resultados.append(f"\n## MERCADO {m['codigo']}: Erro — {e}")
 
     try:
         r = client.messages.create(
@@ -448,13 +502,14 @@ Regras: fresh pins = imagens diferentes para o mesmo URL. Cada variante é uma n
     pins_hist.append({
         "data": datetime.now().isoformat()[:16],
         "produto": produto,
-        "idioma": idioma,
-        "variantes_geradas": n,
+        "mercados": [m["codigo"] for m in mercados],
+        "variantes_geradas": n * len(mercados),
         "status": "gerado",  # → publicado → medido
         "engagement": None,  # preenchido após engagement window 48h
     })
     state["pins_history"] = pins_hist[-500:]
     _save_state(state)
+    return "\n---".join(resultados)
 
     return resultado
 
