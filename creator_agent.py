@@ -1146,6 +1146,87 @@ def rever_agente(nome: str) -> str:
     return f.read_text(encoding="utf-8")
 
 
+def criar_email_purelymail(utilizador: str, dominio: str = "bcvertex.com") -> dict:
+    """
+    Cria um novo email no PurelyMail via Playwright.
+    Usa as credenciais bcvertexowner guardadas no .env.
+    Retorna {'email': '...', 'password': '...', 'status': 'ok'} ou {'status': 'erro', 'detalhes': '...'}.
+    """
+    import secrets, string, time
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    owner_email = os.getenv("PURELYMAIL_OWNER_EMAIL", "bcvertexowner@purelymail.com")
+    owner_pass  = os.getenv("PURELYMAIL_OWNER_PASS", "")
+    if not owner_pass:
+        return {"status": "erro", "detalhes": "PURELYMAIL_OWNER_PASS não configurado no .env"}
+
+    # Gerar password segura
+    chars = string.ascii_letters + string.digits + "!@#$"
+    nova_pass = "".join(secrets.choice(chars) for _ in range(20))
+    email_completo = f"{utilizador}@{dominio}"
+
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return {"status": "erro", "detalhes": "Playwright não instalado"}
+
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            page = browser.new_page()
+
+            # Login
+            page.goto("https://purelymail.com/manage/login")
+            time.sleep(3)
+            page.fill("#emailInput", owner_email)
+            page.fill("#passwordInput", owner_pass)
+            page.keyboard.press("Enter")
+            time.sleep(4)
+
+            # Verificar login
+            if "login" in page.url:
+                browser.close()
+                return {"status": "erro", "detalhes": "Login PurelyMail falhou — verificar credenciais"}
+
+            # Ir para criar user
+            page.goto("https://purelymail.com/manage/user/new")
+            time.sleep(2)
+
+            # Encontrar domínio correcto no select
+            options = page.eval_on_selector_all(
+                'select[name="domainId"] option',
+                'els => els.map(e => ({value: e.value, text: e.textContent.trim()}))'
+            )
+            domain_id = next((o["value"] for o in options if dominio in o["text"]), None)
+            if not domain_id:
+                browser.close()
+                return {"status": "erro", "detalhes": f"Domínio '{dominio}' não encontrado no PurelyMail. Disponíveis: {[o['text'] for o in options]}"}
+
+            page.select_option('select[name="domainId"]', domain_id)
+            page.fill('input[name="name"]', utilizador)
+            page.fill('input[name="password"]', nova_pass)
+            page.click('button:has-text("Save")')
+            time.sleep(3)
+
+            content = page.inner_text("main")
+            browser.close()
+
+            if "updated" in content.lower() or "created" in content.lower() or utilizador in content.lower():
+                # Guardar no .env do Mac Mini
+                env_path = Path(__file__).parent / ".env"
+                env_key = utilizador.upper().replace("-", "_").replace(".", "_")
+                with open(env_path, "a") as f:
+                    f.write(f"\n{env_key}_EMAIL={email_completo}\n")
+                    f.write(f"{env_key}_EMAIL_PASS={nova_pass}\n")
+                return {"status": "ok", "email": email_completo, "password": nova_pass}
+            else:
+                return {"status": "erro", "detalhes": f"Resposta inesperada: {content[:200]}"}
+
+    except Exception as e:
+        return {"status": "erro", "detalhes": str(e)}
+
+
 if __name__ == "__main__":
     # Teste rápido
     resultado = criar_sub_morgan("Directório de nicho PT/BR monetizado")
