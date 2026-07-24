@@ -780,6 +780,15 @@ def get_marketeer_reply(user_text: str) -> str:
     state = _load_state()
     context = f"\nCampanhas activas: {len([c for c in state['campanhas'] if c.get('status')=='ativa'])}"
 
+    mem_semantica = ""
+    try:
+        from episodic_memory import get_contexto_agente
+        mem_semantica = get_contexto_agente("marketeer", user_text or "Etsy SEO marketing Pinterest campanhas BCVertex")
+    except Exception:
+        pass
+    if mem_semantica:
+        context += f"\n\n[Memórias relevantes]\n{mem_semantica}"
+
     msgs = [{"role": "user", "content": user_text}]
     for _ in range(5):
         r = client.messages.create(
@@ -790,7 +799,13 @@ def get_marketeer_reply(user_text: str) -> str:
             messages=msgs,
         )
         if r.stop_reason == "end_turn":
-            return next((b.text for b in r.content if hasattr(b, "text")), "Sem resposta.")
+            reply = next((b.text for b in r.content if hasattr(b, "text")), "Sem resposta.")
+            try:
+                from episodic_memory import registar_evento
+                registar_evento("marketeer", "conversa", f"Q: {user_text[:100]} | R: {reply[:200]}")
+            except Exception:
+                pass
+            return reply
         if r.stop_reason != "tool_use":
             break
         tool_results = []

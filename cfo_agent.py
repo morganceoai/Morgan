@@ -501,7 +501,14 @@ def get_cfo_reply(user_message: str) -> str:
     """Ponto de entrada para conversa com o CFO."""
     global _cfo_history
 
-    system = _build_cfo_system(user_message)
+    mem_semantica = ""
+    try:
+        from episodic_memory import get_contexto_agente
+        mem_semantica = get_contexto_agente("cfo", user_message or "trading Binance BTC posições portfolio BCVertex")
+    except Exception:
+        pass
+
+    system = _build_cfo_system(user_message + ("\n\n[Memórias relevantes]\n" + mem_semantica if mem_semantica else ""))
     _cfo_history.append({"role": "user", "content": user_message})
 
     if len(_cfo_history) > 20:

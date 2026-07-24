@@ -817,6 +817,13 @@ def gerar_codigo_agente(nome: str, descricao: str, capacidades: list[str]) -> st
     referencias = "\n\n".join(refs)
     caps_str = "\n".join(f"- {c}" for c in capacidades)
 
+    mem_semantica = ""
+    try:
+        from episodic_memory import get_contexto_agente
+        mem_semantica = get_contexto_agente("creator", f"agente {nome} {descricao}")
+    except Exception:
+        pass
+
     # Template base com todas as camadas de memória
     from agent_template import gerar_codigo_agente_base
     template_base = gerar_codigo_agente_base(nome, descricao)
@@ -834,6 +841,9 @@ TEMPLATE BASE OBRIGATÓRIO (adapta e expande, nunca removes as camadas de memór
 
 AGENTES EXISTENTES COMO REFERÊNCIA DE PADRÕES:
 {referencias}
+
+MEMÓRIAS DE AGENTES ANTERIORES CRIADOS:
+{mem_semantica if mem_semantica else "Nenhuma memória relevante encontrada."}
 
 REQUISITOS TÉCNICOS OBRIGATÓRIOS:
 1. Função principal: get_{nome}_reply(msg: str) -> str

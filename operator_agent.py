@@ -492,7 +492,15 @@ def get_operator_reply(msg: str) -> str:
 
     listings_bloco = "\n\n" + _ler_listings_etsy()
 
-    content = f"{context}{metrics_bloco}{mkt_bloco}{listings_bloco}{weekly_hint}\n\nMensagem do CEO:\n{msg}"
+    mem_semantica = ""
+    try:
+        from episodic_memory import get_contexto_agente, registar_evento
+        mem_semantica = get_contexto_agente("operator", msg or "Etsy listings vendas gestão negócios BCVertex")
+    except Exception:
+        pass
+    mem_bloco = f"\n\n[Memórias relevantes]\n{mem_semantica}" if mem_semantica else ""
+
+    content = f"{context}{metrics_bloco}{mkt_bloco}{listings_bloco}{weekly_hint}{mem_bloco}\n\nMensagem do CEO:\n{msg}"
     messages = [{"role": "user", "content": content}]
     tools = _get_operator_tools()
 
@@ -528,6 +536,11 @@ def get_operator_reply(msg: str) -> str:
 
     _parse_and_update_state(state, reply, msg)
     _save_state(state)
+
+    try:
+        registar_evento("operator", "conversa", f"Q: {msg[:100]} | R: {reply[:200]}")
+    except Exception:
+        pass
 
     return reply
 
