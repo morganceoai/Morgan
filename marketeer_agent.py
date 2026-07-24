@@ -213,8 +213,8 @@ def enviar_outreach_email(destinatario_email: str, assunto: str, corpo: str, nom
     if enviados >= _OUTREACH_CAP:
         return f"Limite diário de {_OUTREACH_CAP} emails atingido. Retoma amanhã."
 
-    smtp_user = os.getenv("MORGAN_EMAIL", "")
-    smtp_pass = os.getenv("MORGAN_EMAIL_PASS", "")
+    smtp_user = os.getenv("PLANNERATLAS_EMAIL", os.getenv("MORGAN_EMAIL", ""))
+    smtp_pass = os.getenv("PLANNERATLAS_EMAIL_PASS", os.getenv("MORGAN_EMAIL_PASS", ""))
     if not smtp_user or not smtp_pass:
         return "Variáveis MORGAN_EMAIL / MORGAN_EMAIL_PASS não configuradas no .env."
 
