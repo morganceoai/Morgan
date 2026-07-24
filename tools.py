@@ -1616,6 +1616,18 @@ TOOLS = [
         }
     },
     {
+        "name": "criar_email_bcvertex",
+        "description": "Cria um novo endereço de email no domínio bcvertex.com via PurelyMail. Totalmente autónomo — sem interacção humana. Usa para criar emails de novos negócios (ex: planneratlas@bcvertex.com).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "utilizador": {"type": "string", "description": "Nome do utilizador sem domínio (ex: 'planneratlas', 'suporte', 'info')"},
+                "dominio": {"type": "string", "description": "Domínio (padrão: bcvertex.com)", "default": "bcvertex.com"}
+            },
+            "required": ["utilizador"]
+        }
+    },
+    {
         "name": "verificar_email_confirmacao",
         "description": "Verifica o email Zoho à procura de um email de confirmação de conta. Extrai e devolve o URL de confirmação.",
         "input_schema": {
@@ -1712,6 +1724,9 @@ TOOL_FUNCTIONS = {
             __import__('creator_agent').deploy_agente(nome, mensagem_commit),
             ensure_ascii=False, indent=2
         )
+    ),
+    "criar_email_bcvertex": lambda utilizador, dominio="bcvertex.com": (
+        __import__("creator_agent").criar_email_purelymail(utilizador, dominio)
     ),
     "criar_conta_plataforma": lambda plataforma, url_registo, email, password, dados_extra=None: (
         __import__('automation_service').criar_conta_plataforma(plataforma, url_registo, email, password, dados_extra)
