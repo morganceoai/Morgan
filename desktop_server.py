@@ -1633,13 +1633,24 @@ async def _run_briefing(hora: int):
     aprovadas = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
     oport_top = list(scout_data.get("oportunidades", {}).keys())[:1]
 
-    # Delta reporting — memória episódica
-    # Só inclui secção se o conteúdo mudou desde o último briefing
+    # Delta reporting — memória episódica + Zep temporal
     from episodic_memory import registar_evento
     coach_novidade = registar_evento("coach", "moreirense_briefing", coach_str) if coach_str else False
     bot_novidade = registar_evento("cfo", "trading_briefing", bot_str) if bot_str else False
     scout_texto = oport_top[0] if oport_top else ""
     scout_novidade = registar_evento("scout", "oportunidade_top", scout_texto) if scout_texto else False
+
+    # Zep: regista o briefing completo com timestamp real para consulta temporal futura
+    try:
+        from zep_service import registar_evento as zep_reg
+        ts_label = datetime.now().strftime("%d/%m/%Y %H:%M")
+        zep_reg("ceo", "briefing_manha", f"Briefing {ts_label} | Coach: {coach_str[:200]} | CFO: {bot_str[:100]} | Scout: {scout_texto[:100]}")
+        if coach_str:
+            zep_reg("coach", "moreirense_briefing", coach_str[:300])
+        if bot_str:
+            zep_reg("cfo", "trading_briefing", bot_str[:200])
+    except Exception:
+        pass
 
     coach_bloco = coach_str if coach_str else "Dados de futebol indisponíveis."
     if not coach_novidade and coach_str:

@@ -142,6 +142,55 @@ def pesquisar_noticias(query: str) -> str:
     return _formatar_resultados(resultados)
 
 
+# ── FIRECRAWL ──────────────────────────────────────────────────────────────────
+
+def scrape_url(url: str, formato: str = "markdown") -> str:
+    """
+    Extrai conteúdo limpo de qualquer URL e devolve markdown pronto para LLM.
+    Usa Firecrawl. Útil para: analisar listings Etsy de concorrentes, ler páginas
+    de diretórios, extrair conteúdo de sites sem API.
+    500 créditos/mês gratuitos (FIRECRAWL_API_KEY no .env).
+    """
+    api_key = os.getenv("FIRECRAWL_API_KEY", "")
+    if not api_key:
+        return "Firecrawl não configurado — adicionar FIRECRAWL_API_KEY ao .env."
+    try:
+        from firecrawl import FirecrawlApp
+        app = FirecrawlApp(api_key=api_key)
+        result = app.scrape_url(url, formats=[formato])
+        content = getattr(result, "markdown", None) or getattr(result, "content", None) or str(result)
+        return content[:4000] if content else "Sem conteúdo extraído."
+    except ImportError:
+        return "firecrawl-py não instalado. Corre: pip install firecrawl-py"
+    except Exception as e:
+        return f"Firecrawl erro: {e}"
+
+
+def pesquisar_e_scrape(query: str, num_resultados: int = 3) -> str:
+    """
+    Pesquisa na web e extrai conteúdo completo dos resultados (não apenas snippets).
+    Usa Firecrawl crawl sobre resultados Exa. Para análise profunda de concorrentes,
+    extracção de leads de diretórios, research de mercado detalhado.
+    """
+    api_key = os.getenv("FIRECRAWL_API_KEY", "")
+    if not api_key:
+        # fallback para pesquisa normal
+        return pesquisar_web(query)
+    resultados_exa = _pesquisar_exa(query, num_results=num_resultados)
+    if not resultados_exa:
+        return pesquisar_web(query)
+    output = [f"**Pesquisa profunda: {query}**\n"]
+    for r in resultados_exa[:num_resultados]:
+        url = r.get("url", "")
+        titulo = r.get("title", url)
+        if not url:
+            continue
+        output.append(f"\n## {titulo}\nURL: {url}")
+        conteudo = scrape_url(url)
+        output.append(conteudo[:1500])
+    return "\n".join(output)
+
+
 def pesquisar_mercado(query: str) -> str:
     """Scout — análise de oportunidades de mercado via Perplexity sonar-pro.
     Melhor cobertura e síntese que sonar base. Fallback para pesquisar_web.
@@ -1478,6 +1527,30 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "scrape_url",
+        "description": "Extrai conteúdo completo de uma URL e devolve markdown limpo. Usa para: analisar listings Etsy da concorrência, ler páginas de diretórios, extrair conteúdo de sites sem API. Mais completo que pesquisar_web.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "URL completa a fazer scrape"},
+                "formato": {"type": "string", "description": "Formato de saída: 'markdown' (padrão) ou 'html'", "default": "markdown"}
+            },
+            "required": ["url"]
+        }
+    },
+    {
+        "name": "pesquisar_e_scrape",
+        "description": "Pesquisa na web E extrai conteúdo completo dos resultados (não apenas snippets). Para análise profunda de concorrentes, extracção de leads, research detalhado. Mais lento mas muito mais completo que pesquisar_web.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Query de pesquisa"},
+                "num_resultados": {"type": "integer", "description": "Número de URLs a analisar (1-5, padrão 3)", "default": 3}
+            },
+            "required": ["query"]
+        }
+    },
+    {
         "name": "creator_listar_agentes",
         "description": "Lista todos os agentes Python existentes no projecto Morgan.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -1624,6 +1697,8 @@ TOOL_FUNCTIONS = {
     "atualizar_estado_imperio": atualizar_estado_imperio,
     "listar_google_drive": listar_google_drive,
     "organizar_google_drive_sugestoes": organizar_google_drive_sugestoes,
+    "scrape_url": scrape_url,
+    "pesquisar_e_scrape": pesquisar_e_scrape,
     "creator_listar_agentes": lambda: __import__('creator_agent').listar_agentes(),
     "creator_construir_agente": lambda nome, descricao, capacidades, keywords_trigger: (
         __import__('json').dumps(
