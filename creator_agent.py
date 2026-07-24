@@ -1185,7 +1185,9 @@ def criar_email_purelymail(utilizador: str, dominio: str = "bcvertex.com") -> di
             time.sleep(4)
 
             # Verificar login
-            if "login" in page.url:
+            # PurelyMail pode manter URL /login mas já estar logado — verificar pelo conteúdo
+            page_text = page.inner_text("body")
+            if "Logged in as" not in page_text and "Logout" not in page_text:
                 browser.close()
                 return {"status": "erro", "detalhes": "Login PurelyMail falhou — verificar credenciais"}
 
