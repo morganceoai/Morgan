@@ -19,8 +19,8 @@ def _pesquisar_exa(query: str, num_results: int = 5) -> list[dict]:
     try:
         from exa_py import Exa
         exa = Exa(api_key=EXA_API_KEY)
-        results = exa.search_and_contents(query, num_results=num_results, text={"max_characters": 500})
-        return [{"title": r.title or "", "content": r.text or "", "url": r.url or ""} for r in results.results]
+        results = exa.search(query, num_results=num_results)
+        return [{"title": r.title or "", "content": getattr(r, "text", "") or "", "url": r.url or ""} for r in results.results]
     except Exception:
         return []
 
@@ -65,7 +65,7 @@ def _pesquisar_brave(query: str, num_results: int = 5) -> list[dict]:
 def _pesquisar_duckduckgo(query: str, num_results: int = 5) -> list[dict]:
     """Pesquisa via DuckDuckGo — gratuita, sem API key."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=num_results))
         return [{"title": r.get("title",""), "content": r.get("body",""), "url": r.get("href","")} for r in results]
@@ -94,22 +94,26 @@ def _perplexity(query: str, modelo: str, max_tokens: int = 1500) -> str:
         return ""
 
 
+def _formatar_resultados(resultados: list[dict], max_results: int = 5) -> str:
+    output = []
+    for r in resultados[:max_results]:
+        if r.get("title") or r.get("content"):
+            output.append(f"**{r['title']}**\n{r['content']}\nFonte: {r['url']}")
+    return "\n\n---\n\n".join(output) if output else "Sem resultados."
+
+
 def pesquisar_web(query: str, modo: str = "auto") -> str:
-    """Pesquisa na web com cascade: Perplexity Sonar → Exa → Tavily → Brave → DuckDuckGo."""
+    """Pesquisa na web via Exa → Tavily → Brave → DuckDuckGo.
+    NÃO usa Perplexity — reservado para análise de mercado e deep research.
+    Usar pesquisar_mercado() ou pesquisar_oportunidade_profunda() quando precisar de síntese com IA.
+    """
     if "2026" not in query and "2025" not in query:
         query = f"{query} 2026"
 
-    # Perplexity Sonar como fonte primária (sintetiza + cita fontes)
-    resposta = _perplexity(query, "sonar")
-    if resposta:
-        return f"{resposta}\n\n[Perplexity Sonar]"
-
-    # Fallbacks baseados em resultados brutos
-    resultados: list[dict] = []
     if modo == "semantico":
         resultados = _pesquisar_exa(query)
     elif modo == "noticias":
-        resultados = _pesquisar_tavily(query) or _pesquisar_duckduckgo(query)
+        resultados = _pesquisar_tavily(query) or _pesquisar_brave(query) or _pesquisar_duckduckgo(query)
     else:
         resultados = (
             _pesquisar_exa(query) or
@@ -119,13 +123,23 @@ def pesquisar_web(query: str, modo: str = "auto") -> str:
         )
 
     if not resultados:
-        return "Não encontrei resultados para essa pesquisa (todas as fontes indisponíveis)."
+        return "Não encontrei resultados para essa pesquisa."
 
-    output = []
-    for r in resultados[:5]:
-        if r.get("title") or r.get("content"):
-            output.append(f"**{r['title']}**\n{r['content']}\nFonte: {r['url']}")
-    return "\n\n---\n\n".join(output) if output else "Sem resultados."
+    return _formatar_resultados(resultados)
+
+
+def pesquisar_noticias(query: str) -> str:
+    """Coach / Operator — pesquisa de notícias recentes via DDG → Tavily → Brave.
+    Sem Perplexity. Ideal para: notícias futebol, transferências, resultados recentes.
+    """
+    resultados = (
+        _pesquisar_duckduckgo(query) or
+        _pesquisar_tavily(query) or
+        _pesquisar_brave(query)
+    )
+    if not resultados:
+        return "Não encontrei notícias recentes para essa query."
+    return _formatar_resultados(resultados)
 
 
 def pesquisar_mercado(query: str) -> str:
@@ -1057,14 +1071,23 @@ Formato direto, sem rodeios. Português europeu."""}]
 TOOLS = [
     {
         "name": "pesquisar_web",
-        "description": "Pesquisa na web sobre qualquer tema — notícias, análises táticas, novidades de IA, informações gerais. Usa quando precisas de informação atual ou específica.",
+        "description": "Pesquisa na web via Exa → Tavily → DuckDuckGo. Para informação geral, artigos, páginas. NÃO usa Perplexity. Para análise de mercado usa pesquisar_mercado. Para notícias recentes de futebol usa pesquisar_noticias.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "O que pesquisar. Sê específico para melhores resultados."
-                }
+                "query": {"type": "string", "description": "O que pesquisar."},
+                "modo": {"type": "string", "enum": ["auto", "semantico", "noticias"], "description": "auto (padrão), semantico (Exa primeiro), noticias (DDG/Tavily)"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "pesquisar_noticias",
+        "description": "Pesquisa notícias recentes via DuckDuckGo → Tavily. Ideal para futebol, transferências, resultados, actualidades. Gratuito, sem Perplexity.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "O que pesquisar. Ex: 'Moreirense transferências Julho 2026'"}
             },
             "required": ["query"]
         }
@@ -1558,6 +1581,7 @@ TOOLS = [
 # Mapa de nome para função
 TOOL_FUNCTIONS = {
     "pesquisar_web": pesquisar_web,
+    "pesquisar_noticias": pesquisar_noticias,
     "classificacao_primeira_liga": classificacao_primeira_liga,
     "proximos_jogos": proximos_jogos,
     "resultados_recentes": resultados_recentes,

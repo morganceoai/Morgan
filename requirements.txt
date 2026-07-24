@@ -62,6 +62,6 @@ statsbombpy
 playwright>=1.40.0
 
 pywebpush>=2.0.0
-duckduckgo-search>=6.0.0
+ddgs>=0.1.0
 exa-py>=1.0.0
 fastembed>=0.3.0

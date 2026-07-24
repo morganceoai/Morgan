@@ -236,7 +236,7 @@ def statsbomb_dados_abertos(adversario: str = "", competicao: str = "") -> str:
 
 def _get_coach_tools():
     from tools import TOOLS
-    nomes_permitidos = ["pesquisar_web", "proximos_jogos", "resultados_recentes",
+    nomes_permitidos = ["pesquisar_noticias", "proximos_jogos", "resultados_recentes",
                         "classificacao_primeira_liga", "get_stats_jogador",
                         "analise_adversario_tatico"]
     return [t for t in TOOLS if t["name"] in nomes_permitidos]
