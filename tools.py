@@ -103,9 +103,9 @@ def _formatar_resultados(resultados: list[dict], max_results: int = 5) -> str:
 
 
 def pesquisar_web(query: str, modo: str = "auto") -> str:
-    """Pesquisa na web via Exa → Tavily → Brave → DuckDuckGo.
-    NÃO usa Perplexity — reservado para análise de mercado e deep research.
-    Usar pesquisar_mercado() ou pesquisar_oportunidade_profunda() quando precisar de síntese com IA.
+    """Pesquisa na web via cascade: Exa → Perplexity → DDG → Tavily.
+    Cascade ordenada por disponibilidade real — Tavily no fim (limite atingido).
+    Perplexity usado como fallback de pesquisa (sonar base, não deep research).
     """
     if "2026" not in query and "2025" not in query:
         query = f"{query} 2026"
@@ -113,14 +113,24 @@ def pesquisar_web(query: str, modo: str = "auto") -> str:
     if modo == "semantico":
         resultados = _pesquisar_exa(query)
     elif modo == "noticias":
-        resultados = _pesquisar_tavily(query) or _pesquisar_brave(query) or _pesquisar_duckduckgo(query)
-    else:
+        # DDG primeiro para notícias — mais rápido e sem limite
         resultados = (
+            _pesquisar_duckduckgo(query) or
             _pesquisar_exa(query) or
-            _pesquisar_tavily(query) or
-            _pesquisar_brave(query) or
-            _pesquisar_duckduckgo(query)
+            _pesquisar_tavily(query)
         )
+    else:
+        # cascade principal: Exa → Perplexity → DDG → Tavily
+        resultados = _pesquisar_exa(query)
+        if not resultados:
+            # Perplexity como lista de resultados simulada
+            perp = _perplexity(query, modelo="sonar", max_tokens=800)
+            if perp:
+                return perp  # Perplexity já devolve texto formatado
+        if not resultados:
+            resultados = _pesquisar_duckduckgo(query)
+        if not resultados:
+            resultados = _pesquisar_tavily(query)
 
     if not resultados:
         return "Não encontrei resultados para essa pesquisa."
@@ -129,13 +139,13 @@ def pesquisar_web(query: str, modo: str = "auto") -> str:
 
 
 def pesquisar_noticias(query: str) -> str:
-    """Coach / Operator — pesquisa de notícias recentes via DDG → Tavily → Brave.
-    Sem Perplexity. Ideal para: notícias futebol, transferências, resultados recentes.
+    """Coach / Operator — pesquisa de notícias recentes via DDG → Exa → Tavily.
+    Ideal para: notícias futebol, transferências, resultados recentes.
     """
     resultados = (
         _pesquisar_duckduckgo(query) or
-        _pesquisar_tavily(query) or
-        _pesquisar_brave(query)
+        _pesquisar_exa(query) or
+        _pesquisar_tavily(query)
     )
     if not resultados:
         return "Não encontrei notícias recentes para essa query."
