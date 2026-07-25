@@ -32,23 +32,11 @@ def _save_coach_log(log: dict):
 # ── System Prompt ─────────────────────────────────────────────────────────────
 
 def _fetch_moreirense_fixtures() -> str:
-    """Busca próximos jogos do Moreirense via Tavily (API Football free plan não suporta época atual)."""
+    """Busca próximos jogos do Moreirense via cascade de pesquisa (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tavily import TavilyClient
-        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        r = client.search(
-            "Moreirense FC próximos jogos calendário 2025 2026 Liga Portugal",
-            max_results=3,
-            search_depth="basic"
-        )
-        snippets = []
-        for res in (r.get("results") or [])[:3]:
-            c = res.get("content", "")
-            if c:
-                snippets.append(c[:300])
-        if snippets:
-            return "Calendário Moreirense (fonte web):\n" + "\n---\n".join(snippets)
-        return ""
+        from tools import pesquisar_web
+        r = pesquisar_web("Moreirense FC próximos jogos calendário Liga Portugal", modo="noticias")
+        return f"Calendário Moreirense (fonte web):\n{r[:600]}" if r else ""
     except Exception:
         return ""
 
@@ -153,16 +141,11 @@ def _api_football_cached(endpoint: str, params: dict, ttl: int = 14400) -> dict:
 
 
 def _sofascore_jogo(home: str, away: str) -> str:
-    """Stats de jogo via Tavily (proxy Sofascore sem API key)."""
+    """Stats de jogo via cascade de pesquisa (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tavily import TavilyClient
-        client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        r = client.search(
-            f"site:sofascore.com {home} {away} statistics ratings",
-            search_depth="basic", max_results=3
-        )
-        snippets = [item.get("content", "")[:300] for item in r.get("results", [])[:3] if item.get("content")]
-        return "Sofascore stats:\n" + "\n---\n".join(snippets) if snippets else ""
+        from tools import pesquisar_web
+        r = pesquisar_web(f"site:sofascore.com {home} {away} statistics ratings", modo="semantico")
+        return f"Sofascore stats:\n{r[:600]}" if r else ""
     except Exception:
         return ""
 

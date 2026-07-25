@@ -120,31 +120,20 @@ def _save_state(state: dict):
 # ── Ferramentas do Marketeer ──────────────────────────────────────────────────
 
 def pesquisar_leads(nicho: str, mercado: str = "PT") -> str:
-    """Pesquisa leads potenciais via Tavily para um nicho e mercado."""
+    """Pesquisa leads via cascade (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tavily import TavilyClient
-        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        query = f"{nicho} procura comprar {mercado} 2025 2026 fórum reddit"
-        r = c.search(query, max_results=5, search_depth="basic")
-        snippets = []
-        for res in (r.get("results") or [])[:5]:
-            url = res.get("url", "")
-            content = res.get("content", "")[:200]
-            if content:
-                snippets.append(f"- {url}\n  {content}")
-        return "Leads encontrados:\n" + "\n".join(snippets) if snippets else "Sem resultados."
+        from tools import pesquisar_web
+        query = f"{nicho} procura comprar {mercado} 2026 fórum reddit"
+        return pesquisar_web(query)
     except Exception as e:
         return f"Erro na pesquisa: {e}"
 
 
 def analisar_etsy_nicho(nicho: str) -> str:
-    """Analisa concorrência e oportunidades Etsy via Tavily."""
+    """Analisa concorrência e oportunidades Etsy via cascade de pesquisa."""
     try:
-        from tavily import TavilyClient
-        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        r = c.search(f"etsy {nicho} bestseller digital download 2025 2026", max_results=4, search_depth="basic")
-        snippets = [res.get("content","")[:250] for res in (r.get("results") or [])[:4] if res.get("content")]
-        return "Análise Etsy:\n" + "\n---\n".join(snippets) if snippets else "Sem dados."
+        from tools import pesquisar_web
+        return pesquisar_web(f"etsy {nicho} bestseller digital download 2026")
     except Exception as e:
         return f"Erro: {e}"
 
@@ -164,24 +153,12 @@ def redigir_mensagem_outreach(contexto: str, destinatario: str, produto: str) ->
 
 
 def pesquisar_pinterest(nicho: str) -> str:
-    """Analisa presença e tendências de um nicho no Pinterest via Tavily."""
+    """Analisa tendências de um nicho no Pinterest via cascade de pesquisa."""
     try:
-        from tavily import TavilyClient
-        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        queries = [
-            f"site:pinterest.com {nicho} planner digital download most saved 2026",
-            f"pinterest {nicho} trending pins viral digital product",
-        ]
-        snippets = []
-        for q in queries:
-            r = c.search(q, max_results=3, search_depth="basic")
-            for res in (r.get("results") or []):
-                c_text = res.get("content", "")[:250]
-                if c_text:
-                    snippets.append(f"• {res.get('url','')}\n  {c_text}")
-        if snippets:
-            return f"**Pinterest — {nicho}:**\n" + "\n".join(snippets[:5])
-        return f"Sem dados Pinterest para '{nicho}'."
+        from tools import pesquisar_web
+        r1 = pesquisar_web(f"site:pinterest.com {nicho} planner digital download most saved 2026", modo="semantico")
+        r2 = pesquisar_web(f"pinterest {nicho} trending pins viral digital product 2026")
+        return f"**Pinterest — {nicho}:**\n{r1}\n---\n{r2}"
     except Exception as e:
         return f"Erro Pinterest: {e}"
 
@@ -247,14 +224,10 @@ def otimizar_listings_etsy(nicho: str = "planners digitais") -> str:
     Proposta para aprovação — não publica directamente.
     """
     try:
-        from tavily import TavilyClient
-        c = TavilyClient(api_key=os.getenv("TAVILY_API_KEY", ""))
-        r1 = c.search(f"etsy SEO keywords {nicho} 2026 high traffic tags titles best sellers", max_results=3, search_depth="basic")
-        r2 = c.search(f"etsy {nicho} top listings titles tags Portuguese Spanish", max_results=3, search_depth="basic")
-        snippets = []
-        for r in [r1, r2]:
-            snippets += [res.get("content", "")[:300] for res in (r.get("results") or [])[:3] if res.get("content")]
-        dados_seo = "\n---\n".join(snippets[:5])
+        from tools import pesquisar_web
+        r1 = pesquisar_web(f"etsy SEO keywords {nicho} 2026 high traffic tags titles best sellers")
+        r2 = pesquisar_web(f"etsy {nicho} top listings titles tags Portuguese Spanish German")
+        dados_seo = f"{r1[:600]}\n---\n{r2[:600]}"
     except Exception as e:
         dados_seo = f"(pesquisa indisponível: {e})"
 
