@@ -297,6 +297,118 @@ def adicionar_lego_set(nome: str, numero: str, estado: str, preco_pago: float, v
         return f"Erro ao adicionar set: {e}"
 
 
+# ── Diário Morgan — log cronológico de tudo ───────────────────────────────────
+
+# Fontes possíveis: "Claude Code", "CEO", "Scout", "Coach", "CFO",
+#                   "Creator", "Marketeer", "Operator", "Solver"
+# Tipos possíveis:  "Decisão", "Acção", "Fix", "Briefing", "Conversa",
+#                   "Erro", "Sessão", "Deploy"
+
+def _setup_diario() -> str:
+    """Cria a base de dados 'Diário Morgan' no Notion (corre automaticamente na 1ª chamada)."""
+    ids = _load_ids()
+    if "diario_db" in ids:
+        return ids["diario_db"]
+
+    # Cria página raiz "Morgan — Diário"
+    raiz = _criar_pagina_raiz("Morgan — Diário", "📓")
+    ids["diario_raiz"] = raiz
+
+    # Cria database dentro da página raiz
+    r = requests.post(f"{BASE_URL}/databases", headers=HEADERS, json={
+        "parent": {"type": "page_id", "page_id": raiz},
+        "icon": {"type": "emoji", "emoji": "📓"},
+        "title": [{"type": "text", "text": {"content": "Diário Morgan"}}],
+        "properties": {
+            "Nome": {"title": {}},
+            "Data": {"date": {}},
+            "Fonte": {
+                "select": {
+                    "options": [
+                        {"name": "Claude Code", "color": "blue"},
+                        {"name": "CEO",         "color": "purple"},
+                        {"name": "Scout",       "color": "green"},
+                        {"name": "Coach",       "color": "yellow"},
+                        {"name": "CFO",         "color": "orange"},
+                        {"name": "Creator",     "color": "pink"},
+                        {"name": "Marketeer",   "color": "red"},
+                        {"name": "Operator",    "color": "brown"},
+                        {"name": "Solver",      "color": "gray"},
+                    ]
+                }
+            },
+            "Tipo": {
+                "select": {
+                    "options": [
+                        {"name": "Decisão",   "color": "blue"},
+                        {"name": "Acção",     "color": "green"},
+                        {"name": "Fix",       "color": "red"},
+                        {"name": "Briefing",  "color": "purple"},
+                        {"name": "Conversa",  "color": "yellow"},
+                        {"name": "Erro",      "color": "orange"},
+                        {"name": "Sessão",    "color": "gray"},
+                        {"name": "Deploy",    "color": "pink"},
+                    ]
+                }
+            },
+        },
+    }, timeout=15)
+    r.raise_for_status()
+    db_id = r.json()["id"]
+    ids["diario_db"] = db_id
+    _save_ids(ids)
+    return db_id
+
+
+def diario_log(fonte: str, tipo: str, conteudo: str, titulo: str = "") -> None:
+    """
+    Regista uma entrada no Diário Morgan.
+    Criação automática da base de dados na primeira chamada.
+    Falha silenciosa — nunca bloqueia o fluxo principal.
+
+    Args:
+        fonte:    quem gerou a entrada ("Claude Code", "CEO", "Scout", etc.)
+        tipo:     categoria ("Decisão", "Acção", "Fix", "Briefing", "Sessão", etc.)
+        conteudo: descrição completa do que aconteceu
+        titulo:   título curto opcional (gerado automaticamente se vazio)
+    """
+    if not NOTION_TOKEN:
+        return
+    try:
+        db_id = _setup_diario()
+        agora = datetime.now(timezone.utc)
+        titulo_final = titulo or f"[{fonte}] {conteudo[:60]}{'...' if len(conteudo) > 60 else ''}"
+
+        requests.post(f"{BASE_URL}/pages", headers=HEADERS, json={
+            "parent": {"database_id": db_id},
+            "icon": {"type": "emoji", "emoji": _emoji_para_tipo(tipo)},
+            "properties": {
+                "Nome": {"title": [{"type": "text", "text": {"content": titulo_final}}]},
+                "Data": {"date": {"start": agora.isoformat()}},
+                "Fonte": {"select": {"name": fonte}},
+                "Tipo":  {"select": {"name": tipo}},
+            },
+            "children": [
+                _bloco_paragrafo(conteudo),
+            ],
+        }, timeout=10)
+    except Exception:
+        pass  # falha silenciosa
+
+
+def _emoji_para_tipo(tipo: str) -> str:
+    return {
+        "Decisão":  "🧭",
+        "Acção":    "⚡",
+        "Fix":      "🔧",
+        "Briefing": "📋",
+        "Conversa": "💬",
+        "Erro":     "🚨",
+        "Sessão":   "🔵",
+        "Deploy":   "🚀",
+    }.get(tipo, "📝")
+
+
 def estado_notion() -> str:
     """Resumo do estado da integração Notion."""
     if not is_configured():

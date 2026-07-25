@@ -503,6 +503,11 @@ def chat_with_morgan(user_text: str) -> str:
             reply = executar_oportunidade_aprovada(nome_op, f"Aprovado pelo Vasco: {nome_op}")
         except Exception as e:
             reply = f"Erro ao aprovar: {e}"
+        try:
+            from notion_service import diario_log
+            diario_log("CEO", "Decisão", f"Vasco aprovou oportunidade: '{nome_op}'\n{reply[:500]}", titulo=f"Aprovação: {nome_op}")
+        except Exception:
+            pass
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -1704,6 +1709,11 @@ Instruções:
     texto = response.content[0].text if response.content else "Briefing indisponível."
     send_push(title="Morgan — Bom dia", body=texto[:200], url="/pwa/")
     _dedup_mark(f"push_briefing_{agora.strftime('%Y-%m-%d_%H')}")
+    try:
+        from notion_service import diario_log
+        diario_log("CEO", "Briefing", texto[:1000], titulo=f"Briefing manhã {agora.strftime('%d/%m/%Y')}")
+    except Exception:
+        pass
 
 
 async def _run_scout_push():
@@ -1720,6 +1730,11 @@ async def _run_scout_push():
         url="/pwa/"
     )
     _dedup_mark(f"push_scout_{_agora_lisboa().strftime('%Y-%W')}")
+    try:
+        from notion_service import diario_log
+        diario_log("Scout", "Briefing", corpo[:1000], titulo=f"Scout Missão A — {_agora_lisboa().strftime('%d/%m/%Y')}")
+    except Exception:
+        pass
 
 
 async def _run_scout_relatorio_completo():
@@ -1804,6 +1819,11 @@ Sê específico e realista. Português europeu. Máximo 400 palavras."""
     report_file = Path(__file__).parent / "memory" / f"report_{_agora_lisboa().strftime('%Y-%m-%d')}.txt"
     report_file.write_text(texto, encoding="utf-8")
     print(f"[scout] relatório completo guardado: {report_file}", flush=True)
+    try:
+        from notion_service import diario_log
+        diario_log("Scout", "Briefing", texto[:1000], titulo=f"Scout — 5 Negócios {_agora_lisboa().strftime('%d/%m/%Y')}")
+    except Exception:
+        pass
 
 
 async def _run_scout_melhorias():

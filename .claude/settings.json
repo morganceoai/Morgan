@@ -1,4 +1,18 @@
 {
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd ~/Morgan && source venv/bin/activate && python scripts/notion_session_end.py 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "A registar sessão no Diário Morgan..."
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(grep *)",
