@@ -103,34 +103,34 @@ def _formatar_resultados(resultados: list[dict], max_results: int = 5) -> str:
 
 
 def pesquisar_web(query: str, modo: str = "auto") -> str:
-    """Pesquisa na web via cascade: Exa → Perplexity → DDG → Tavily.
-    Cascade ordenada por disponibilidade real — Tavily no fim (limite atingido).
-    Perplexity usado como fallback de pesquisa (sonar base, não deep research).
+    """Pesquisa na web. Cada ferramenta tem o seu papel; DDG é o safety net final.
+    Cascade: Exa (semântico) → Tavily (notícias/estruturado) → Perplexity → DDG.
+    Se qualquer ferramenta falhar (limite, erro, sem chave), passa à seguinte.
+    DDG é gratuito e ilimitado — garante que nunca ficamos sem resposta.
     """
     if "2026" not in query and "2025" not in query:
         query = f"{query} 2026"
 
     if modo == "semantico":
-        resultados = _pesquisar_exa(query)
-    elif modo == "noticias":
-        # DDG primeiro para notícias — mais rápido e sem limite
         resultados = (
-            _pesquisar_duckduckgo(query) or
             _pesquisar_exa(query) or
-            _pesquisar_tavily(query)
+            _pesquisar_tavily(query) or
+            _pesquisar_duckduckgo(query)
+        )
+    elif modo == "noticias":
+        resultados = (
+            _pesquisar_tavily(query) or
+            _pesquisar_exa(query) or
+            _pesquisar_duckduckgo(query)
         )
     else:
-        # cascade principal: Exa → Perplexity → DDG → Tavily
-        resultados = _pesquisar_exa(query)
+        # auto: Exa → Tavily → Perplexity → DDG
+        resultados = _pesquisar_exa(query) or _pesquisar_tavily(query)
         if not resultados:
-            # Perplexity como lista de resultados simulada
             perp = _perplexity(query, modelo="sonar", max_tokens=800)
             if perp:
-                return perp  # Perplexity já devolve texto formatado
-        if not resultados:
+                return perp
             resultados = _pesquisar_duckduckgo(query)
-        if not resultados:
-            resultados = _pesquisar_tavily(query)
 
     if not resultados:
         return "Não encontrei resultados para essa pesquisa."
@@ -139,13 +139,11 @@ def pesquisar_web(query: str, modo: str = "auto") -> str:
 
 
 def pesquisar_noticias(query: str) -> str:
-    """Coach / Operator — pesquisa de notícias recentes via DDG → Exa → Tavily.
-    Ideal para: notícias futebol, transferências, resultados recentes.
-    """
+    """Notícias recentes: Tavily → Exa → DDG. DDG como safety net."""
     resultados = (
-        _pesquisar_duckduckgo(query) or
+        _pesquisar_tavily(query) or
         _pesquisar_exa(query) or
-        _pesquisar_tavily(query)
+        _pesquisar_duckduckgo(query)
     )
     if not resultados:
         return "Não encontrei notícias recentes para essa query."
