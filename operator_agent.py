@@ -650,11 +650,11 @@ def monitorizar_negocios() -> str:
 
 def gerar_plano_semana_planneratlas() -> str:
     """Gera o plano de produtos PlannerAtlas para a semana — corre às segundas de manhã."""
-    from tools import pesquisar_web
+    from tools import pesquisar
 
     tendencias = ""
     try:
-        tendencias = pesquisar_web("Etsy digital planner bestseller trending German Spanish 2026 GoodNotes")
+        tendencias = pesquisar("Etsy digital planner bestseller trending German Spanish 2026 GoodNotes", agente="operator")
     except Exception:
         pass
 

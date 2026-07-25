@@ -1735,10 +1735,10 @@ async def _run_scout_relatorio_completo():
     ]
 
     resultados = []
-    from tools import pesquisar_web
+    from tools import pesquisar
     for q in queries:
         try:
-            r = await loop.run_in_executor(None, lambda q=q: pesquisar_web(q))
+            r = await loop.run_in_executor(None, lambda q=q: pesquisar(q, agente="ceo"))
             resultados.append(r[:400])
         except Exception:
             pass
@@ -1829,10 +1829,10 @@ Formato: [Agente] — [Melhoria] — [Impacto estimado]
 Máximo 8 sugestões. Português europeu."""
 
     try:
-        from tools import pesquisar_web
+        from tools import pesquisar
         pesquisa = await loop.run_in_executor(
             None,
-            lambda: pesquisar_web("new AI tools automation agents 2026 indie hackers")
+            lambda: pesquisar("new AI tools automation agents 2026 indie hackers", agente="ceo")
         )
     except Exception:
         pesquisa = ""

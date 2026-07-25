@@ -102,40 +102,137 @@ def _formatar_resultados(resultados: list[dict], max_results: int = 5) -> str:
     return "\n\n---\n\n".join(output) if output else "Sem resultados."
 
 
-def pesquisar_web(query: str, modo: str = "auto") -> str:
-    """Pesquisa na web. Cada ferramenta tem o seu papel; DDG é o safety net final.
-    Cascade: Exa (semântico) → Tavily (notícias/estruturado) → Perplexity → DDG.
-    Se qualquer ferramenta falhar (limite, erro, sem chave), passa à seguinte.
-    DDG é gratuito e ilimitado — garante que nunca ficamos sem resposta.
+# ── CASCATA DE PESQUISA POR AGENTE ─────────────────────────────────────────────
+
+# Cascade por agente: lista ordenada de ferramentas a tentar.
+# Cada entry é um nome de ferramenta. DDG é sempre o último safety net.
+AGENT_CASCADE: dict[str, list[str]] = {
+    "ceo":       ["exa", "tavily", "perplexity", "ddg"],
+    "scout":     ["perplexity_pro", "exa", "tavily", "ddg"],
+    "coach":     ["ddg", "exa"],
+    "cfo":       ["perplexity", "exa", "ddg"],
+    "creator":   ["perplexity_reasoning", "exa", "ddg"],
+    "marketeer": ["exa", "tavily", "ddg"],
+    "operator":  ["tavily", "exa", "ddg"],
+    "solver":    ["exa", "perplexity_reasoning", "ddg"],
+}
+
+# Palavras-chave que indicam queries simples → ir directamente ao DDG sem gastar créditos
+_SIMPLE_QUERY_PATTERNS = (
+    "tempo em ", "temperatura ", "previsão meteorológica", "weather ",
+    "que horas são", "que dia é", "fuso horário", "hora em ",
+    "como chegar", "distância entre", "quanto tempo demora",
+    "o que é ", "definição de ", "significado de ",
+    "tradução de ", "traduzir ", "como se diz ",
+    "quem é ", "quantos anos tem ", "data de nascimento",
+    "capital de ", "moeda de ", "população de ",
+)
+
+
+def _e_query_simples(query: str) -> bool:
+    """Detecta queries factuais simples que não justificam usar créditos de APIs pagas."""
+    q = query.lower()
+    return any(p in q for p in _SIMPLE_QUERY_PATTERNS)
+
+
+def _notificar_solver_erro(ferramenta: str, query: str, erro: str) -> None:
+    """Regista erro inesperado num ficheiro para o Solver processar autonomamente."""
+    import json
+    from pathlib import Path
+    from datetime import datetime, timezone
+    erros_path = Path(__file__).parent / "memory" / "search_errors.json"
+    try:
+        erros = json.loads(erros_path.read_text()) if erros_path.exists() else []
+        erros.append({
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "ferramenta": ferramenta,
+            "query": query[:200],
+            "erro": str(erro)[:500],
+            "resolvido": False,
+        })
+        # manter apenas os últimos 100 erros
+        erros_path.write_text(json.dumps(erros[-100:], ensure_ascii=False, indent=2))
+    except Exception:
+        pass  # falha silenciosa — não bloquear o fluxo principal
+
+
+def _executar_ferramenta(nome: str, query: str) -> list[dict] | str | None:
     """
-    if "2026" not in query and "2025" not in query:
+    Executa uma ferramenta de pesquisa pelo nome.
+    Retorna lista de resultados, string (Perplexity), ou None se falhou.
+    Regista no Solver se o erro for inesperado (não é limite de quota).
+    """
+    try:
+        if nome == "exa":
+            r = _pesquisar_exa(query)
+            if not r:
+                return None
+            return r
+        elif nome == "tavily":
+            r = _pesquisar_tavily(query)
+            if not r:
+                return None
+            return r
+        elif nome == "ddg":
+            r = _pesquisar_duckduckgo(query)
+            return r  # DDG pode devolver lista vazia, mas nunca falha com erro
+        elif nome == "perplexity":
+            r = _perplexity(query, modelo="sonar", max_tokens=800)
+            return r if r else None
+        elif nome == "perplexity_pro":
+            r = _perplexity(query, modelo="sonar-pro", max_tokens=1500)
+            return r if r else None
+        elif nome == "perplexity_reasoning":
+            r = _perplexity(query, modelo="sonar-reasoning-pro", max_tokens=1500)
+            return r if r else None
+        else:
+            return None
+    except Exception as e:
+        erro_str = str(e).lower()
+        # Erros de quota/limite são esperados — não notificar Solver
+        is_limit = any(w in erro_str for w in ("quota", "limit", "rate", "429", "402", "credits", "exceeded"))
+        if not is_limit:
+            _notificar_solver_erro(nome, query, str(e))
+        return None
+
+
+def pesquisar(query: str, agente: str = "ceo", tipo: str = "auto") -> str:
+    """
+    Pesquisa na web com cascata específica por agente.
+    - Queries simples (tempo, hora, definições) → DDG directamente, sem gastar créditos.
+    - Cascade silenciosa: se uma ferramenta falhar, passa à seguinte.
+    - Erros inesperados (não quota) são registados em memory/search_errors.json.
+    - DDG é sempre o safety net final — nunca falha.
+    """
+    if "2026" not in query and "2025" not in query and tipo == "auto":
         query = f"{query} 2026"
 
-    if modo == "semantico":
-        resultados = (
-            _pesquisar_exa(query) or
-            _pesquisar_tavily(query) or
-            _pesquisar_duckduckgo(query)
-        )
-    elif modo == "noticias":
-        resultados = (
-            _pesquisar_tavily(query) or
-            _pesquisar_exa(query) or
-            _pesquisar_duckduckgo(query)
-        )
-    else:
-        # auto: Exa → Tavily → Perplexity → DDG
-        resultados = _pesquisar_exa(query) or _pesquisar_tavily(query)
-        if not resultados:
-            perp = _perplexity(query, modelo="sonar", max_tokens=800)
-            if perp:
-                return perp
-            resultados = _pesquisar_duckduckgo(query)
+    cascade = AGENT_CASCADE.get(agente, AGENT_CASCADE["ceo"])
 
-    if not resultados:
-        return "Não encontrei resultados para essa pesquisa."
+    # Queries simples: ignorar ferramentas pagas e ir directamente ao DDG
+    if _e_query_simples(query) and tipo == "auto":
+        resultados = _pesquisar_duckduckgo(query)
+        return _formatar_resultados(resultados) if resultados else "Não encontrei resultados."
 
-    return _formatar_resultados(resultados)
+    for ferramenta in cascade:
+        resultado = _executar_ferramenta(ferramenta, query)
+        if resultado is None:
+            continue
+        # Perplexity devolve string directamente
+        if isinstance(resultado, str) and resultado.strip():
+            return resultado
+        # Ferramentas de lista
+        if isinstance(resultado, list) and resultado:
+            return _formatar_resultados(resultado)
+
+    return "Não encontrei resultados para essa pesquisa."
+
+
+def pesquisar_web(query: str, modo: str = "auto") -> str:
+    """Wrapper de compatibilidade → pesquisar(agente='ceo').
+    Mantido para não quebrar chamadas existentes.
+    """
+    return pesquisar(query, agente="ceo", tipo=modo)
 
 
 def pesquisar_noticias(query: str) -> str:
@@ -208,7 +305,7 @@ def pesquisar_mercado(query: str) -> str:
         modelo="sonar-pro",
         max_tokens=2000,
     )
-    return resposta if resposta else pesquisar_web(query)
+    return resposta if resposta else pesquisar(query, agente="scout")
 
 
 def pesquisar_oportunidade_profunda(query: str) -> str:
@@ -232,7 +329,7 @@ def pesquisar_arquitectura(query: str) -> str:
         modelo="sonar-reasoning-pro",
         max_tokens=2000,
     )
-    return resposta if resposta else pesquisar_web(query)
+    return resposta if resposta else pesquisar(query, agente="creator")
 
 
 def classificacao_primeira_liga() -> str:
@@ -1673,6 +1770,7 @@ TOOLS = [
 
 # Mapa de nome para função
 TOOL_FUNCTIONS = {
+    "pesquisar": pesquisar,
     "pesquisar_web": pesquisar_web,
     "pesquisar_noticias": pesquisar_noticias,
     "classificacao_primeira_liga": classificacao_primeira_liga,

@@ -122,9 +122,9 @@ def _save_state(state: dict):
 def pesquisar_leads(nicho: str, mercado: str = "PT") -> str:
     """Pesquisa leads via cascade (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tools import pesquisar_web
+        from tools import pesquisar
         query = f"{nicho} procura comprar {mercado} 2026 fórum reddit"
-        return pesquisar_web(query)
+        return pesquisar(query, agente="marketeer")
     except Exception as e:
         return f"Erro na pesquisa: {e}"
 
@@ -132,8 +132,8 @@ def pesquisar_leads(nicho: str, mercado: str = "PT") -> str:
 def analisar_etsy_nicho(nicho: str) -> str:
     """Analisa concorrência e oportunidades Etsy via cascade de pesquisa."""
     try:
-        from tools import pesquisar_web
-        return pesquisar_web(f"etsy {nicho} bestseller digital download 2026")
+        from tools import pesquisar
+        return pesquisar(f"etsy {nicho} bestseller digital download 2026", agente="marketeer")
     except Exception as e:
         return f"Erro: {e}"
 
@@ -155,9 +155,9 @@ def redigir_mensagem_outreach(contexto: str, destinatario: str, produto: str) ->
 def pesquisar_pinterest(nicho: str) -> str:
     """Analisa tendências de um nicho no Pinterest via cascade de pesquisa."""
     try:
-        from tools import pesquisar_web
-        r1 = pesquisar_web(f"site:pinterest.com {nicho} planner digital download most saved 2026", modo="semantico")
-        r2 = pesquisar_web(f"pinterest {nicho} trending pins viral digital product 2026")
+        from tools import pesquisar
+        r1 = pesquisar(f"site:pinterest.com {nicho} planner digital download most saved 2026", agente="marketeer")
+        r2 = pesquisar(f"pinterest {nicho} trending pins viral digital product 2026", agente="marketeer")
         return f"**Pinterest — {nicho}:**\n{r1}\n---\n{r2}"
     except Exception as e:
         return f"Erro Pinterest: {e}"
@@ -224,9 +224,9 @@ def otimizar_listings_etsy(nicho: str = "planners digitais") -> str:
     Proposta para aprovação — não publica directamente.
     """
     try:
-        from tools import pesquisar_web
-        r1 = pesquisar_web(f"etsy SEO keywords {nicho} 2026 high traffic tags titles best sellers")
-        r2 = pesquisar_web(f"etsy {nicho} top listings titles tags Portuguese Spanish German")
+        from tools import pesquisar
+        r1 = pesquisar(f"etsy SEO keywords {nicho} 2026 high traffic tags titles best sellers", agente="marketeer")
+        r2 = pesquisar(f"etsy {nicho} top listings titles tags Portuguese Spanish German", agente="marketeer")
         dados_seo = f"{r1[:600]}\n---\n{r2[:600]}"
     except Exception as e:
         dados_seo = f"(pesquisa indisponível: {e})"
@@ -320,7 +320,7 @@ def analisar_instagram_referencia(conta_referencia: str = "pepteam", conta_vasco
     e produz um plano de crescimento para a conta do Vasco como treinador.
     Usa pesquisa web como proxy (Instagram não tem API pública sem aprovação).
     """
-    from tools import pesquisar_web
+    from tools import pesquisar
 
     resultados = []
     for q in [
@@ -329,7 +329,7 @@ def analisar_instagram_referencia(conta_referencia: str = "pepteam", conta_vasco
         f"treinador futebol instagram crescimento conta pessoal dicas 2026",
     ]:
         try:
-            resultados.append(pesquisar_web(q)[:500])
+            resultados.append(pesquisar(q, agente="marketeer")[:500])
         except Exception:
             pass
 

@@ -34,8 +34,8 @@ def _save_coach_log(log: dict):
 def _fetch_moreirense_fixtures() -> str:
     """Busca próximos jogos do Moreirense via cascade de pesquisa (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tools import pesquisar_web
-        r = pesquisar_web("Moreirense FC próximos jogos calendário Liga Portugal", modo="noticias")
+        from tools import pesquisar
+        r = pesquisar("Moreirense FC próximos jogos calendário Liga Portugal", agente="coach")
         return f"Calendário Moreirense (fonte web):\n{r[:600]}" if r else ""
     except Exception:
         return ""
@@ -143,8 +143,8 @@ def _api_football_cached(endpoint: str, params: dict, ttl: int = 14400) -> dict:
 def _sofascore_jogo(home: str, away: str) -> str:
     """Stats de jogo via cascade de pesquisa (Exa→Tavily→Perplexity→DDG)."""
     try:
-        from tools import pesquisar_web
-        r = pesquisar_web(f"site:sofascore.com {home} {away} statistics ratings", modo="semantico")
+        from tools import pesquisar
+        r = pesquisar(f"site:sofascore.com {home} {away} statistics ratings", agente="coach")
         return f"Sofascore stats:\n{r[:600]}" if r else ""
     except Exception:
         return ""
