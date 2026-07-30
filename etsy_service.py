@@ -147,6 +147,44 @@ def actualizar_preco(listing_id: int, preco: float) -> bool:
     return bool(r)
 
 
+def upload_listing_image(listing_id: int, image_path: str, rank: int = 1) -> bool:
+    """Faz upload de uma imagem para um listing via multipart/form-data."""
+    import requests as _req
+    token = _get_token()
+    if not token:
+        return False
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "x-api-key": f"{ETSY_KEYSTRING}:{ETSY_SHARED_SECRET}" if ETSY_SHARED_SECRET else ETSY_KEYSTRING,
+    }
+    path = Path(image_path)
+    if not path.exists():
+        logger.warning("etsy upload: ficheiro não encontrado — %s", image_path)
+        return False
+    try:
+        with open(path, "rb") as f:
+            r = _req.post(
+                f"https://openapi.etsy.com/v3/application/shops/{ETSY_SHOP_ID}/listings/{listing_id}/images",
+                headers=headers,
+                files={"image": (path.name, f, "image/jpeg")},
+                data={"rank": rank, "overwrite": "true"},
+                timeout=30,
+            )
+        if r.status_code in (200, 201):
+            logger.info("etsy upload OK: listing %s ← %s", listing_id, path.name)
+            return True
+        logger.warning("etsy upload %s → %s %s", listing_id, r.status_code, r.text[:300])
+    except Exception as e:
+        logger.warning("etsy upload erro: %s", e)
+    return False
+
+
+def listar_imagens_listing(listing_id: int) -> list:
+    """Lista imagens actuais de um listing."""
+    data = _etsy_get(f"/listings/{listing_id}/images")
+    return data.get("results", [])
+
+
 def resumo_loja() -> dict:
     """Resumo rápido: vendas totais, receita, nº listings."""
     vendas = obter_vendas()

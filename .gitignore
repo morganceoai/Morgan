@@ -22,3 +22,10 @@ memory/operator_state.json
 memory/solver_fixes.json
 memory/scout_memoria.json
 morgan_server.log
+
+# Premium assets (PDFs, imagens, vídeos — ficheiros grandes)
+premium/**/*.pdf
+premium/**/*.png
+premium/**/*.mp4
+premium/**/*.jpg
+memory/etsy_tokens.json
