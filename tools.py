@@ -999,18 +999,16 @@ def scout_pesquisa_multilang(geo_mode: str, keywords: list) -> str:
                 seen_urls.add(url)
                 if item.get("title") or item.get("content"):
                     results_all.append(
-                        f"[{market_label}] **{item['title']}**\n{item['content'][:250]}\n{url}"
+                        f"[{market_label}] **{item['title']}**\n{item['content'][:300]}\n{url}"
                     )
-            if len(results_all) >= 20:
-                break
-        if len(results_all) >= 20:
-            break
+        # sem break por keyword — percorre todos os query_sets para cobertura completa
 
     if not results_all:
         return f"Sem resultados para modo {geo_mode}."
 
     label = config["lang_label"]
-    return f"**Pesquisa multilíngue ({label}) — {geo_mode}:**\n\n" + "\n\n---\n\n".join(results_all[:18])
+    # sem limite artificial — devolve todos os resultados únicos recolhidos
+    return f"**Pesquisa multilíngue ({label}) — {geo_mode} ({len(results_all)} resultados):**\n\n" + "\n\n---\n\n".join(results_all)
 
 
 def scout_g2_capterra(nicho: str) -> str:
