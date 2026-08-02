@@ -52,7 +52,14 @@ NEGÓCIOS ACTIVOS:
    - Alertas estáticos (sempre críticos): zero vendas >14 dias, review ≤2★, CTR <0.5%
    - Alertas dinâmicos: queda >40% vs. baseline rolling 28 dias em qualquer métrica primária
 
-2. Futuros Negócios (aprovados pelo Scout)
+2. The AI Pulse (Beehiiv) — fase: setup
+   - Newsletter faceless EN — AI tools & productivity para founders (US/UK/CA)
+   - Métricas primárias: subscribers activos, open rate, click rate, receita (sponsors/Boosts)
+   - Milestones: 0-100 subs (setup) → 100-1k (crescimento) → 1k+ (monetização sponsors) → 5k+ (escala CPM $15-40)
+   - Alertas: 0 subs após 30 dias (rever SEO), open rate <30% (rever subject lines), 0 rascunhos >2 semanas
+   - SETUP PENDENTE: criar conta Beehiiv + BEEHIIV_API_KEY + BEEHIIV_PUB_ID no .env
+
+3. Futuros Negócios (aprovados pelo Scout)
    - Registas quando o CEO introduz um novo negócio aprovado
    - Cada negócio tem fase com critérios numéricos de transição (ver abaixo)
 
@@ -568,6 +575,21 @@ def _build_metrics_context(state: dict) -> str:
     return "\n".join(linhas)
 
 
+def enviar_mensagens_compradores() -> str:
+    """
+    Corre a cada hora — detecta novas ordens Etsy e envia mensagem
+    personalizada na língua do produto comprado.
+    """
+    try:
+        from scripts.etsy_order_messages import run as run_messages
+        sent = run_messages()
+        if sent > 0:
+            return f"✅ {sent} mensagem(ns) enviada(s) a compradores."
+        return "Sem novas ordens para mensagear."
+    except Exception as e:
+        return f"Erro em enviar_mensagens_compradores: {e}"
+
+
 def monitorizar_negocios() -> str:
     """
     Sprint I — ciclo de monitorização autónomo.
@@ -627,6 +649,14 @@ def monitorizar_negocios() -> str:
             continue
         metrics = biz.get("metrics", {})
         resumo.append(f"[{biz['name']}] Fase: {biz.get('phase', '?')} | Métricas: {metrics}")
+
+    # Auto-mensagens a compradores (cada ciclo de monitorização)
+    try:
+        msg_result = enviar_mensagens_compradores()
+        if "✅" in msg_result:
+            resumo.append(msg_result)
+    except Exception:
+        pass
 
     # Actualizar estado
     state["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M")
