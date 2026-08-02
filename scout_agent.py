@@ -230,7 +230,10 @@ def _run_tool(name: str, inp: dict) -> str:
 def _chamar_claude_scout(system: str, messages: list, max_tokens: int = 2000) -> str:
     tools = _get_tools_scout()
     msgs = list(messages)
-    while True:
+    max_iterations = 30  # guard: evita loops infinitos de tool_use em produção
+    iteration = 0
+    while iteration < max_iterations:
+        iteration += 1
         response = _client.messages.create(
             model="claude-opus-4-8",  # Scout usa Opus — decisões de negócio
             max_tokens=max_tokens,
@@ -248,6 +251,7 @@ def _chamar_claude_scout(system: str, messages: list, max_tokens: int = 2000) ->
             msgs.append({"role": "user", "content": tool_results})
         else:
             return "".join(b.text for b in response.content if hasattr(b, "text"))
+    return "[Scout: limite de iterações atingido após 30 chamadas — relatório pode estar incompleto]"
 
 
 def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
@@ -258,9 +262,14 @@ def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
     msgs = [{"role": "user", "content": f"Aplica o Quality Gate a esta oportunidade:\n\n{oportunidade_raw}"}]
     resultado = _chamar_claude_scout(system, msgs, max_tokens=1500)
 
-    # Extrair confiança do texto
+    # Extrair score do texto — aceita "SCORE: 87/100", "87 pts", "87/100 pts", "CONFIANÇA: 87%"
     import re
-    m = re.search(r"CONFIANÇA:\s*(\d+)%", resultado, re.IGNORECASE)
+    m = (
+        re.search(r"SCORE:\s*(\d+)\s*/\s*100", resultado, re.IGNORECASE) or
+        re.search(r"(\d+)\s*/\s*100\s*pts", resultado, re.IGNORECASE) or
+        re.search(r"(\d+)\s*pts?\b", resultado, re.IGNORECASE) or
+        re.search(r"CONFIANÇA:\s*(\d+)%", resultado, re.IGNORECASE)
+    )
     confianca = int(m.group(1)) if m else 0
 
     return resultado, confianca
@@ -290,12 +299,20 @@ def missao_a_oportunidades() -> str:
         "No final, apresenta o relatório estruturado com máximo 3 oportunidades validadas."
     )}]
 
-    relatorio = _chamar_claude_scout(system, msgs, max_tokens=3000)
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=6000)
 
     # Guardar relatório
     hoje = date.today().strftime("%Y-%m-%d")
     report_file = SCOUT_REPORTS_DIR / f"missao_a_{hoje}.txt"
     report_file.write_text(relatorio, encoding="utf-8")
+
+    # Persistir oportunidades propostas — extrai nomes do relatório
+    import re
+    nomes_propostos = re.findall(r"OPORTUNIDADE:\s*(.+)", relatorio)
+    for nome in nomes_propostos:
+        nome = nome.strip()
+        if nome and nome not in state.get("oportunidades_propostas", []):
+            state.setdefault("oportunidades_propostas", []).append(nome)
 
     state["ultima_missao_a"] = hoje
     state["missoes_completadas"] = state.get("missoes_completadas", 0) + 1
@@ -514,6 +531,9 @@ def get_scout_reply(user_message: str) -> str:
         "Nunca propões hipóteses sem dados. Nunca exageras potencial. "
         "Cada afirmação tem fonte ou é marcada como estimativa.\n"
         "Responde sempre em PT-PT. Tom: directo, factual, sem hype.\n\n"
+        "REGRA DE PESQUISA: para qualquer análise de oportunidade, usa SEMPRE as ferramentas\n"
+        "scout_pesquisa_multilang nos 3 modos (anglofonico, iberico_latam, dach) antes de concluir.\n"
+        "Nunca baseies uma recomendação apenas em mercado PT — é pequeno demais.\n\n"
         + QUALITY_GATE_PROMPT
         + mem_bloco
     )

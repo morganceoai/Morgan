@@ -893,30 +893,84 @@ def monitorizar_oportunidades_aprovadas() -> str:
         return f"Erro na monitorização de aprovadas: {e}"
 
 
+def _ver_historico_scout_safe() -> str:
+    """Ver histórico do Scout com fallback robusto se scout_memory não existe/falha."""
+    try:
+        import scout_memory
+        return scout_memory.get_resumo_para_vasco()
+    except Exception:
+        pass
+    # Fallback: ler scout_state.json directamente
+    try:
+        from pathlib import Path
+        import json
+        state_file = Path(__file__).parent / "memory" / "scout_state.json"
+        if state_file.exists():
+            s = json.loads(state_file.read_text())
+            propostas = s.get("oportunidades_propostas", [])
+            aprovadas = s.get("oportunidades_aprovadas", [])
+            ultima_a = s.get("ultima_missao_a", "nunca")
+            return (
+                f"Histórico Scout (fallback directo):\n"
+                f"- Última Missão A: {ultima_a}\n"
+                f"- Oportunidades propostas: {', '.join(propostas) if propostas else 'nenhuma'}\n"
+                f"- Aprovadas: {', '.join([a if isinstance(a, str) else a.get('nome','?') for a in aprovadas]) if aprovadas else 'nenhuma'}"
+            )
+    except Exception as e:
+        return f"Histórico Scout indisponível: {e}"
+    return "Histórico Scout: sem dados ainda."
+
+
 # ── Scout: ferramentas multilíngue e geográficas ─────────────────────────────
 
 _GEO_MODES = {
     "iberico_latam": {
-        "langs": ["pt", "es"],
-        "markets": ["Portugal", "Brasil", "Espanha", "México", "Argentina"],
         "lang_label": "PT/ES",
+        "query_sets": [
+            # Português (BR/PT)
+            ("{kw} negócio rendimento passivo Brasil 2026", "Brasil"),
+            ("{kw} renda passiva fundador solo receita 2025 2026 site:indiehackers.com OR site:reddit.com", "Brasil"),
+            ("{kw} oportunidade negócio mercado Brasil Portugal 2026 receita", "Brasil/PT"),
+            ("{kw} SaaS nicho mercado português brasileiro concorrência 2026", "PT/BR"),
+            # Espanhol (MX/ES/AR)
+            ("{kw} negocio ingresos pasivos México España 2026", "México/España"),
+            ("{kw} fundador solo ingresos MRR 2025 2026 Latinoamérica", "LATAM"),
+            ("{kw} oportunidad mercado hispanohablante competencia baja 2026", "LATAM"),
+            # Inglês mas com foco Ibérico/LATAM
+            ("{kw} business Portuguese Spanish market opportunity low competition 2026", "Ibérico/LATAM"),
+            ("{kw} solo founder revenue Brazil Mexico passive income case study 2025", "BR/MX"),
+        ],
     },
     "anglofonico": {
-        "langs": ["en"],
-        "markets": ["United States", "United Kingdom", "Australia", "Canada"],
         "lang_label": "EN",
+        "query_sets": [
+            ("{kw} business opportunity passive income United States 2026", "US"),
+            ("{kw} solo founder revenue MRR case study US UK 2025 2026", "US/UK"),
+            ("{kw} SaaS niche market United States competition analysis 2026", "US"),
+            ("{kw} passive income business Australia Canada 2026 founder", "AU/CA"),
+            ("{kw} indie hacker $10k MRR United States 2025 2026", "US"),
+            ("{kw} business opportunity UK market underserved 2026", "UK"),
+        ],
     },
     "dach": {
-        "langs": ["de"],
-        "markets": ["Deutschland", "Österreich", "Schweiz"],
         "lang_label": "DE",
+        "query_sets": [
+            # Alemão real
+            ("{kw} passives Einkommen Geschäft Deutschland 2026", "Deutschland"),
+            ("{kw} Gründer Solo-Unternehmer Einnahmen Fallstudie 2025 2026 Deutschland Österreich", "DACH"),
+            ("{kw} SaaS Nische Markt Deutschland Wettbewerb 2026", "Deutschland"),
+            ("{kw} Online-Geschäft passives Einkommen Schweiz Österreich 2026", "CH/AT"),
+            # Inglês mas foco DACH
+            ("{kw} business opportunity Germany Austria Switzerland underserved market 2026", "DACH"),
+            ("{kw} solo founder Germany revenue passive income 2025 2026 case study", "DACH"),
+        ],
     },
 }
 
 
 def scout_pesquisa_multilang(geo_mode: str, keywords: list) -> str:
     """
-    Pesquisa oportunidades de negócio em múltiplas línguas para o modo geográfico escolhido.
+    Pesquisa oportunidades de negócio com queries nativas (PT/ES/DE) para o modo geográfico.
     geo_mode: 'iberico_latam' | 'anglofonico' | 'dach'
     keywords: lista de termos a pesquisar (max 5)
     """
@@ -926,25 +980,31 @@ def scout_pesquisa_multilang(geo_mode: str, keywords: list) -> str:
 
     results_all = []
     keywords = keywords[:5]
+    seen_urls: set = set()
 
     for kw in keywords:
-        for market in config["markets"][:3]:
-            queries = [
-                f"{kw} business opportunity passive income {market} 2026",
-                f"{kw} solo founder revenue case study {market} 2025 2026",
-                f"{kw} SaaS niche market {market} competition analysis",
-            ]
-            for q in queries:
-                r = _pesquisar_tavily(q, num_results=3) or _pesquisar_exa(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
-                for item in r:
-                    if item.get("title") or item.get("content"):
-                        results_all.append(f"[{market}] **{item['title']}**\n{item['content'][:250]}\n{item['url']}")
+        for template, market_label in config["query_sets"]:
+            q = template.format(kw=kw)
+            r = _pesquisar_tavily(q, num_results=3) or _pesquisar_exa(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
+            for item in r:
+                url = item.get("url", "")
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                if item.get("title") or item.get("content"):
+                    results_all.append(
+                        f"[{market_label}] **{item['title']}**\n{item['content'][:250]}\n{url}"
+                    )
+            if len(results_all) >= 20:
+                break
+        if len(results_all) >= 20:
+            break
 
     if not results_all:
         return f"Sem resultados para modo {geo_mode}."
 
     label = config["lang_label"]
-    return f"**Pesquisa multilíngue ({label}) — {geo_mode}:**\n\n" + "\n\n---\n\n".join(results_all[:15])
+    return f"**Pesquisa multilíngue ({label}) — {geo_mode}:**\n\n" + "\n\n---\n\n".join(results_all[:18])
 
 
 def scout_g2_capterra(nicho: str) -> str:
@@ -1503,7 +1563,7 @@ TOOLS = [
     },
     {
         "name": "google_trends",
-        "description": "Verifica se termos ou nichos de negócio estão a crescer ou a decrescer no Google Trends nos últimos 3 meses. Usa para validar oportunidades antes de recomendar — se o interesse está a crescer é um bom sinal, se está a cair é um alerta. Máximo 5 termos por chamada.",
+        "description": "Analisa tendências de interesse para termos de negócio via pesquisa web (Tavily/DDG). ATENÇÃO: não usa a API do Google Trends — retorna artigos e discussões web sobre tendências do termo, não dados de volume de pesquisa reais. Útil para contexto qualitativo de crescimento/declínio. Para dados quantitativos de volume, usa pesquisar_mercado. Máximo 5 termos por chamada.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1533,7 +1593,7 @@ TOOLS = [
     },
     {
         "name": "scout_oportunidades",
-        "description": "Analisa o mercado de IA e identifica as melhores oportunidades de negócio com potencial de rendimento passivo. Pesquisa SaaS, afiliados, nichos de conteúdo, automação, mercados PT/BR/ES. Usa no relatório semanal do Morgan AI Scout ou quando o Vasco pede análise de oportunidades.",
+        "description": "[LEGADO — usar scout_pesquisa_multilang em vez desta] Pesquisa básica de oportunidades de negócio. Substituída por scout_pesquisa_multilang que suporta 3 modos geográficos e queries nativas PT/ES/DE. Mantida por compatibilidade com código mais antigo.",
         "input_schema": {
             "type": "object",
             "properties": {},
@@ -1947,7 +2007,7 @@ TOOL_FUNCTIONS = {
     "reddit_trending": reddit_trending,
     "product_hunt_trending": product_hunt_trending,
     "scout_oportunidades": scout_oportunidades,
-    "ver_historico_scout": lambda: __import__('scout_memory').get_resumo_para_vasco(),
+    "ver_historico_scout": lambda: _ver_historico_scout_safe(),
     "indiehackers_trending": indiehackers_trending,
     "aprovar_oportunidade_scout": lambda nome: aprovar_oportunidade_scout(nome),
     "monitorizar_oportunidades_aprovadas": monitorizar_oportunidades_aprovadas,
