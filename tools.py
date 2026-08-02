@@ -985,7 +985,13 @@ def scout_pesquisa_multilang(geo_mode: str, keywords: list) -> str:
     for kw in keywords:
         for template, market_label in config["query_sets"]:
             q = template.format(kw=kw)
-            r = _pesquisar_tavily(q, num_results=3) or _pesquisar_exa(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
+            # Perplexity sonar-pro primeiro — melhor cobertura multilíngue PT/ES/DE
+            perp = _perplexity(q, modelo="sonar-pro", max_tokens=400) if PERPLEXITY_API_KEY else ""
+            r: list[dict] = []
+            if perp:
+                r = [{"title": f"Perplexity: {market_label}", "content": perp, "url": ""}]
+            else:
+                r = _pesquisar_tavily(q, num_results=3) or _pesquisar_exa(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
             for item in r:
                 url = item.get("url", "")
                 if url in seen_urls:

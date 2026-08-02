@@ -301,14 +301,35 @@ def missao_a_oportunidades() -> str:
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=6000)
 
+    # ── Verificação programática do Quality Gate ──────────────────────────────
+    # Extrai todos os scores do relatório e filtra oportunidades sub-85
+    import re as _re
+    scores_encontrados = _re.findall(
+        r"SCORE:\s*(\d+)\s*/\s*100|(\d+)\s*/\s*100\s*pts|(\d+)\s*pts?\b(?!\s*de\b)",
+        relatorio, _re.IGNORECASE
+    )
+    scores_int = []
+    for g in scores_encontrados:
+        val = next((int(x) for x in g if x), None)
+        if val is not None and 0 < val <= 100:
+            scores_int.append(val)
+
+    reprovadas = [s for s in scores_int if s < 85]
+    if reprovadas:
+        aviso = (
+            f"\n\n⚠️ ALERTA QG (verificação programática): {len(reprovadas)} score(s) abaixo de 85pts "
+            f"detectados no relatório ({reprovadas}). Estas oportunidades NÃO deveriam ter sido propostas. "
+            f"O CEO deve ignorá-las."
+        )
+        relatorio += aviso
+
     # Guardar relatório
     hoje = date.today().strftime("%Y-%m-%d")
     report_file = SCOUT_REPORTS_DIR / f"missao_a_{hoje}.txt"
     report_file.write_text(relatorio, encoding="utf-8")
 
-    # Persistir oportunidades propostas — extrai nomes do relatório
-    import re
-    nomes_propostos = re.findall(r"OPORTUNIDADE:\s*(.+)", relatorio)
+    # Persistir apenas oportunidades que passaram (sem aviso de reprovação)
+    nomes_propostos = _re.findall(r"OPORTUNIDADE:\s*(.+)", relatorio)
     for nome in nomes_propostos:
         nome = nome.strip()
         if nome and nome not in state.get("oportunidades_propostas", []):
@@ -316,6 +337,7 @@ def missao_a_oportunidades() -> str:
 
     state["ultima_missao_a"] = hoje
     state["missoes_completadas"] = state.get("missoes_completadas", 0) + 1
+    state["ultimo_qg_scores"] = scores_int  # persistir scores para auditoria
     _save_state(state)
 
     try:
