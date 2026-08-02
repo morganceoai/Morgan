@@ -301,35 +301,60 @@ def missao_a_oportunidades() -> str:
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=6000)
 
-    # ── Verificação programática do Quality Gate ──────────────────────────────
-    # Extrai todos os scores do relatório e filtra oportunidades sub-85
+    # ── Verificação programática do Quality Gate — filtragem hard ────────────
     import re as _re
-    scores_encontrados = _re.findall(
-        r"SCORE:\s*(\d+)\s*/\s*100|(\d+)\s*/\s*100\s*pts|(\d+)\s*pts?\b(?!\s*de\b)",
-        relatorio, _re.IGNORECASE
-    )
-    scores_int = []
-    for g in scores_encontrados:
-        val = next((int(x) for x in g if x), None)
-        if val is not None and 0 < val <= 100:
-            scores_int.append(val)
 
-    reprovadas = [s for s in scores_int if s < 85]
-    if reprovadas:
-        aviso = (
-            f"\n\n⚠️ ALERTA QG (verificação programática): {len(reprovadas)} score(s) abaixo de 85pts "
-            f"detectados no relatório ({reprovadas}). Estas oportunidades NÃO deveriam ter sido propostas. "
-            f"O CEO deve ignorá-las."
+    def _extrair_score_bloco(bloco: str) -> int:
+        """Extrai o score numérico de um bloco de oportunidade. Retorna 0 se não encontrado."""
+        for pat in [
+            r"SCORE:\s*(\d+)\s*/\s*100",
+            r"(\d+)\s*/\s*100\s*pts",
+            r"(\d+)\s*pts\b(?!\s*de\b)",
+        ]:
+            m = _re.search(pat, bloco, _re.IGNORECASE)
+            if m:
+                val = int(m.group(1))
+                if 0 < val <= 100:
+                    return val
+        return 0
+
+    # Split do relatório em blocos por oportunidade
+    partes = _re.split(r"(?=OPORTUNIDADE:\s*\S)", relatorio, flags=_re.IGNORECASE)
+    cabecalho = partes[0]  # texto antes da primeira oportunidade (intro, contexto)
+    blocos_opor = partes[1:]
+
+    blocos_aprovados = []
+    blocos_removidos = []
+    scores_aprovados = []
+
+    for bloco in blocos_opor:
+        score = _extrair_score_bloco(bloco)
+        if score >= 85:
+            blocos_aprovados.append(bloco)
+            scores_aprovados.append(score)
+        else:
+            nome_m = _re.search(r"OPORTUNIDADE:\s*(.+)", bloco, _re.IGNORECASE)
+            nome_bloco = nome_m.group(1).strip() if nome_m else "?"
+            blocos_removidos.append(f"{nome_bloco} ({score}pts)")
+
+    # Reconstruir relatório só com aprovados
+    relatorio = cabecalho + "".join(blocos_aprovados)
+
+    if blocos_removidos:
+        relatorio += (
+            f"\n\n---\n⚠️ QG (verificação programática): {len(blocos_removidos)} oportunidade(s) "
+            f"removida(s) por score abaixo de 85pts: {', '.join(blocos_removidos)}"
         )
-        relatorio += aviso
+    if not blocos_aprovados and blocos_opor:
+        relatorio += "\n\n[Scout: nenhuma oportunidade passou o Quality Gate nesta semana — dados insuficientes para proposta.]"
 
     # Guardar relatório
     hoje = date.today().strftime("%Y-%m-%d")
     report_file = SCOUT_REPORTS_DIR / f"missao_a_{hoje}.txt"
     report_file.write_text(relatorio, encoding="utf-8")
 
-    # Persistir apenas oportunidades que passaram (sem aviso de reprovação)
-    nomes_propostos = _re.findall(r"OPORTUNIDADE:\s*(.+)", relatorio)
+    # Persistir apenas oportunidades aprovadas
+    nomes_propostos = _re.findall(r"OPORTUNIDADE:\s*(.+)", "".join(blocos_aprovados))
     for nome in nomes_propostos:
         nome = nome.strip()
         if nome and nome not in state.get("oportunidades_propostas", []):
@@ -337,7 +362,7 @@ def missao_a_oportunidades() -> str:
 
     state["ultima_missao_a"] = hoje
     state["missoes_completadas"] = state.get("missoes_completadas", 0) + 1
-    state["ultimo_qg_scores"] = scores_int  # persistir scores para auditoria
+    state["ultimo_qg_scores"] = scores_aprovados  # scores das oportunidades que passaram
     _save_state(state)
 
     try:
