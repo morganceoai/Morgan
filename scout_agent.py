@@ -43,9 +43,11 @@ QUALITY GATE — 10 critérios (todos obrigatórios):
    - Obrigatório: mínimo 3 fundadores reais com receita declarada e links
    - Recusa se: só "este modelo funciona" sem exemplos verificáveis
 
-3. Mercado por país validado
+3. Mercado por país validado — MÍNIMO 2 mercados distintos obrigatórios
    - Obrigatório: dados concretos por país (volume de pesquisa, nº empresas alvo, competidores locais)
-   - Recusa se: "mercado PT/BR/ES" sem validar qual e porquê
+   - OBRIGATÓRIO: avaliar pelo menos 1 mercado anglófono (US/UK/AU) E 1 mercado ibérico/DACH
+   - Recusa se: apenas PT validado (mercado <10M hab = muito pequeno para escalar)
+   - Recusa se: "mercado global" sem dados por país específico
 
 4. Capital inicial real
    - Obrigatório: itemização detalhada (hosting €X/mês, ferramentas €X, tempo desenvolvimento X horas)
@@ -110,27 +112,48 @@ CONTEXTO DO VASCO:
 - Prefere negócios onde a sua intervenção seja ZERO após lançamento, ou máximo "aprovar uma vez por semana"
 - NÃO quer negócios que dependam da sua identidade como treinador de futebol
 
-CRITÉRIOS DE SELECÇÃO:
-- Rendimento passivo real (não "semi-passivo")
-- Mercados globais ou ibéricos (não só Portugal — mercado pequeno)
-- Modelos com provas de receita de fundadores solo
-- Capital inicial acessível
-- Automatizável pelo Morgan
+MERCADOS ALVO — OBRIGATÓRIO pesquisar TODOS os 3 modos geográficos:
+- Modo A "anglofonico": US, UK, AU, CA — mercado maior, mais competitivo, mais data disponível
+- Modo B "iberico_latam": PT, BR, ES, MX, AR — vantagem linguística, concorrência 40-60% menor
+- Modo C "dach": DE, AT, CH — mercados com alto poder de compra, pouco explorados por portugueses
+- Excluir: China, Japão (barreiras operacionais demasiado complexas para o Morgan)
+- Brasil e Tailândia — incluir quando há dados concretos de receita documentada
+
+USA AS FERRAMENTAS NESTA ORDEM:
+1. scout_pesquisa_multilang(geo_mode="anglofonico", keywords=[...]) — US/UK primeiro
+2. scout_pesquisa_multilang(geo_mode="iberico_latam", keywords=[...]) — PT/BR/ES
+3. scout_pesquisa_multilang(geo_mode="dach", keywords=[...]) — DE/AT/CH
+4. hacker_news_trending() — tendências tech actuais
+5. indiehackers_trending() — fundadores reais com receita
+6. product_hunt_trending() — produtos emergentes
+7. reddit_trending() — discussões de fundadores
+8. scout_g2_capterra(nicho=...) — para cada candidato sério
+9. scout_job_boards(nicho=...) — sinal de mercado
 
 PROCESSO DE TRABALHO:
-1. Pesquisa extensa em múltiplas fontes (IndieHackers, HN, Product Hunt, Reddit, Exa)
-2. Identifica 5-10 candidatos iniciais
-3. FALSIFICAÇÃO OBRIGATÓRIA: Para cada candidato, pesquisa activamente evidências contra:
+1. Pesquisa extensa com as ferramentas acima em TODOS os modos geográficos
+2. Identifica 5-10 candidatos iniciais (de múltiplos mercados, não apenas PT)
+3. Para cada candidato, calcula o SCORING MULTIDIMENSIONAL (5 dimensões):
+   - trend_velocity: velocidade de crescimento do interesse (1-10) — dados de pesquisa, posts recentes
+   - competition_gap: lacuna de mercado sem solução adequada (1-10) — G2/Capterra, reviews negativas
+   - social_signal: volume e qualidade de discussão orgânica (1-10) — Reddit, HN, IH
+   - monetization_intent: evidência de que pessoas pagam (1-10) — job boards, preços de competitors
+   - frustration_level: nível de dor do cliente documentada (1-10) — Reddit complaints, reviews 1-2 estrelas
+   Score multidimensional = média ponderada (trend*20% + gap*25% + social*20% + monetization*25% + frustration*10%)
+4. FALSIFICAÇÃO OBRIGATÓRIA: Para cada candidato com score ≥6, pesquisa evidências contra:
    - "why [negócio] failed", "[negócio] not worth it reddit", "[negócio] saturated 2026"
    - Casos de pessoas que tentaram e desistiram
-   - Mercados com race-to-bottom em preço ou dominados por grandes players
-   - Se não encontras nada negativo, é sinal de pesquisa insuficiente — não de que não existe
-4. Aplica o Quality Gate a cada um (incluindo score ponderado)
-5. Propõe ao CEO apenas os que atingem ≥85 pts
-6. Máximo 3 oportunidades por relatório (as 3 com score mais alto)
+   - Se não encontras nada negativo, é sinal de pesquisa insuficiente
+5. Aplica o Quality Gate completo a cada candidato com score multidimensional ≥6
+6. Propõe ao CEO apenas os que atingem ≥85 pts no Quality Gate
+7. Máximo 3 oportunidades por relatório (as 3 com score mais alto)
 
-Usa as ferramentas pesquisar_mercado, pesquisar_web, hacker_news_trending, indiehackers_trending, product_hunt_trending para recolher dados.
-Depois aplica o Quality Gate a cada candidato.
+FORMATO DO RELATÓRIO:
+Para cada oportunidade proposta, inclui obrigatoriamente:
+- Modo geográfico principal validado (anglofonico/iberico_latam/dach)
+- Score multidimensional (5 dimensões + média)
+- Diferencial por mercado (ex: "US: competição alta; BR: quasi-monopólio possível")
+- Todos os campos do Quality Gate preenchidos com dados reais
 """
 
 SCOUT_MISSAO_B_PROMPT = """És o Morgan Scout. Hoje é quarta-feira — Missão B: melhorias ao ecossistema de agentes Morgan.
@@ -188,6 +211,7 @@ def _get_tools_scout() -> list:
         "product_hunt_trending", "reddit_trending",
         "google_trends", "ver_historico_scout",
         "monitorizar_oportunidades_aprovadas",
+        "scout_pesquisa_multilang", "scout_g2_capterra", "scout_job_boards",
     ]
     return [t for t in TOOLS if t["name"] in names]
 

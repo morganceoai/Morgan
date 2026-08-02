@@ -2,6 +2,13 @@ import os
 import requests
 from memory_store import save_fact, remove_fact, list_memory
 
+try:
+    from tavily import TavilyClient as _TavilyClient
+    _TAVILY_AVAILABLE = True
+except ImportError:
+    _TAVILY_AVAILABLE = False
+    _TavilyClient = None
+
 API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 EXA_API_KEY = os.getenv("EXA_API_KEY")
@@ -30,8 +37,9 @@ def _pesquisar_tavily(query: str, num_results: int = 5) -> list[dict]:
     if not TAVILY_API_KEY:
         return []
     try:
-        from tavily import TavilyClient
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return []
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         result = client.search(query=query, search_depth="advanced", max_results=num_results)
         return [{"title": r.get("title",""), "content": r.get("content",""), "url": r.get("url","")} for r in result.get("results", [])]
     except Exception:
@@ -558,7 +566,9 @@ def hacker_news_trending() -> str:
 def reddit_trending() -> str:
     """Busca posts populares de IA e negócios no Reddit via Tavily."""
     try:
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
             "site:reddit.com r/artificial OR r/MachineLearning AI tools 2026",
             "site:reddit.com r/SideProject OR r/entrepreneur AI business revenue 2026",
@@ -591,8 +601,9 @@ def reddit_trending() -> str:
 def google_trends(termos: list) -> str:
     """Analisa tendências de interesse via Tavily (pytrends arquivado em Abril 2025)."""
     try:
-        from tavily import TavilyClient
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         termos = termos[:5]
         linhas = ["**Tendências de mercado — análise via web:**\n"]
 
@@ -686,7 +697,9 @@ def product_hunt_trending() -> str:
 def scout_oportunidades() -> str:
     """Analisa o mercado de IA e identifica oportunidades de negócio com potencial de rendimento passivo."""
     try:
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
             # Máximo retorno, mínimo risco — mercado global
             "highest ROI AI business 2026 low risk passive income proven founder",
@@ -727,7 +740,9 @@ def scout_oportunidades() -> str:
 def monitorizar_nome(nome: str = "Vasco Botelho da Costa") -> str:
     """Pesquisa menções ao nome em múltiplas plataformas."""
     try:
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
             f'"{nome}" site:reddit.com 2026',
             f'"{nome}" site:youtube.com 2026',
@@ -779,7 +794,9 @@ def monitorizar_nome(nome: str = "Vasco Botelho da Costa") -> str:
 def indiehackers_trending() -> str:
     """Pesquisa no IndieHackers negócios reais com receita declarada pelos fundadores."""
     try:
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         queries = [
             "site:indiehackers.com \"making\" OR \"revenue\" OR \"MRR\" 2025 OR 2026 AI SaaS",
             "site:indiehackers.com passive income AI tools revenue 2026",
@@ -833,7 +850,9 @@ def monitorizar_oportunidades_aprovadas() -> str:
         if not aprovadas:
             return "Nenhuma oportunidade aprovada ainda. Aprova uma oportunidade do relatório do Scout para acompanhamento contínuo."
 
-        client = TavilyClient(api_key=TAVILY_API_KEY)
+        if not _TAVILY_AVAILABLE or not _TavilyClient:
+            return "Tavily indisponível."
+        client = _TavilyClient(api_key=TAVILY_API_KEY)
         semana = date.today().strftime("%Y-W%W")
         relatorio = ["**Acompanhamento de oportunidades aprovadas:**\n"]
 
@@ -872,6 +891,109 @@ def monitorizar_oportunidades_aprovadas() -> str:
         return "\n\n".join(relatorio)
     except Exception as e:
         return f"Erro na monitorização de aprovadas: {e}"
+
+
+# ── Scout: ferramentas multilíngue e geográficas ─────────────────────────────
+
+_GEO_MODES = {
+    "iberico_latam": {
+        "langs": ["pt", "es"],
+        "markets": ["Portugal", "Brasil", "Espanha", "México", "Argentina"],
+        "lang_label": "PT/ES",
+    },
+    "anglofonico": {
+        "langs": ["en"],
+        "markets": ["United States", "United Kingdom", "Australia", "Canada"],
+        "lang_label": "EN",
+    },
+    "dach": {
+        "langs": ["de"],
+        "markets": ["Deutschland", "Österreich", "Schweiz"],
+        "lang_label": "DE",
+    },
+}
+
+
+def scout_pesquisa_multilang(geo_mode: str, keywords: list) -> str:
+    """
+    Pesquisa oportunidades de negócio em múltiplas línguas para o modo geográfico escolhido.
+    geo_mode: 'iberico_latam' | 'anglofonico' | 'dach'
+    keywords: lista de termos a pesquisar (max 5)
+    """
+    config = _GEO_MODES.get(geo_mode)
+    if not config:
+        return f"Modo geográfico inválido. Escolhe: {list(_GEO_MODES.keys())}"
+
+    results_all = []
+    keywords = keywords[:5]
+
+    for kw in keywords:
+        for market in config["markets"][:3]:
+            queries = [
+                f"{kw} business opportunity passive income {market} 2026",
+                f"{kw} solo founder revenue case study {market} 2025 2026",
+                f"{kw} SaaS niche market {market} competition analysis",
+            ]
+            for q in queries:
+                r = _pesquisar_tavily(q, num_results=3) or _pesquisar_exa(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
+                for item in r:
+                    if item.get("title") or item.get("content"):
+                        results_all.append(f"[{market}] **{item['title']}**\n{item['content'][:250]}\n{item['url']}")
+
+    if not results_all:
+        return f"Sem resultados para modo {geo_mode}."
+
+    label = config["lang_label"]
+    return f"**Pesquisa multilíngue ({label}) — {geo_mode}:**\n\n" + "\n\n---\n\n".join(results_all[:15])
+
+
+def scout_g2_capterra(nicho: str) -> str:
+    """
+    Pesquisa competidores, reviews e gaps de mercado no G2 e Capterra para um nicho.
+    nicho: ex. 'directory software', 'scheduling tool', 'AI writing assistant'
+    """
+    queries = [
+        f"site:g2.com {nicho} reviews alternatives competitors",
+        f"site:capterra.com {nicho} pricing reviews 2025 2026",
+        f"{nicho} G2 OR Capterra market leader gap underserved 2026",
+        f"{nicho} users complain missing feature reddit 2025 2026",
+    ]
+    resultados = []
+    for q in queries:
+        r = _pesquisar_exa(q, num_results=4) or _pesquisar_tavily(q, num_results=4) or _pesquisar_duckduckgo(q, num_results=4)
+        for item in r:
+            if item.get("title") or item.get("content"):
+                resultados.append(f"**{item['title']}**\n{item['content'][:300]}\nFonte: {item['url']}")
+
+    if not resultados:
+        return f"Sem dados G2/Capterra para '{nicho}'."
+
+    return f"**G2/Capterra — análise de competidores: {nicho}**\n\n" + "\n\n---\n\n".join(resultados[:10])
+
+
+def scout_job_boards(nicho: str) -> str:
+    """
+    Pesquisa job boards (LinkedIn, Indeed, Remote.co) para medir procura de skills no nicho.
+    Um nicho com muitas vagas = mercado com dinheiro a circular = oportunidade.
+    nicho: ex. 'AI prompt engineer', 'no-code automation', 'SEO specialist'
+    """
+    queries = [
+        f"site:linkedin.com/jobs {nicho} 2026 hiring demand",
+        f"site:indeed.com {nicho} jobs growing 2026",
+        f"{nicho} remote jobs growing demand 2025 2026 salary range",
+        f"{nicho} freelance market size clients budget 2026",
+    ]
+    resultados = []
+    for q in queries:
+        r = _pesquisar_exa(q, num_results=3) or _pesquisar_tavily(q, num_results=3) or _pesquisar_duckduckgo(q, num_results=3)
+        for item in r:
+            if item.get("title") or item.get("content"):
+                resultados.append(f"**{item['title']}**\n{item['content'][:250]}\n{item['url']}")
+
+    if not resultados:
+        return f"Sem dados de job boards para '{nicho}'."
+
+    return f"**Job Boards — sinal de mercado: {nicho}**\n\n" + "\n\n---\n\n".join(resultados[:8])
 
 
 # ── Ferramentas do Solver ────────────────────────────────────────────────────
@@ -1765,6 +1887,40 @@ TOOLS = [
         "name": "estado_sistema",
         "description": "Devolve o estado completo do sistema Morgan: agentes activos, negócios activos, contas Zoho.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "scout_pesquisa_multilang",
+        "description": "Pesquisa oportunidades de negócio em múltiplas línguas e mercados. Usa um dos 3 modos geográficos: 'iberico_latam' (PT/ES/BR/MX), 'anglofonico' (US/UK/AU/CA), 'dach' (DE/AT/CH). Ideal para validar se uma oportunidade funciona fora do mercado PT.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "geo_mode": {"type": "string", "description": "Modo geográfico: 'iberico_latam' | 'anglofonico' | 'dach'"},
+                "keywords": {"type": "array", "items": {"type": "string"}, "description": "Lista de keywords a pesquisar (max 5)"}
+            },
+            "required": ["geo_mode", "keywords"]
+        }
+    },
+    {
+        "name": "scout_g2_capterra",
+        "description": "Pesquisa no G2 e Capterra para encontrar competidores, preços, reviews e gaps de mercado num nicho específico. Usa para validar o critério de competidores do Quality Gate.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nicho": {"type": "string", "description": "Nicho de mercado a analisar (ex: 'directory software', 'AI scheduling tool')"}
+            },
+            "required": ["nicho"]
+        }
+    },
+    {
+        "name": "scout_job_boards",
+        "description": "Pesquisa job boards (LinkedIn, Indeed) para medir a procura real num nicho. Muitas vagas = mercado com dinheiro a circular. Útil para medir monetization_intent.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nicho": {"type": "string", "description": "Skill ou nicho a analisar (ex: 'no-code automation', 'AI prompt engineer')"}
+            },
+            "required": ["nicho"]
+        }
     }
 ]
 
@@ -1846,4 +2002,7 @@ TOOL_FUNCTIONS = {
     "estado_sistema": lambda: __import__('json').dumps(
         __import__('sistema_service').get_estado(), ensure_ascii=False, indent=2
     ),
+    "scout_pesquisa_multilang": scout_pesquisa_multilang,
+    "scout_g2_capterra": scout_g2_capterra,
+    "scout_job_boards": scout_job_boards,
 }
