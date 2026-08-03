@@ -57,6 +57,12 @@ def _notificar_ceo(titulo: str, corpo: str, urgente: bool = False):
         registar_evento("operator", "patlas_update", f"{titulo}: {corpo}")
     except Exception:
         pass
+    try:
+        from ceo_events import publicar
+        nivel = "critico" if urgente else "aviso"
+        publicar("patlas", "alerta" if urgente else "update", f"{titulo}: {corpo}", nivel=nivel)
+    except Exception:
+        pass
     if urgente:
         try:
             from push_service import send_push

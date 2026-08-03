@@ -127,6 +127,15 @@ def get_system_prompt(query: str = "") -> str:
     except Exception:
         pass
 
+    # Camada 1 — alertas e eventos não processados (CEO contínuo)
+    try:
+        from ceo_events import resumo_para_ceo
+        resumo_ev = resumo_para_ceo()
+        if resumo_ev:
+            contexto += "\n\n[ALERTAS ACTIVOS — requerem atenção]\n" + resumo_ev
+    except Exception:
+        pass
+
     limiar = confianca_limiar()
     return f"""És o Morgan CEO — orquestrador do império BCVertex e braço direito do Vasco Botelho da Costa.
 Data e hora: {agora}
@@ -2186,6 +2195,23 @@ async def _heartbeat_loop():
                     _log.info("PAtlas ciclo diário: %s", res_patlas[:100])
                 except Exception as e:
                     _log.error("PAtlas erro: %s", e)
+
+            # CEO contínuo — processar eventos críticos a cada minuto
+            try:
+                from ceo_events import eventos_nao_processados, marcar_processado
+                criticos = eventos_nao_processados(nivel_min="critico")
+                for ev in criticos[:3]:  # máx 3 por ciclo para não sobrecarregar
+                    agente = ev.get("agente", "?").upper()
+                    msg = ev.get("mensagem", "")[:200]
+                    send_push(
+                        title=f"Morgan — Alerta {agente}",
+                        body=msg,
+                        url="/pwa/"
+                    )
+                    marcar_processado(ev["id"])
+                    _log.warning("CEO contínuo — alerta crítico: [%s] %s", agente, msg)
+            except Exception as e:
+                _log.error("CEO events loop erro: %s", e)
 
             # Plano semanal PlannerAtlas — segunda-feira às 8h
             chave_etsy = f"etsy_plano_{agora.strftime('%Y-%W')}"

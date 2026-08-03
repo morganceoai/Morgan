@@ -55,10 +55,17 @@ def _notificar_ceo(titulo: str, corpo: str, urgente: bool = False):
     except Exception:
         pass
     try:
-        from push_service import send_push
-        send_push(title=f"Morgan — {titulo}", body=corpo[:160], url="/pwa/")
+        from ceo_events import publicar
+        nivel = "critico" if urgente else "aviso"
+        publicar("pulser", "alerta" if urgente else "update", f"{titulo}: {corpo}", nivel=nivel)
     except Exception:
         pass
+    if urgente:
+        try:
+            from push_service import send_push
+            send_push(title=f"Morgan — {titulo}", body=corpo[:160], url="/pwa/")
+        except Exception:
+            pass
 
 
 def _detectar_fase(state: dict) -> str:
