@@ -142,38 +142,38 @@ Gera o rascunho completo em inglês. Inclui subject line (max 50 chars) e previe
         return f"Erro ao curar conteúdo: {e}"
 
 
-def criar_rascunho_beehiiv(assunto: str, conteudo_html: str, preview: str = "") -> dict:
-    """Cria rascunho no Beehiiv (não envia — Vasco aprova antes)."""
-    if not BEEHIIV_API_KEY or not BEEHIIV_PUB_ID:
-        return {"erro": verificar_setup()}
-    try:
-        payload = {
-            "subject_line": assunto,
-            "preview_text": preview,
-            "content": {"type": "html", "value": conteudo_html},
-            "status": "draft",
-            "send_at": None,
-        }
-        r = httpx.post(
-            f"{BEEHIIV_BASE}/publications/{BEEHIIV_PUB_ID}/emails",
-            headers=_headers(),
-            json=payload,
-            timeout=15,
-        )
-        r.raise_for_status()
-        data = r.json().get("data", {})
+def criar_rascunho_local(assunto: str, conteudo: str) -> dict:
+    """
+    Guarda rascunho localmente e notifica o Vasco via push.
+    API Beehiiv só permite criar posts no plano Enterprise — usamos ficheiro local.
+    """
+    drafts_dir = MEMORY_DIR / "newsletter_drafts"
+    drafts_dir.mkdir(exist_ok=True)
 
-        state = _load_state()
-        state["rascunhos"].append({
-            "id": data.get("id"),
-            "assunto": assunto,
-            "criado_em": datetime.now().isoformat(),
-            "status": "draft",
-        })
-        _save_state(state)
-        return {"ok": True, "id": data.get("id"), "assunto": assunto}
-    except Exception as e:
-        return {"erro": str(e)}
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    ficheiro = drafts_dir / f"draft_{timestamp}.md"
+    ficheiro.write_text(f"# {assunto}\n\n{conteudo}", encoding="utf-8")
+
+    state = _load_state()
+    state["rascunhos"].append({
+        "ficheiro": str(ficheiro),
+        "assunto": assunto,
+        "criado_em": datetime.now().isoformat(),
+        "status": "draft_local",
+    })
+    _save_state(state)
+
+    try:
+        from push_service import send_push
+        send_push(
+            title="The AI Pulse BC — Rascunho pronto",
+            body=f"'{assunto}' — copia para o Beehiiv e envia.",
+            url="/pwa/"
+        )
+    except Exception:
+        pass
+
+    return {"ok": True, "ficheiro": str(ficheiro), "assunto": assunto}
 
 
 def relatorio_semanal() -> str:
@@ -220,16 +220,12 @@ def ciclo_semanal_automatico() -> str:
     assunto = next((l for l in linhas if "subject" in l.lower()), "AI Pulse — This Week's Top Picks")
     assunto = assunto.split(":")[-1].strip().strip('"') if ":" in assunto else assunto[:50]
 
-    resultado = criar_rascunho_beehiiv(
-        assunto=assunto,
-        conteudo_html=f"<div style='font-family:sans-serif;max-width:600px'>{conteudo_html}</div>",
-        preview="Your weekly digest of AI tools worth your time",
-    )
+    resultado = criar_rascunho_local(assunto=assunto, conteudo=conteudo_raw)
 
     if resultado.get("ok"):
-        return f"{relatorio}\n\n✅ Rascunho criado: '{assunto}' (ID: {resultado['id']})\nAguarda aprovação do Vasco antes de enviar."
+        return f"{relatorio}\n\n✅ Rascunho guardado: '{assunto}'\nFicheiro: {resultado['ficheiro']}\nCopia para o Beehiiv e envia quando aprovares."
     else:
-        return f"{relatorio}\n\n❌ Erro ao criar rascunho: {resultado.get('erro')}"
+        return f"{relatorio}\n\n❌ Erro ao guardar rascunho: {resultado.get('erro')}"
 
 
 if __name__ == "__main__":

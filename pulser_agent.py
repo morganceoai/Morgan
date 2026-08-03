@@ -147,7 +147,7 @@ def ciclo_semanal() -> str:
     resultado_draft = ciclo_semanal_automatico()
 
     # Registar timestamp do draft
-    if "✅ Rascunho criado" in resultado_draft:
+    if "✅ Rascunho guardado" in resultado_draft:
         state = _load_state()
         state["ultimo_draft_criado"] = datetime.now().isoformat()
         _save_state(state)
