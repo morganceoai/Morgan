@@ -25,7 +25,7 @@ BEEHIIV_BASE = "https://api.beehiiv.com/v2"
 BEEHIIV_API_KEY = os.getenv("BEEHIIV_API_KEY", "")
 BEEHIIV_PUB_ID = os.getenv("BEEHIIV_PUB_ID", "")
 
-NEWSLETTER_NAME = "The AI Pulse"
+NEWSLETTER_NAME = "The AI Pulse BC"
 NEWSLETTER_NICHE = "AI tools & productivity for founders"
 NEWSLETTER_LINGUA = "EN"
 NEWSLETTER_MERCADO = "US/UK/CA"
