@@ -2163,19 +2163,6 @@ async def _heartbeat_loop():
                 except Exception as e:
                     _log.error("Marketeer→Operator erro: %s", e)
 
-            # Creator proactivo — verifica oportunidades aprovadas de hora em hora
-            chave_creator_watch = f"creator_watch_{agora.strftime('%Y-%m-%d_%H')}"
-            if not _dedup_check(chave_creator_watch):
-                _dedup_mark(chave_creator_watch)
-                try:
-                    from creator_agent import verificar_oportunidades_aprovadas
-                    loop = asyncio.get_event_loop()
-                    res_creator = await loop.run_in_executor(None, verificar_oportunidades_aprovadas)
-                    if "novas oportunidades" in res_creator:
-                        _log.info("Creator proactivo: %s", res_creator)
-                except Exception as e:
-                    _log.error("Creator watcher erro: %s", e)
-
             # Pulser — ciclo semanal newsletter (domingo 18h)
             chave_pulser = f"pulser_{agora.strftime('%Y-%W')}"
             if agora.weekday() == 6 and agora.hour == 18 and not _dedup_check(chave_pulser):
