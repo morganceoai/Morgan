@@ -15,6 +15,8 @@ import json
 import httpx
 from datetime import datetime, timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
 
 MEMORY_DIR = Path(__file__).parent / "memory"
 NEWSLETTER_STATE_FILE = MEMORY_DIR / "newsletter_state.json"
