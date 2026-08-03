@@ -169,6 +169,20 @@ def ciclo_semanal() -> str:
     )
     _notificar_ceo("Ciclo semanal concluído", resumo)
 
+    # Publicar estado no runtime partilhado
+    try:
+        from runtime_state import publicar as rs_publicar
+        rs_publicar("pulser", {
+            "status": f"{'⚠️ alertas' if alertas else '✅ normal'}",
+            "resumo": f"Subs: {state['subscribers']} | Fase: {state['fase']} | Alertas: {len(alertas)}",
+            "subscribers": state.get("subscribers", 0),
+            "fase": state.get("fase", "setup"),
+            "ultimo_draft": state.get("ultimo_draft_criado", ""),
+            "alertas": alertas,
+        })
+    except Exception:
+        pass
+
     return f"{resumo}\n{resultado_draft}"
 
 

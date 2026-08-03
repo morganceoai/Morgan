@@ -210,7 +210,7 @@ def run_cycle() -> dict:
 
 def get_status() -> dict:
     state = load_state()
-    return {
+    status = {
         "bot": "Supertrend BTC/USDT 4h",
         "active": state.get("active", True),
         "position": state.get("position"),
@@ -222,6 +222,22 @@ def get_status() -> dict:
         "trend": state.get("trend", 1),
         "testnet": TESTNET,
     }
+    try:
+        from runtime_state import publicar as rs_publicar
+        pnl_t = status["pnl_total"]
+        pnl_d = status["pnl_today"]
+        rs_publicar("cfo", {
+            "status": "✅ activo" if status["active"] else "⏸️ pausado",
+            "resumo": f"PnL hoje: {pnl_d:+.4f} USDT | Total: {pnl_t:+.4f} | Trades: {status['trades']}",
+            "pnl_today": pnl_d,
+            "pnl_total": pnl_t,
+            "position": status["position"],
+            "last_signal": status["last_signal"],
+            "testnet": TESTNET,
+        })
+    except Exception:
+        pass
+    return status
 
 def pause_bot():
     state = load_state(); state["active"] = False; save_state(state)

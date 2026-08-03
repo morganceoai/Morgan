@@ -136,6 +136,15 @@ def get_system_prompt(query: str = "") -> str:
     except Exception:
         pass
 
+    # Estado runtime partilhado — o que cada agente está a fazer agora
+    try:
+        from runtime_state import resumo_sistema
+        rs = resumo_sistema()
+        if rs and rs != "(sem estado publicado)":
+            contexto += "\n\n[Estado actual dos agentes]\n" + rs
+    except Exception:
+        pass
+
     limiar = confianca_limiar()
     return f"""És o Morgan CEO — orquestrador do império BCVertex e braço direito do Vasco Botelho da Costa.
 Data e hora: {agora}
@@ -279,6 +288,16 @@ async def api_control_status():
         "silencio_fim": c.get("silencio_fim", 7),
         "confianca_limiar": c.get("confianca_limiar", 90),
     })
+
+@app.get("/api/runtime-state")
+async def api_runtime_state():
+    """Estado actual de todos os agentes — leitura em tempo real."""
+    try:
+        from runtime_state import ler_todos
+        return JSONResponse(ler_todos())
+    except Exception as e:
+        return JSONResponse({"erro": str(e)}, status_code=500)
+
 
 @app.post("/api/escalada")
 async def api_escalada(request: Request):

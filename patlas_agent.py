@@ -176,6 +176,20 @@ def ciclo_diario() -> str:
             urgente=False
         )
 
+    # Publicar estado no runtime partilhado
+    try:
+        from runtime_state import publicar as rs_publicar
+        rs_publicar("patlas", {
+            "status": f"{'⚠️ alertas' if alertas else '✅ normal'}",
+            "resumo": f"Vendas: {state['vendas_total']} | Receita: €{state['receita_total']:.2f} | Alertas: {len(alertas)}",
+            "listings": state.get("listings_activos", 0),
+            "receita": state.get("receita_total", 0),
+            "alertas": alertas,
+            "etsy_oauth": state.get("etsy_configurado", False),
+        })
+    except Exception:
+        pass
+
     return estado_str
 
 
