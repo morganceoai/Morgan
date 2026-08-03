@@ -2163,6 +2163,30 @@ async def _heartbeat_loop():
                 except Exception as e:
                     _log.error("Marketeer→Operator erro: %s", e)
 
+            # Pulser — ciclo semanal newsletter (domingo 18h)
+            chave_pulser = f"pulser_{agora.strftime('%Y-%W')}"
+            if agora.weekday() == 6 and agora.hour == 18 and not _dedup_check(chave_pulser):
+                _dedup_mark(chave_pulser)
+                try:
+                    from pulser_agent import ciclo_semanal
+                    loop = asyncio.get_event_loop()
+                    res_pulser = await loop.run_in_executor(None, ciclo_semanal)
+                    _log.info("Pulser ciclo semanal: %s", res_pulser[:100])
+                except Exception as e:
+                    _log.error("Pulser erro: %s", e)
+
+            # PAtlas — ciclo diário Etsy (diário às 10h)
+            chave_patlas = f"patlas_{agora.strftime('%Y-%m-%d')}"
+            if agora.hour == 10 and not _dedup_check(chave_patlas):
+                _dedup_mark(chave_patlas)
+                try:
+                    from patlas_agent import ciclo_diario
+                    loop = asyncio.get_event_loop()
+                    res_patlas = await loop.run_in_executor(None, ciclo_diario)
+                    _log.info("PAtlas ciclo diário: %s", res_patlas[:100])
+                except Exception as e:
+                    _log.error("PAtlas erro: %s", e)
+
             # Plano semanal PlannerAtlas — segunda-feira às 8h
             chave_etsy = f"etsy_plano_{agora.strftime('%Y-%W')}"
             if agora.weekday() == 0 and agora.hour == 8 and not _dedup_check(chave_etsy):
