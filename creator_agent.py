@@ -549,7 +549,8 @@ def activar_sub_morgan(oportunidade: str, mensagem: str) -> str:
 
     ferramentas_disponiveis = [t for t in TOOLS if t["name"] in template["ferramentas"]]
 
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    from claude_guard import GuardedClient
+    client = GuardedClient("creator")
     msgs = [{"role": "user", "content": mensagem}]
 
     while True:

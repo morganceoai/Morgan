@@ -109,8 +109,8 @@ def obter_stats() -> dict:
 def curar_conteudo_semanal() -> str:
     """Usa Claude para curar conteúdo da semana e gerar rascunho da newsletter."""
     try:
-        import anthropic
-        client = anthropic.Anthropic()
+        from claude_guard import GuardedClient
+        client = GuardedClient("pulser")
 
         hoje = datetime.now().strftime("%d %b %Y")
         semana_anterior = (datetime.now() - timedelta(days=7)).strftime("%d %b")

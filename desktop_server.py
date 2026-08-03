@@ -62,7 +62,8 @@ HUME_VOICE_ID = os.getenv("HUME_VOICE_ID")
 CONVAI_AGENT_ID = "agent_0001kwqq04nbe689bpxdtp2dkpc7"
 DESKTOP_USER_ID = "vasco"
 
-claude = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+from claude_guard import GuardedClient
+claude = GuardedClient("ceo")
 app = FastAPI()
 DESKTOP_DIR = Path(__file__).parent / "desktop"
 
@@ -299,6 +300,22 @@ async def api_runtime_state():
         return JSONResponse({"erro": str(e)}, status_code=500)
 
 
+@app.get("/api/claude-usage")
+async def api_claude_usage():
+    """Consumo Claude hoje — tokens, custo por agente, circuit breakers."""
+    try:
+        from claude_guard import resumo_uso_hoje, estado_circuitos, _load_budget, _hoje
+        data = _load_budget()
+        hoje = _hoje()
+        return JSONResponse({
+            "resumo": resumo_uso_hoje(),
+            "circuitos": estado_circuitos(),
+            "detalhe": data.get("dias", {}).get(hoje, {}),
+        })
+    except Exception as e:
+        return JSONResponse({"erro": str(e)}, status_code=500)
+
+
 @app.post("/api/escalada")
 async def api_escalada(request: Request):
     """Endpoint interno para agentes enviarem escaladas ao Vasco via push."""
@@ -416,7 +433,7 @@ Analisa a mensagem e responde APENAS com um destes labels (sem mais texto):
   ceo        — tudo o resto (conversa geral, tarefas, perguntas pessoais, status)
 Responde apenas com o label. Nenhuma outra palavra."""
 
-_haiku_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+_haiku_client = GuardedClient("router")
 
 def _classificar_agente(msg: str) -> str:
     """Usa Claude Haiku para classificar para qual agente encaminhar a mensagem."""
@@ -1985,8 +2002,18 @@ async def _run_daily_report():
         operator_str = f"(erro: {e})"
 
     # Estado do sistema (agentes + negócios activos)
-    from sistema_service import resumo_sistema
-    sistema_str = resumo_sistema()
+    try:
+        from sistema_service import resumo_sistema
+        sistema_str = resumo_sistema()
+    except Exception as e:
+        sistema_str = f"(erro: {e})"
+
+    # Consumo Claude do dia
+    try:
+        from claude_guard import resumo_uso_hoje
+        claude_uso_str = resumo_uso_hoje()
+    except Exception:
+        claude_uso_str = "Dados de consumo indisponíveis."
 
     # Relatório de logs / erros do dia (últimas 20 linhas do error log)
     erros_str = ""
@@ -2017,13 +2044,16 @@ SCOUT:
 Oportunidades aprovadas: {ops_str}
 Oportunidades activas: {oport_str}
 
+CONSUMO CLAUDE HOJE:
+{claude_uso_str}
+
 ERROS DO DIA:
 {erros_str}
 
 Instruções:
 - Secção por agente/área: CFO, Operator, Scout, sistema
 - O que aconteceu hoje, o que ficou por fazer, decisões tomadas
-- Alertas se houver erros ou anomalias
+- Alertas se houver erros, anomalias ou consumo anómalo de Claude
 - O que o Vasco deve ter em mente amanhã
 - Tom direto, como um relatório de CEO. Máximo 10 linhas. Sem emojis. Português europeu."""
 

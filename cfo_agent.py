@@ -514,7 +514,8 @@ def get_cfo_reply(user_message: str) -> str:
     if len(_cfo_history) > 20:
         _cfo_history = _cfo_history[-20:]
 
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    from claude_guard import GuardedClient
+    client = GuardedClient("cfo")
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,

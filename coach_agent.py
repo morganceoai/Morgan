@@ -238,7 +238,8 @@ def _run_tool(name: str, inp: dict) -> str:
 # ── Chamada ao Claude ─────────────────────────────────────────────────────────
 
 def _chamar_claude_coach(system: str, messages: list) -> str:
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+    from claude_guard import GuardedClient
+    client = GuardedClient("coach")
     tools = _get_coach_tools()
     kwargs = {
         "model": "claude-sonnet-4-6",

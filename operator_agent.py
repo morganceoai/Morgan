@@ -21,7 +21,8 @@ OPERATOR_STATE_FILE = MEMORY_DIR / "operator_state.json"
 
 MEMORY_DIR.mkdir(exist_ok=True)
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+from claude_guard import GuardedClient as _GuardedClient
+client = _GuardedClient("operator")
 
 SYSTEM_PROMPT = """És o Morgan Operator, o agente de operações do império BCVertex.
 

@@ -26,7 +26,8 @@ SCOUT_STATE_FILE = MEMORY_DIR / "scout_state.json"
 SCOUT_REPORTS_DIR = MEMORY_DIR / "scout_reports"
 SCOUT_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+from claude_guard import GuardedClient as _GuardedClient
+_client = _GuardedClient("scout")
 
 
 # ── Quality Gate ──────────────────────────────────────────────────────────────

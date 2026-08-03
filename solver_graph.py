@@ -391,7 +391,8 @@ _client = None
 def get_client():
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        from claude_guard import GuardedClient
+        _client = GuardedClient("solver")
     return _client
 
 

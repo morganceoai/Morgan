@@ -13,7 +13,8 @@ import os
 from typing import Any
 import anthropic
 
-_claude = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+from claude_guard import GuardedClient as _GuardedClient
+_claude = _GuardedClient("ceo")
 
 _HAIKU = "claude-haiku-4-5-20251001"
 _SONNET = "claude-sonnet-4-6"

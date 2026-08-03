@@ -18,7 +18,8 @@ load_dotenv()
 MEMORY_DIR = Path(__file__).parent / "memory"
 MARKETEER_FILE = MEMORY_DIR / "marketeer_state.json"
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", ""))
+from claude_guard import GuardedClient as _GuardedClient
+client = _GuardedClient("marketeer")
 
 SYSTEM_PROMPT = """És o Morgan Marketeer, o agente de marketing e crescimento do império BCVertex.
 

@@ -229,10 +229,8 @@ def propor_accoes_correctivas() -> str:
         return "Sem alertas activos — nenhuma acção correctiva necessária."
 
     try:
-        import anthropic
-        from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent / ".env")
-        client = anthropic.Anthropic()
+        from claude_guard import GuardedClient
+        client = GuardedClient("patlas")
 
         prompt = f"""És o Morgan Operator a analisar a loja Etsy PlannerAtlas.
 
