@@ -564,6 +564,63 @@ Responde:
     return relatorio
 
 
+def missao_b_solver_ideal() -> str:
+    """
+    Missão B especial — pesquisa focada no Solver ideal.
+    Investiga padrões SRE, AIOps e chaos engineering do mundo real
+    para informar a construção do Solver proactivo do Morgan.
+    """
+    system = """És o Morgan Scout. Tens uma missão de investigação técnica urgente.
+
+OBJECTIVO:
+Pesquisar como os melhores sistemas de IA e SRE do mundo detectam erros silenciosos proactivamente.
+O Morgan tem um Solver que só age quando há erro reportado. Queremos torná-lo proactivo.
+
+PERGUNTAS A RESPONDER (com fontes reais):
+1. Como os melhores sistemas SRE/AIOps detectam erros ANTES de serem reportados?
+2. Que padrões de "proactive error scanning" existem em produção hoje? (ex: chaos engineering, canary testing, anomaly detection)
+3. Que ferramentas/bibliotecas Python fazem scan proactivo de sistemas em produção?
+4. O que fazem o Datadog, Sentry, Honeycomb, OpenTelemetry de diferente dos sistemas reactivos?
+5. Para um sistema com 8 agentes Python num Mac Mini: qual o padrão mais leve e eficaz de scan proactivo?
+
+CRITÉRIOS:
+- Apenas padrões com utilizadores reais documentados
+- Implementável em Python 3.12 sem infraestrutura adicional pesada
+- Custo: €0 preferível, máx €20/mês
+- Foco em detecção de erros silenciosos (não crashes óbvios — esses já temos)
+
+FORMATO DA RESPOSTA:
+## Padrões encontrados (máx 5, por ordem de relevância)
+[Nome] | [Como funciona] | [Implementação Python] | [Custo] | [Fonte]
+
+## Recomendação para o Solver Morgan
+[O que adoptar, em que ordem, com que esforço de implementação]
+
+## Riscos e trade-offs
+[O que perdemos vs. ganharíamos com cada abordagem]
+
+Pesquisa em inglês (mercado global). Resposta final em PT-PT."""
+
+    msgs = [{"role": "user", "content": (
+        "Investiga padrões de Solver/SRE proactivo para sistemas multi-agente Python. "
+        "Usa pesquisar_web e hacker_news_trending. Foca em implementações reais, não teoria."
+    )}]
+
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=2500)
+
+    hoje = date.today().strftime("%Y-%m-%d")
+    report_file = SCOUT_REPORTS_DIR / f"missao_b_solver_ideal_{hoje}.txt"
+    report_file.write_text(relatorio, encoding="utf-8")
+
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "missao_b_solver", relatorio[:400])
+    except Exception:
+        pass
+
+    return relatorio
+
+
 def get_scout_reply(user_message: str) -> str:
     """Resposta directa do Scout quando invocado na conversa."""
     try:
