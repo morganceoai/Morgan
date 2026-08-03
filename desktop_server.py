@@ -2249,7 +2249,8 @@ async def _heartbeat_loop():
                     print(f"[creator] erro plano etsy: {e}", flush=True)
 
         except Exception as e:
-            print(f"[heartbeat] erro: {e}", flush=True)
+            import traceback
+            print(f"[heartbeat] erro: {e}\n{traceback.format_exc()}", flush=True)
         await asyncio.sleep(60)
 
 
