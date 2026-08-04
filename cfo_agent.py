@@ -351,6 +351,13 @@ def circuit_breaker() -> bool:
 
     if razao:
         parar_bot(razao)
+        # Pausar também o grid bot se estiver activo
+        try:
+            from grid_bot import pause_bot as grid_pause
+            grid_pause()
+            print(f"[cfo] Grid Bot também pausado: {razao}", flush=True)
+        except Exception:
+            pass
         return True
 
     return False

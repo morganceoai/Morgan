@@ -2181,6 +2181,16 @@ async def _run_trading_cycle():
         print(f"[trading_bot] erro: {e}", flush=True)
         registar_erro("trading_bot", str(e))
 
+    # Grid Bot BTC/USDT
+    try:
+        from grid_bot import run_cycle as grid_run_cycle
+        result_grid = await loop.run_in_executor(None, grid_run_cycle)
+        _handle_trading_result(result_grid, "Grid BTC")
+        limpar_erro("grid_bot")
+    except Exception as e:
+        print(f"[grid_bot] erro: {e}", flush=True)
+        registar_erro("grid_bot", str(e))
+
     # DCA SOL/USDT
     try:
         from dca_bot import run_dca_cycle
