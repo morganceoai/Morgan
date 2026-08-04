@@ -2342,7 +2342,7 @@ async def startup_event():
         iniciar_scheduler_scout()
         _log.info("Scout sweep scheduler iniciado (6h interval)")
     except Exception as e:
-        _log.warning("Scout sweep scheduler não iniciou: %s", e)
+        _log.warning("Scout sweep scheduler não iniciou", error=str(e))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
