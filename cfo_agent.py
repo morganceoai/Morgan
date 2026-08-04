@@ -15,11 +15,18 @@ load_dotenv()
 
 MEMORY_DIR = Path(__file__).parent / "memory"
 TRADING_STATE_FILE = MEMORY_DIR / "trading_state.json"
-CFO_REPORT_FILE = MEMORY_DIR / "cfo_reports.json"
+GRID_STATE_FILE    = MEMORY_DIR / "grid_state.json"
+CFO_REPORT_FILE    = MEMORY_DIR / "cfo_reports.json"
 
-DRAWDOWN_DAY_LIMITE = 0.05    # 5% num dia — alerta imediato
-DRAWDOWN_TOTAL_LIMITE = 0.15  # 15% total — parar bot
-CAPITAL_BASE = 100.0          # USDT de referência
+DRAWDOWN_DAY_LIMITE   = 0.05   # 5% num dia — alerta imediato
+DRAWDOWN_TOTAL_LIMITE = 0.15   # 15% total — parar bots
+CAPITAL_BASE          = 100.0  # USDT de referência
+
+# Limites de defesa
+SALDO_DIVERGENCIA_MAX  = 0.05   # 5% de divergência saldo real vs memória → alerta
+PRECO_SPIKE_MAX        = 0.10   # 10% de diferença vs último preço válido → recusa operação
+TRADES_POR_HORA_MAX    = 15     # grid a fazer >15 trades/hora → anomalia
+GRID_RANGE_ALERTA_PCT  = 0.005  # grid dentro de 0.5% do limite → alerta preventivo
 
 
 # ── Estado do trading bot ────────────────────────────────────────────────────
@@ -231,6 +238,20 @@ def relatorio_financeiro_diario() -> str:
     except Exception:
         pass
 
+    # Consistência (Defesa 5)
+    try:
+        c = relatorio_consistencia()
+        linhas += ["", "CONSISTÊNCIA"]
+        linhas.append(f"  Saldo real: ${c['saldo_real_usdt']:.2f} USDT + {c['saldo_real_btc']:.6f} BTC")
+        linhas.append(f"  Grid posições abertas: {c['grid_posicoes_abertas']}")
+        if c["alertas"]:
+            for a in c["alertas"]:
+                linhas.append(f"  ⚠ {a}")
+        else:
+            linhas.append("  ✓ Sem divergências detectadas")
+    except Exception:
+        pass
+
     report_txt = "\n".join(linhas)
 
     # Guardar histórico
@@ -280,6 +301,230 @@ def verificar_alertas_criticos() -> list:
         if "DRAWDOWN" in a or "parar" in a.lower():
             criticos.append(a)
     return criticos
+
+
+# ── Sistema de defesa ────────────────────────────────────────────────────────
+
+def _notificar_cfo(tipo: str, mensagem: str, urgencia: str = "alta"):
+    """Escreve evento em ceo_events.json e imprime no log."""
+    print(f"[cfo/{tipo}] {mensagem}", flush=True)
+    try:
+        ceo_events_file = MEMORY_DIR / "ceo_events.json"
+        try:
+            eventos = json.loads(ceo_events_file.read_text())
+        except Exception:
+            eventos = []
+        eventos.append({
+            "ts": datetime.now().isoformat(),
+            "agente": "cfo",
+            "tipo": tipo,
+            "mensagem": mensagem,
+            "urgencia": urgencia,
+        })
+        ceo_events_file.write_text(json.dumps(eventos, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"[cfo] erro ceo_events: {e}", flush=True)
+
+
+def _get_exchange():
+    import ccxt
+    return ccxt.binance({
+        "apiKey":  os.getenv("BINANCE_API_KEY", ""),
+        "secret":  os.getenv("BINANCE_SECRET_KEY", ""),
+        "options": {"defaultType": "spot"},
+    })
+
+
+def verificar_saldo_vs_memoria() -> list:
+    """
+    Defesa 1: compara saldo real Binance com o esperado pelos estados em memória.
+    Divergência >5% → alerta (indica bug silencioso ou ordem não registada).
+    """
+    alertas = []
+    try:
+        ex = _get_exchange()
+        balance = ex.fetch_balance()
+        usdt_real = float(balance.get("USDT", {}).get("total", 0))
+        btc_real  = float(balance.get("BTC",  {}).get("total", 0))
+        ticker    = ex.fetch_ticker("BTC/USDT")
+        preco     = ticker["last"]
+        total_real = usdt_real + btc_real * preco
+
+        # Capital esperado: base - perdas registadas
+        st = _load_trading_state()
+        pnl_super = st.get("pnl_total", 0.0)
+
+        grid_pnl = 0.0
+        try:
+            grid_st = json.loads(GRID_STATE_FILE.read_text())
+            grid_pnl = grid_st.get("pnl_total", 0.0)
+            # Valor em posições abertas do grid
+            for pos in grid_st.get("open_positions", {}).values():
+                grid_pnl += pos.get("size", 0) * preco
+        except Exception:
+            pass
+
+        capital_esperado = CAPITAL_BASE + pnl_super + grid_pnl
+        divergencia = abs(total_real - capital_esperado) / max(capital_esperado, 1)
+
+        if divergencia > SALDO_DIVERGENCIA_MAX:
+            msg = (
+                f"SALDO DIVERGENTE: real=${total_real:.2f} "
+                f"vs esperado=${capital_esperado:.2f} "
+                f"(divergência {divergencia*100:.1f}%)"
+            )
+            alertas.append(msg)
+            _notificar_cfo("saldo_divergente", msg, "critica")
+
+    except Exception as e:
+        alertas.append(f"SALDO: erro a verificar ({e})")
+
+    return alertas
+
+
+def verificar_velocidade_grid() -> list:
+    """
+    Defesa 2: detecta se o grid está a executar trades a velocidade anómala.
+    >15 trades na última hora → possível loop de erro.
+    """
+    alertas = []
+    try:
+        grid_st = json.loads(GRID_STATE_FILE.read_text())
+        trades = grid_st.get("trades", [])
+        uma_hora_atras = datetime.now().isoformat()[:13]  # "YYYY-MM-DDTHH"
+        trades_hora = [
+            t for t in trades
+            if t.get("closed_at", "")[:13] == uma_hora_atras
+        ]
+        if len(trades_hora) > TRADES_POR_HORA_MAX:
+            msg = (
+                f"VELOCIDADE ANÓMALA: {len(trades_hora)} trades na última hora "
+                f"(limite: {TRADES_POR_HORA_MAX})"
+            )
+            alertas.append(msg)
+            _notificar_cfo("velocidade_grid", msg, "critica")
+    except Exception:
+        pass
+    return alertas
+
+
+def verificar_range_grid() -> list:
+    """
+    Defesa 3: alerta preventivo quando o preço se aproxima dos limites do grid.
+    Não pausa — coloca o Vasco em posição de decidir antes da ruptura.
+    """
+    alertas = []
+    try:
+        grid_st = json.loads(GRID_STATE_FILE.read_text())
+        if not grid_st.get("active") or not grid_st.get("ref_price"):
+            return alertas
+
+        ex = _get_exchange()
+        preco = ex.fetch_ticker("BTC/USDT")["last"]
+
+        ref        = grid_st["ref_price"]
+        level_size = grid_st["level_size"]
+        n_levels   = 10
+        lower      = ref - (n_levels // 2) * level_size
+        upper      = ref + (n_levels // 2) * level_size
+        margem     = (upper - lower) * GRID_RANGE_ALERTA_PCT
+
+        if preco < lower + margem:
+            dist_pct = (preco - lower) / lower * 100
+            msg = (
+                f"GRID LIMITE INFERIOR: BTC ${preco:.0f} está a "
+                f"{dist_pct:.1f}% do limite inferior ${lower:.0f}. "
+                f"Se romper, posições abertas ficam em perda não realizada."
+            )
+            alertas.append(msg)
+            _notificar_cfo("grid_range", msg, "alta")
+        elif preco > upper - margem:
+            msg = (
+                f"GRID LIMITE SUPERIOR: BTC ${preco:.0f} está a "
+                f"{((upper - preco) / upper * 100):.1f}% do limite superior ${upper:.0f}."
+            )
+            alertas.append(msg)
+            _notificar_cfo("grid_range", msg, "media")
+
+    except Exception:
+        pass
+    return alertas
+
+
+def verificar_preco_sanidade(preco_novo: float, simbolo: str = "BTC/USDT") -> bool:
+    """
+    Defesa 4: valida se um preço recebido é plausível vs o último registado.
+    Retorna False se o preço for suspeito (spike de API). Usado pelos bots antes de operar.
+    """
+    try:
+        grid_st = json.loads(GRID_STATE_FILE.read_text())
+        ultimo = grid_st.get("last_price")
+        if ultimo and abs(preco_novo - ultimo) / ultimo > PRECO_SPIKE_MAX:
+            msg = (
+                f"PREÇO SUSPEITO: recebido ${preco_novo:.2f} vs último ${ultimo:.2f} "
+                f"(diferença {abs(preco_novo - ultimo) / ultimo * 100:.1f}% > {PRECO_SPIKE_MAX*100:.0f}%)"
+            )
+            _notificar_cfo("preco_spike", msg, "critica")
+            return False
+    except Exception:
+        pass
+    return True
+
+
+def relatorio_consistencia() -> dict:
+    """
+    Defesa 5: snapshot de consistência para incluir no relatório das 22h.
+    Compara estado em memória com realidade Binance.
+    """
+    resultado = {
+        "ts": datetime.now().isoformat(),
+        "alertas": [],
+        "saldo_real_usdt": None,
+        "saldo_real_btc": None,
+        "grid_posicoes_abertas": 0,
+        "supertrend_posicao": None,
+        "consistente": True,
+    }
+    try:
+        ex = _get_exchange()
+        balance = ex.fetch_balance()
+        resultado["saldo_real_usdt"] = round(float(balance.get("USDT", {}).get("total", 0)), 4)
+        resultado["saldo_real_btc"]  = round(float(balance.get("BTC",  {}).get("total", 0)), 8)
+
+        try:
+            grid_st = json.loads(GRID_STATE_FILE.read_text())
+            resultado["grid_posicoes_abertas"] = len(grid_st.get("open_positions", {}))
+        except Exception:
+            pass
+
+        st = _load_trading_state()
+        resultado["supertrend_posicao"] = st.get("position")
+
+        alertas = (
+            verificar_saldo_vs_memoria() +
+            verificar_velocidade_grid() +
+            verificar_range_grid()
+        )
+        resultado["alertas"] = alertas
+        resultado["consistente"] = len(alertas) == 0
+
+    except Exception as e:
+        resultado["alertas"].append(f"Erro ao verificar consistência: {e}")
+        resultado["consistente"] = False
+
+    return resultado
+
+
+def run_defesa_completa() -> list:
+    """
+    Corre todas as verificações de defesa. Chamado pelo scheduler do CFO.
+    Retorna lista de alertas activos.
+    """
+    alertas = []
+    alertas += verificar_saldo_vs_memoria()
+    alertas += verificar_velocidade_grid()
+    alertas += verificar_range_grid()
+    return alertas
 
 
 # ── Circuit breaker autónomo ─────────────────────────────────────────────────
@@ -364,7 +609,11 @@ def circuit_breaker() -> bool:
 
 
 def iniciar_scheduler_cfo():
-    """Inicia loop autónomo do CFO — verifica circuit breaker a cada 30 minutos."""
+    """
+    Inicia loop autónomo do CFO — a cada 30 minutos:
+    1. Circuit breaker (drawdown/streak)
+    2. Defesa completa (saldo, velocidade, range)
+    """
     def _loop():
         time.sleep(60)  # 1min startup delay
         while True:
@@ -372,6 +621,10 @@ def iniciar_scheduler_cfo():
                 circuit_breaker()
             except Exception as e:
                 print(f"[cfo] circuit_breaker erro: {e}", flush=True)
+            try:
+                run_defesa_completa()
+            except Exception as e:
+                print(f"[cfo] defesa erro: {e}", flush=True)
             time.sleep(30 * 60)
 
     t = threading.Thread(target=_loop, daemon=True, name="cfo-scheduler")
