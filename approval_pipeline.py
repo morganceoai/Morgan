@@ -26,7 +26,7 @@ def _ask(system: str, prompt: str, model: str = _HAIKU, max_tokens: int = 400) -
         r = _claude.messages.create(
             model=model,
             max_tokens=max_tokens,
-            system=system,
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}],
         )
         return r.content[0].text.strip()

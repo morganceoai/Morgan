@@ -238,7 +238,7 @@ def _chamar_claude_scout(system: str, messages: list, max_tokens: int = 2000) ->
         response = _client.messages.create(
             model="claude-opus-4-8",  # Scout usa Opus — decisões de negócio
             max_tokens=max_tokens,
-            system=system,
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             tools=tools,
             messages=msgs,
         )

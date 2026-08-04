@@ -864,7 +864,7 @@ Começa com a docstring do módulo (\"\"\"...\"\"\") e termina com if __name__ =
     response = client.messages.create(
         model="claude-opus-4-8",
         max_tokens=4096,
-        system=SYSTEM_PROMPT_META_CREATOR,
+        system=[{"type": "text", "text": SYSTEM_PROMPT_META_CREATOR, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": prompt}]
     )
     codigo = response.content[0].text if response.content else ""
@@ -1234,5 +1234,3 @@ if __name__ == "__main__":
     resultado = criar_sub_morgan("Directório de nicho PT/BR monetizado")
     print(json.dumps(resultado, ensure_ascii=False, indent=2))
     print("\nSub-Morgans criados:", len(listar_sub_morgans()))
-    print("\nWatcher:")
-    print(verificar_oportunidades_aprovadas())

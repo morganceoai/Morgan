@@ -30,22 +30,70 @@ def _load_fixes() -> list:
             return []
     return []
 
-def _save_fix(problema: str, diagnostico: str, fix: str, confianca: int, fonte: str = "solver"):
-    """Guarda fix no histórico."""
+INCIDENT_LOG = Path(__file__).parent / "memory" / "incident_log.jsonl"
+
+
+def _log_snapshot() -> str:
+    """Captura as últimas 50 linhas do log no momento do evento."""
+    log_path = Path(__file__).parent / "morgan_server.log"
+    if not log_path.exists():
+        return ""
+    try:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        return "\n".join(lines[-50:])
+    except Exception:
+        return ""
+
+
+def _registar_incidente(agente: str, descricao: str, severidade: str = "media", logs: str = "") -> None:
+    """
+    Regista TODOS os incidentes no incident_log.jsonl — grandes ou pequenos.
+    Chamado por qualquer agente quando algo corre mal, mesmo que seja minor.
+    severidade: 'baixa' | 'media' | 'alta' | 'critica'
+    """
+    entrada = {
+        "ts": datetime.now().isoformat(),
+        "agente": agente,
+        "descricao": descricao[:500],
+        "severidade": severidade,
+        "logs_snapshot": logs[:3000] if logs else _log_snapshot()[:3000],
+    }
+    INCIDENT_LOG.parent.mkdir(exist_ok=True)
+    with open(INCIDENT_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entrada, ensure_ascii=False) + "\n")
+
+
+def _save_fix(problema: str, diagnostico: str, fix: str, confianca: int,
+              fonte: str = "solver", resultado: str = "RESOLVIDO",
+              causa_diagnostico_errado: str = "") -> None:
+    """
+    Guarda fix no histórico — sucesso E falha.
+    resultado: 'RESOLVIDO' | 'PARCIALMENTE_RESOLVIDO' | 'NÃO_RESOLVIDO'
+    causa_diagnostico_errado: preenchido quando o diagnóstico foi incorrecto —
+        ensina o Solver a não repetir o mesmo erro de leitura.
+    """
     fixes = _load_fixes()
-    fixes.append({
+    registo = {
         "data": datetime.now().isoformat(),
         "problema": problema[:300],
         "diagnostico": diagnostico[:300],
         "fix": fix[:500],
         "confianca": confianca,
         "fonte": fonte,
-    })
-    fixes = fixes[-200:]
+        "resultado": resultado,
+        "logs_snapshot": _log_snapshot()[:2000],
+    }
+    if causa_diagnostico_errado:
+        registo["causa_diagnostico_errado"] = causa_diagnostico_errado[:300]
+    fixes.append(registo)
+    fixes = fixes[-500:]  # aumentado para manter histórico mais longo
     FIXES_FILE.parent.mkdir(exist_ok=True)
     FIXES_FILE.write_text(json.dumps(fixes, indent=2, ensure_ascii=False), encoding="utf-8")
-    # Indexar automaticamente no Qdrant para pesquisa semântica
-    _qdrant_upsert_fix(fixes[-1])
+    # Indexar no Qdrant — incluindo falhas (útil para saber o que NÃO funciona)
+    _qdrant_upsert_fix(registo)
+    # Registar também no incident log geral
+    sev = "alta" if resultado == "NÃO_RESOLVIDO" else "baixa"
+    _registar_incidente("solver", f"[{resultado}] {problema[:150]}", severidade=sev)
 
 
 def registar_fix_manual(problema: str, diagnostico: str, fix: str, confianca: int = 95) -> str:
@@ -404,6 +452,7 @@ class SolverState(TypedDict):
     modo: str             # "fix" | "explain"
     # Outputs por nó
     diagnostico: str
+    reproducao_sandbox: str
     plano: str
     execucao: str
     verificacao: str
@@ -450,7 +499,7 @@ def _chamar_claude(system: str, messages: list, tools: list = None) -> str:
     kwargs = {
         "model": "claude-sonnet-4-6",
         "max_tokens": 2048,
-        "system": system,
+        "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         "messages": messages,
     }
     client = get_client()
@@ -529,8 +578,80 @@ IMPACTO: isolado/sistémico/crítico"""
             "iteracoes": state.get("iteracoes", 0) + 1}
 
 
+def node_reproducao(state: SolverState) -> SolverState:
+    """
+    Tenta reproduzir o erro em subprocess isolado antes de planear o fix.
+    Se reproduzir: passa contexto concreto ao nó de plano.
+    Se não reproduzir: regista e avança na mesma (pode ser erro intermitente).
+    """
+    problema = state["problema"]
+    morgan_dir = Path(__file__).parent
+    resultado_rep = {"reproduzido": False, "output": "", "metodo": ""}
+
+    # 1. Tentar extrair o módulo/ficheiro mencionado no diagnóstico
+    diag = state.get("diagnostico", "")
+    ficheiro_match = re.search(r'(\w+\.py)(?::(\d+))?', diag)
+    ficheiro = ficheiro_match.group(1) if ficheiro_match else None
+
+    # 2. Tentar importar o módulo em subprocess isolado
+    if ficheiro:
+        try:
+            import sys
+            r = subprocess.run(
+                [sys.executable, "-c", f"import importlib.util; "
+                 f"spec=importlib.util.spec_from_file_location('m', '{morgan_dir}/{ficheiro}'); "
+                 f"mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)"],
+                capture_output=True, text=True, timeout=30, cwd=str(morgan_dir)
+            )
+            if r.returncode != 0:
+                resultado_rep = {
+                    "reproduzido": True,
+                    "output": f"STDERR:\n{r.stderr[:1000]}\nSTDOUT:\n{r.stdout[:500]}",
+                    "metodo": f"import {ficheiro}",
+                }
+        except Exception as e:
+            resultado_rep["output"] = f"Sandbox timeout/erro: {e}"
+
+    # 3. Tentar sintaxe do ficheiro
+    if not resultado_rep["reproduzido"] and ficheiro:
+        try:
+            import sys
+            r = subprocess.run(
+                [sys.executable, "-m", "py_compile", ficheiro],
+                capture_output=True, text=True, timeout=10, cwd=str(morgan_dir)
+            )
+            if r.returncode != 0:
+                resultado_rep = {
+                    "reproduzido": True,
+                    "output": r.stderr[:800],
+                    "metodo": f"py_compile {ficheiro}",
+                }
+        except Exception:
+            pass
+
+    # Formatar output para o nó de plano
+    if resultado_rep["reproduzido"]:
+        rep_texto = (
+            f"[SANDBOX] Erro reproduzido via '{resultado_rep['metodo']}':\n"
+            f"{resultado_rep['output']}"
+        )
+    else:
+        rep_texto = (
+            f"[SANDBOX] Não foi possível reproduzir automaticamente "
+            f"(pode ser erro intermitente ou de runtime específico). "
+            f"Ficheiro analisado: {ficheiro or 'não identificado'}."
+        )
+
+    return {**state, "reproducao_sandbox": rep_texto}
+
+
 def node_plano(state: SolverState) -> SolverState:
-    system = """És o Morgan Solver. Com base no diagnóstico, cria o plano de correção.
+    rep = state.get("reproducao_sandbox", "")
+    rep_bloco = f"\n\nRESULTADO SANDBOX:\n{rep}\n" if rep else ""
+
+    system = f"""És o Morgan Solver. Com base no diagnóstico e nos resultados da sandbox, cria o plano de correção.{rep_bloco}
+Se a sandbox reproduziu o erro: o teu plano deve resolver exactamente esse output.
+Se não reproduziu: assinala que o erro pode ser intermitente e propõe fix defensivo.
 
 Obrigatório no final da resposta, neste formato exacto:
 PLANO: [passos concretos]
@@ -699,14 +820,32 @@ DETALHES: [o que verificaste e como]"""
 
     confianca = _extrair_confianca(texto, "CONFIANÇA_VERIFICAÇÃO")
 
-    # Guarda fix no histórico se resolvido com sucesso
-    if "RESOLVIDO" in texto.upper() and "NÃO_RESOLVIDO" not in texto.upper():
-        _save_fix(
-            problema=state["problema"],
-            diagnostico=state.get("diagnostico", "")[:300],
-            fix=state.get("execucao", "")[:500],
-            confianca=confianca,
-        )
+    # Determinar resultado
+    texto_upper = texto.upper()
+    if "NÃO_RESOLVIDO" in texto_upper or "NAO_RESOLVIDO" in texto_upper:
+        resultado = "NÃO_RESOLVIDO"
+    elif "PARCIALMENTE_RESOLVIDO" in texto_upper:
+        resultado = "PARCIALMENTE_RESOLVIDO"
+    else:
+        resultado = "RESOLVIDO"
+
+    # Registar SEMPRE — sucesso, falha parcial, ou falha total.
+    # Falhas são tão importantes quanto sucessos: ensinam o que não funciona
+    # e onde o diagnóstico foi incorrecto.
+    causa_errada = ""
+    if resultado != "RESOLVIDO":
+        # Extrair possível causa do diagnóstico errado a partir do texto de verificação
+        m = re.search(r'(diagnós[a-z]+ (incor[a-z]+|errad[a-z]+)[^\n]*)', texto, re.IGNORECASE)
+        causa_errada = m.group(0) if m else ""
+
+    _save_fix(
+        problema=state["problema"],
+        diagnostico=state.get("diagnostico", "")[:300],
+        fix=state.get("execucao", "")[:500],
+        confianca=confianca,
+        resultado=resultado,
+        causa_diagnostico_errado=causa_errada,
+    )
 
     return {**state, "verificacao": texto, "confianca_verificacao": confianca}
 
@@ -793,7 +932,7 @@ def decide_apos_diagnostico(state: SolverState) -> str:
     """Se modo=explain, salta directamente para relatório sem executar nada."""
     if state.get("modo") == "explain":
         return "relatorio"
-    return "plano"
+    return "reproducao"
 
 
 def decide_apos_plano(state: SolverState) -> str:
@@ -816,6 +955,7 @@ def build_solver_graph():
     grafo = StateGraph(SolverState)
 
     grafo.add_node("diagnostico", node_diagnostico)
+    grafo.add_node("reproducao", node_reproducao)
     grafo.add_node("plano", node_plano)
     grafo.add_node("aguardar_aprovacao", node_aguardar_aprovacao)
     grafo.add_node("escalar_claude_code", node_escalar_claude_code)
@@ -826,8 +966,9 @@ def build_solver_graph():
     grafo.set_entry_point("diagnostico")
     grafo.add_conditional_edges("diagnostico", decide_apos_diagnostico, {
         "relatorio": "relatorio",
-        "plano": "plano",
+        "reproducao": "reproducao",
     })
+    grafo.add_edge("reproducao", "plano")
     grafo.add_conditional_edges("plano", decide_apos_plano, {
         "aguardar_aprovacao": "aguardar_aprovacao",
         "escalar_claude_code": "escalar_claude_code",
@@ -866,6 +1007,7 @@ def solver_diagnosticar(problema: str, aprovado: bool = False, modo: str = "fix"
         "problema": problema,
         "modo": modo,
         "diagnostico": "",
+        "reproducao_sandbox": "",
         "plano": "",
         "execucao": "",
         "verificacao": "",

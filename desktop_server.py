@@ -32,6 +32,8 @@ import anthropic
 from tools import TOOLS, TOOL_FUNCTIONS
 from memory_store import load_memory
 from scout_memory import _load as load_scout
+from state_service import (escrever_negocio, escrever_sistema, escrever_oportunidades,
+                            escrever_claude_usage, registar_erro, limpar_erro, resumo_texto as state_resumo)
 from conversation_store import get_context_messages, save_message as store_save
 from voice_id import enroll_voice, is_vasco, has_profile, load_profile
 from coach_agent import get_coach_reply
@@ -448,7 +450,7 @@ def _classificar_agente(msg: str) -> str:
         r = _haiku_client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=10,
-            system=_ROUTER_SYSTEM,
+            system=[{"type": "text", "text": _ROUTER_SYSTEM, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": msg[:400]}],
         )
         label = r.content[0].text.strip().lower().split()[0]
@@ -478,7 +480,7 @@ def _chat_ceo(user_text: str) -> str:
     response = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
-        system=get_system_prompt(user_text),
+        system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}],
         tools=TOOLS,
         messages=conversation_history[-50:],
     )
@@ -493,7 +495,7 @@ def _chat_ceo(user_text: str) -> str:
         conversation_history.append({"role": "user", "content": tool_results})
         response = claude.messages.create(
             model="claude-sonnet-4-6", max_tokens=2048,
-            system=get_system_prompt(user_text), tools=TOOLS,
+            system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}], tools=TOOLS,
             messages=conversation_history[-50:],
         )
     reply = "".join(block.text for block in response.content if hasattr(block, "text"))
@@ -669,10 +671,11 @@ def chat_with_morgan(user_text: str) -> str:
 def _chat_ceo_with_system(user_text: str, system: str) -> str:
     """CEO com system prompt customizado (ex: Scout mode)."""
     msgs = conversation_history[-28:] + [{"role": "user", "content": user_text}]
+    _sys = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
     response = claude.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
-        system=system,
+        system=_sys,
         tools=TOOLS,
         messages=msgs,
     )
@@ -687,7 +690,7 @@ def _chat_ceo_with_system(user_text: str, system: str) -> str:
         msgs.append({"role": "user", "content": tool_results})
         response = claude.messages.create(
             model="claude-sonnet-4-6", max_tokens=2048,
-            system=system, tools=TOOLS, messages=msgs,
+            system=_sys, tools=TOOLS, messages=msgs,
         )
     return "".join(block.text for block in response.content if hasattr(block, "text"))
 
@@ -877,7 +880,7 @@ async def chat_stream(request: Request):
         with claude.messages.stream(
             model="claude-sonnet-4-6",
             max_tokens=512,
-            system=get_system_prompt(user_text),
+            system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}],
             messages=conversation_history[-50:],
         ) as stream:
             for text in stream.text_stream:
@@ -1747,7 +1750,7 @@ Instruções:
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=300,
-            system=get_system_prompt(),
+            system=[{"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
     )
@@ -1849,7 +1852,7 @@ Sê específico e realista. Português europeu. Máximo 400 palavras."""
         lambda: claude.messages.create(
             model="claude-opus-4-8",
             max_tokens=1200,
-            system="És o Scout do BCVertex. Analisas oportunidades de negócio com dados reais. Directo, concreto, sem hype.",
+            system=[{"type": "text", "text": "És o Scout do BCVertex. Analisas oportunidades de negócio com dados reais. Directo, concreto, sem hype.", "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
     )
@@ -1910,7 +1913,7 @@ Máximo 8 sugestões. Português europeu."""
         lambda: claude.messages.create(
             model="claude-opus-4-8",
             max_tokens=800,
-            system="És o Scout do Morgan. Foco em melhorias práticas e implementáveis. Análise profunda e rigorosa.",
+            system=[{"type": "text", "text": "És o Scout do Morgan. Foco em melhorias práticas e implementáveis. Análise profunda e rigorosa.", "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
     )
@@ -2062,7 +2065,7 @@ Instruções:
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=500,
-            system=get_system_prompt(),
+            system=[{"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
     )
@@ -2124,8 +2127,17 @@ async def _run_trading_cycle():
         from trading_bot import run_cycle
         result = await loop.run_in_executor(None, run_cycle)
         _handle_trading_result(result, "Supertrend BTC")
+        if isinstance(result, dict):
+            escrever_negocio("trading", {
+                "posicao": result.get("posicao", ""),
+                "pnl_hoje": result.get("pnl_hoje", 0.0),
+                "saldo_usdt": result.get("saldo", 0.0),
+                "ultima_ordem": result.get("ultima_ordem", ""),
+            })
+            limpar_erro("trading_bot")
     except Exception as e:
         print(f"[trading_bot] erro: {e}", flush=True)
+        registar_erro("trading_bot", str(e))
 
     # DCA SOL/USDT
     try:
@@ -2277,6 +2289,43 @@ async def _heartbeat_loop():
                     )
                 except Exception as e:
                     print(f"[creator] erro plano etsy: {e}", flush=True)
+
+            # Actualizar shared state board
+            try:
+                scout_data = load_scout()
+                aprovadas_raw = scout_data.get("aprovadas", [])
+                aprovadas_nomes = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
+                em_pipeline = list(scout_data.get("oportunidades", {}).keys())
+                escrever_oportunidades(em_pipeline=em_pipeline, aprovadas=aprovadas_nomes)
+
+                from claude_guard import resumo_uso_hoje, _load_budget, _hoje
+                dados_budget = _load_budget()
+                hoje_str = _hoje()
+                hoje_usd = sum(v.get("usd", 0) for v in dados_budget.get("agentes", {}).values()
+                               if v.get("data") == hoje_str)
+                agente_top = max(
+                    ((ag, v.get("usd", 0)) for ag, v in dados_budget.get("agentes", {}).items()
+                     if v.get("data") == hoje_str),
+                    key=lambda x: x[1], default=("", 0)
+                )[0]
+                escrever_claude_usage(hoje_usd=hoje_usd, agente_top=agente_top)
+            except Exception:
+                pass
+
+            # Health check passivo — a cada 5 ciclos (≈5 minutos)
+            # Detecta falhas silenciosas sem chamar Claude
+            chave_health = f"health_{agora.strftime('%Y-%m-%d_%H')}_{agora.minute // 5}"
+            if not _dedup_check(chave_health):
+                _dedup_mark(chave_health)
+                try:
+                    from solver_health import run_health_check, acionar_solver_se_necessario
+                    loop = asyncio.get_event_loop()
+                    anomalias = await loop.run_in_executor(None, run_health_check)
+                    if anomalias:
+                        _log.warning("Health check: %d anomalia(s): %s", len(anomalias), "; ".join(anomalias))
+                        await loop.run_in_executor(None, acionar_solver_se_necessario, anomalias)
+                except Exception as e:
+                    _log.debug("Health check erro (não crítico): %s", e)
 
         except Exception as e:
             import traceback

@@ -150,7 +150,7 @@ def redigir_mensagem_outreach(contexto: str, destinatario: str, produto: str) ->
         r = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=300,
-            system="Redige mensagens de outreach curtas (max 80 palavras), personalizadas, em PT-PT. Tom: profissional mas humano. Nunca uses saudações genéricas.",
+            system=[{"type": "text", "text": "Redige mensagens de outreach curtas (max 80 palavras), personalizadas, em PT-PT. Tom: profissional mas humano. Nunca uses saudações genéricas.", "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": f"Contexto do lead: {contexto}\nDestinatário: {destinatario}\nProduto/serviço a oferecer: {produto}\n\nRedige a mensagem:"}]
         )
         return r.content[0].text
@@ -241,7 +241,7 @@ def otimizar_listings_etsy(nicho: str = "planners digitais") -> str:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=800,
-            system="És o Marketeer do Morgan. Especializas-te em SEO para Etsy 2026. Geras títulos e tags de alta conversão.",
+            system=[{"type": "text", "text": "És o Marketeer do Morgan. Especializas-te em SEO para Etsy 2026. Geras títulos e tags de alta conversão.", "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": f"""Nicho: {nicho}
 Dados de pesquisa SEO:
 {dados_seo}
@@ -302,7 +302,7 @@ def plano_pinterest_semanal(negocio: str = "PlannerAtlas", nicho: str = "planner
             resp = client.messages.create(
                 model="claude-haiku-4-5-20251001",
                 max_tokens=600,
-                system=f"Crias pins Pinterest de alta conversão para lojas Etsy. Escreve SEMPRE em {m['lingua']}. Foco em descoberta orgânica.",
+                system=[{"type": "text", "text": f"Crias pins Pinterest de alta conversão para lojas Etsy. Escreve SEMPRE em {m['lingua']}. Foco em descoberta orgânica.", "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": f"""Negócio: {negocio} — loja Etsy de {nicho}
 Mercado: {m['codigo']} | Língua: {m['lingua']} | Keyword base: {m['keyword']}
 Timing óptimo: {m['timing']}
@@ -370,7 +370,7 @@ Máximo 400 palavras. Português europeu. Directo e accionável."""
         r = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1000,
-            system="És o Morgan Marketeer. Analisas estratégias de crescimento em redes sociais com foco em conversão e autoridade.",
+            system=[{"type": "text", "text": "És o Morgan Marketeer. Analisas estratégias de crescimento em redes sociais com foco em conversão e autoridade.", "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}],
         )
         plano = r.content[0].text.strip()
@@ -465,16 +465,6 @@ Escreve TUDO em {m['lingua']}. Fresh pins = imagens diferentes para o mesmo URL.
         except Exception as e:
             resultados.append(f"\n## MERCADO {m['codigo']}: Erro — {e}")
 
-    try:
-        r = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=800,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        resultado = r.content[0].text if r.content else "Variantes indisponíveis."
-    except Exception as e:
-        return f"Erro ao gerar variantes: {e}"
-
     # Guardar no histórico de pins para loop de aprendizagem
     state = _load_state()
     pins_hist = state.setdefault("pins_history", [])
@@ -489,8 +479,6 @@ Escreve TUDO em {m['lingua']}. Fresh pins = imagens diferentes para o mesmo URL.
     state["pins_history"] = pins_hist[-500:]
     _save_state(state)
     return "\n---".join(resultados)
-
-    return resultado
 
 
 def analisar_top_performers(semanas: int = 4) -> str:
@@ -550,7 +538,7 @@ Máximo 15 linhas. PT-PT. Números concretos."""
         r = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=600,
-            system=SYSTEM_PROMPT,
+            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
         return r.content[0].text if r.content else "Análise indisponível."
@@ -599,7 +587,7 @@ Apenas responde com o JSON, sem mais texto."""
         r = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=500,
-            system=SYSTEM_PROMPT,
+            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
         texto = r.content[0].text.strip() if r.content else "{}"
@@ -828,7 +816,7 @@ def get_marketeer_reply(user_text: str) -> str:
         r = client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1500,
-            system=SYSTEM_PROMPT + context,
+            system=[{"type": "text", "text": SYSTEM_PROMPT + context, "cache_control": {"type": "ephemeral"}}],
             tools=TOOLS,
             messages=msgs,
         )
