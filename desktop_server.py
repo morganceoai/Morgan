@@ -7,7 +7,7 @@ import sys
 import json
 import asyncio
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
 
 # Garantir que imports do Morgan funcionam
 sys.path.insert(0, str(Path(__file__).parent))
@@ -2311,6 +2311,33 @@ async def _heartbeat_loop():
                 escrever_claude_usage(hoje_usd=hoje_usd, agente_top=agente_top)
             except Exception:
                 pass
+
+            # Scout Missão C (saúde negócios, cada 30d) e D (trading, cada 14d)
+            # Verificar uma vez por dia se é altura de correr
+            chave_scout_cd = f"scout_cd_{agora.strftime('%Y-%m-%d')}"
+            if not _dedup_check(chave_scout_cd):
+                _dedup_mark(chave_scout_cd)
+                try:
+                    from scout_agent import missao_c_saude_negocios, missao_d_trading_estrategia, _load_state as _scout_state
+                    from datetime import timedelta as _td
+                    scout_st = _scout_state()
+                    hoje_d = agora.date()
+                    # Missão C — 30 dias
+                    ultima_c_str = scout_st.get("missoes_c", {})
+                    # se qualquer negócio não foi analisado nos últimos 30 dias
+                    loop = asyncio.get_event_loop()
+                    rel_c = await loop.run_in_executor(None, missao_c_saude_negocios)
+                    if rel_c and "próxima em" not in rel_c:
+                        send_push(title="Scout — Saúde dos negócios", body=rel_c[:180], url="/pwa/")
+                    # Missão D — 14 dias
+                    ultima_d = scout_st.get("ultima_missao_d", "")
+                    precisa_d = not ultima_d or (hoje_d - date.fromisoformat(ultima_d)).days >= 14
+                    if precisa_d:
+                        rel_d = await loop.run_in_executor(None, missao_d_trading_estrategia)
+                        if rel_d and "próxima análise" not in rel_d:
+                            send_push(title="Scout — Estratégia de trading", body=rel_d[:180], url="/pwa/")
+                except Exception as e:
+                    print(f"[heartbeat] scout C/D erro: {e}", flush=True)
 
             # Health check passivo — a cada 5 ciclos (≈5 minutos)
             # Detecta falhas silenciosas sem chamar Claude

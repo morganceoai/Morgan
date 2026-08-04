@@ -219,9 +219,14 @@ def _record_signal(topic: str, source: str) -> float:
 def _quality_prefilter(titulo: str, descricao: str = "") -> bool:
     """
     Pré-filtro sem Claude. Verifica fit básico com BCVertex antes de gastar tokens.
+    Requer: pelo menos 1 categoria BCVertex presente E nenhuma palavra de exclusão.
     """
     texto = f"{titulo} {descricao}".lower()
+    # Rejeitar se contém palavras de negócio físico
     if not _is_relevant(texto):
+        return False
+    # Exigir pelo menos 1 categoria BCVertex — evita passar ruído genérico
+    if not any(cat in texto for cat in BCVERTEX_CATEGORIES):
         return False
     # Verificar se já foi rejeitado antes
     try:
@@ -719,12 +724,17 @@ def run_sweep() -> dict:
     # Sinais novos (cold start — sem histórico)
     novos = [s for s in todos_sinais if s.get("velocity") == _COLD_START_VELOCITY]
 
+    pausadas_detalhes = _get_source_health_summary()
     resumo = {
         "ts": datetime.now().isoformat(),
         "total_sinais": len(todos_sinais),
         "sinais_fortes": len(fortes),
         "sinais_novos": len(novos),
         "fontes_pausadas": fontes_pausadas,
+        "fontes_pausadas_detalhes": {
+            k: {"fails": v.get("consecutive_fails"), "ultimo_erro": v.get("last_error", "")}
+            for k, v in pausadas_detalhes.items()
+        },
         "top_sinais": fortes[:10],
         "top_novos": novos[:5],
         "erros": erros,

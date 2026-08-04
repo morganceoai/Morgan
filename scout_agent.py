@@ -499,6 +499,28 @@ def missao_a_oportunidades_triggered(contexto_sinais: str) -> str:
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=4000)
 
+    # Hard filter programático — igual à Missão A normal
+    import re as _re_trig
+    partes = _re_trig.split(r"(?=OPORTUNIDADE:\s*\S)", relatorio, flags=_re_trig.IGNORECASE)
+    blocos_aprovados = []
+    blocos_removidos = []
+    for bloco in partes[1:]:
+        for pat in [r"SCORE:\s*(\d+)\s*/\s*100", r"(\d+)\s*/\s*100\s*pts", r"(\d+)\s*pts\b(?!\s*de\b)"]:
+            m = _re_trig.search(pat, bloco, _re_trig.IGNORECASE)
+            if m:
+                val = int(m.group(1))
+                if 0 < val <= 100:
+                    if val >= 85:
+                        blocos_aprovados.append(bloco)
+                    else:
+                        nome_m = _re_trig.search(r"OPORTUNIDADE:\s*(.+)", bloco, _re_trig.IGNORECASE)
+                        blocos_removidos.append(nome_m.group(1).strip() if nome_m else "?")
+                    break
+    if blocos_aprovados or blocos_removidos:
+        relatorio = partes[0] + "".join(blocos_aprovados)
+        if blocos_removidos:
+            relatorio += f"\n\n[QG: {len(blocos_removidos)} removida(s) por score <85pts: {', '.join(blocos_removidos)}]"
+
     try:
         from episodic_memory import registar_evento
         registar_evento("scout", "missao_a_triggered", relatorio[:400])
@@ -551,6 +573,28 @@ def missao_b_melhorias() -> str:
     )}]
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=1500)
+
+    # Validação programática: remover sugestões sem utilizador real documentado
+    import re as _re_b
+    linhas = relatorio.splitlines()
+    linhas_validas = []
+    for linha in linhas:
+        # Linha de sugestão: começa com [Agente] ou é cabeçalho/contexto
+        if _re_b.match(r"^\[?\w+\]?\s*[—–-]", linha):
+            linha_low = linha.lower()
+            # Rejeitar se não há evidência de utilizador real
+            tem_utilizador = any(kw in linha_low for kw in [
+                "utilizador", "user", "produção", "production", "caso real",
+                "empresa", "company", "fundador", "founder", "review", "https://"
+            ])
+            # Rejeitar se custo > €30 sem ROI explícito
+            custo_m = _re_b.search(r"€\s*(\d+)", linha)
+            custo_alto = custo_m and int(custo_m.group(1)) > 30 and "roi" not in linha_low
+            if not tem_utilizador or custo_alto:
+                linhas_validas.append(f"~~{linha}~~ [QG-B: sem utilizador real ou custo não justificado]")
+                continue
+        linhas_validas.append(linha)
+    relatorio = "\n".join(linhas_validas)
 
     hoje = date.today().strftime("%Y-%m-%d")
     report_file = SCOUT_REPORTS_DIR / f"missao_b_{hoje}.txt"
