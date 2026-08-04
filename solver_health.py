@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -279,6 +280,23 @@ def acionar_solver_se_necessario(anomalias: list[str]) -> None:
         solver_diagnosticar(problema, modo="explain")
     except Exception:
         pass
+
+
+def iniciar_scheduler_solver():
+    """Daemon thread independente — health check a cada 5 minutos, sem depender do heartbeat."""
+    def _loop():
+        time.sleep(90)  # 1.5min startup delay
+        while True:
+            try:
+                anomalias = run_health_check()
+                if anomalias:
+                    acionar_solver_se_necessario(anomalias)
+            except Exception as e:
+                print(f"[solver_health] erro: {e}", flush=True)
+            time.sleep(5 * 60)
+
+    t = threading.Thread(target=_loop, daemon=True, name="solver-health-scheduler")
+    t.start()
 
 
 if __name__ == "__main__":

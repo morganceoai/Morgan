@@ -2443,6 +2443,13 @@ async def startup_event():
         print("[startup] CFO circuit breaker iniciado (30min interval)", flush=True)
     except Exception as e:
         print(f"[startup] CFO circuit breaker não iniciou: {e}", flush=True)
+    # Solver — health check autónomo a cada 5 minutos
+    try:
+        from solver_health import iniciar_scheduler_solver
+        iniciar_scheduler_solver()
+        print("[startup] Solver health scheduler iniciado (5min interval)", flush=True)
+    except Exception as e:
+        print(f"[startup] Solver health scheduler não iniciou: {e}", flush=True)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
