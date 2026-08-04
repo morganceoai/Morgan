@@ -608,11 +608,128 @@ def circuit_breaker() -> bool:
     return False
 
 
+def ciclo_decisao() -> dict:
+    """
+    Ciclo de inteligência do CFO — corre a cada 30 minutos.
+    PERCEPÇÃO → ANÁLISE (LLM) → DECISÃO → EXECUÇÃO (observation ou real).
+
+    Retorna a decisão tomada.
+    """
+    try:
+        from cfo_market import snapshot_mercado
+        from cfo_accounts import resumo_imperio
+        from cfo_executor import executar_decisao, get_modo
+
+        # 1. PERCEPÇÃO
+        mercado = snapshot_mercado("BTC/USDT")
+        imperio = resumo_imperio()
+        risco_trading = avaliar_risco_trading()
+        modo_executor = get_modo()
+
+        # Snapshot do grid
+        grid_status = {}
+        try:
+            from grid_bot import get_status
+            grid_status = get_status()
+        except Exception:
+            pass
+
+        contexto = f"""CICLO CFO — {datetime.now().strftime('%d/%m/%Y %H:%M')}
+MODO EXECUTOR: {modo_executor.upper()} (observation=só analisar; execution=executar)
+
+MERCADO BTC/USDT:
+- Preço: ${mercado.get('preco', '?')}
+- Variação 24h: {mercado.get('variacao_24h_pct', '?')}%
+- Regime: {mercado.get('regime', '?')} (confiança {mercado.get('regime_confianca', 0)}%)
+- Estratégia recomendada: {mercado.get('estrategia_recomendada', '?')}
+- Razão: {mercado.get('regime_razao', '?')}
+
+GRID BOT:
+- Activo: {grid_status.get('active', '?')}
+- Posições abertas: {grid_status.get('open_positions', 0)}
+- PnL total: {grid_status.get('pnl_total', 0):.4f} USDT
+- PnL hoje: {grid_status.get('pnl_today', 0):.4f} USDT
+- Último preço: ${grid_status.get('last_price', '?')}
+- Ref. grid: ${grid_status.get('ref_price', '?')}
+
+RISCO:
+- Nível: {risco_trading.get('nivel_risco', '?').upper()}
+- Drawdown total: {risco_trading.get('drawdown_total_pct', 0):.1f}%
+- Streak perdas: {risco_trading.get('streak_perdas', 0)}
+- Alertas: {'; '.join(risco_trading.get('alertas', [])) or 'nenhum'}
+
+IMPÉRIO:
+- Capital total alocado: ${imperio.get('capital_total_alocado', 0):.2f}
+- PnL total império: ${imperio.get('pnl_total_imperio', 0):.4f}
+- Contas activas: {imperio.get('contas_activas', 0)}/{imperio.get('total_contas', 0)}"""
+
+        system = """És o CFO do império BCVertex. Analisa o contexto e toma UMA decisão estruturada.
+
+DECISÕES AUTÓNOMAS (não precisam do Vasco):
+- manter: continuar como está
+- pausar_grid: parar o grid bot temporariamente
+- retomar_grid: retomar o grid bot após pausa
+
+DECISÕES QUE REQUEREM VASCO (autonomo: false):
+- escalar_vasco: quando há risco elevado, oportunidade de reajuste de capital, ou situação fora do normal
+- resetar_grid: reiniciar o grid com novo preço de referência (impacto alto)
+
+REGRAS:
+- Se risco VERMELHO → pausa_grid + escala ao Vasco
+- Se regime VOLATILE → considera pausar_grid
+- Se regime mudou de LATERAL para TRENDING → escalar (estratégia pode mudar)
+- Se tudo estável → manter
+
+Responde APENAS com JSON válido, sem mais texto:
+{
+  "acao": "manter" | "pausar_grid" | "retomar_grid" | "resetar_grid" | "escalar_vasco",
+  "autonomo": true | false,
+  "confianca": 0-100,
+  "razao": "explicação concisa em PT-PT",
+  "conta_id": "binance_grid_btc",
+  "observacoes_futuras": "o que monitorizar na próxima análise"
+}"""
+
+        # 2. ANÁLISE LLM
+        from claude_guard import GuardedClient
+        client = GuardedClient("cfo")
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=512,
+            system=system,
+            messages=[{"role": "user", "content": contexto}],
+        )
+
+        raw = response.content[0].text.strip()
+        # Extrair JSON mesmo se vier com markdown
+        if "```" in raw:
+            raw = raw.split("```")[1].replace("json", "").strip()
+
+        decisao = json.loads(raw)
+
+        # 3. EXECUÇÃO
+        resultado = executar_decisao(decisao)
+
+        print(
+            f"[cfo/ciclo] {decisao.get('acao')} | autonomo={decisao.get('autonomo')} "
+            f"| confianca={decisao.get('confianca')}% | modo={modo_executor} "
+            f"| resultado={resultado.get('status')}",
+            flush=True
+        )
+
+        return {**decisao, "resultado_execucao": resultado}
+
+    except Exception as e:
+        print(f"[cfo/ciclo] erro no ciclo de decisão: {e}", flush=True)
+        return {"acao": "erro", "razao": str(e)}
+
+
 def iniciar_scheduler_cfo():
     """
     Inicia loop autónomo do CFO — a cada 30 minutos:
     1. Circuit breaker (drawdown/streak)
     2. Defesa completa (saldo, velocidade, range)
+    3. Ciclo de decisão inteligente (LLM)
     """
     def _loop():
         time.sleep(60)  # 1min startup delay
@@ -625,6 +742,10 @@ def iniciar_scheduler_cfo():
                 run_defesa_completa()
             except Exception as e:
                 print(f"[cfo] defesa erro: {e}", flush=True)
+            try:
+                ciclo_decisao()
+            except Exception as e:
+                print(f"[cfo] ciclo_decisao erro: {e}", flush=True)
             time.sleep(30 * 60)
 
     t = threading.Thread(target=_loop, daemon=True, name="cfo-scheduler")
