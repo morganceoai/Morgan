@@ -1556,6 +1556,25 @@ async def etsy_plano():
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
+@app.get("/api/grid")
+async def grid_status():
+    """Estado completo do Grid Bot BTC/USDT."""
+    try:
+        from grid_bot import get_status
+        s = get_status()
+        # Calcular range do grid para mostrar
+        if s.get("ref_price") and s.get("level_size"):
+            ref = s["ref_price"]
+            lvl = s["level_size"]
+            s["grid_range"] = {
+                "lower": round(ref - 5 * lvl, 2),
+                "upper": round(ref + 5 * lvl, 2),
+            }
+        return JSONResponse(s)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.get("/api/bot/multi")
 async def bot_multi_status():
     """Estado do trading bot em modo multi-par."""
