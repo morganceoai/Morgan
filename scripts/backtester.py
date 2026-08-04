@@ -339,7 +339,7 @@ def strat_bollinger(ohlcv, n=20, std=2.0, label=None):
     signals = ["hold"] * len(closes)
     in_long = False
     for i in range(1, len(closes)):
-        if lower[i] is None:
+        if lower[i] is None or lower[i-1] is None or upper[i] is None or upper[i-1] is None or mid[i] is None:
             continue
         if not in_long and closes[i-1] < lower[i-1] and closes[i] >= lower[i]:
             signals[i] = "buy"
@@ -471,7 +471,7 @@ def strat_mean_reversion_bb_rsi(ohlcv, label="BB+RSI Mean Rev."):
     signals = ["hold"] * len(closes)
     in_long = False
     for i in range(1, len(closes)):
-        if lower[i] is None or rsi[i] is None:
+        if lower[i] is None or mid[i] is None or rsi[i] is None:
             continue
         if not in_long and closes[i] < lower[i] and rsi[i] < 35:
             signals[i] = "buy"
