@@ -5,6 +5,8 @@ Reporta ao Morgan CEO. A última decisão é sempre do Vasco.
 """
 import os
 import json
+import threading
+import time
 from pathlib import Path
 from datetime import datetime, date
 import anthropic
@@ -278,6 +280,95 @@ def verificar_alertas_criticos() -> list:
         if "DRAWDOWN" in a or "parar" in a.lower():
             criticos.append(a)
     return criticos
+
+
+# ── Circuit breaker autónomo ─────────────────────────────────────────────────
+
+def parar_bot(razao: str):
+    """
+    Para o trading bot escrevendo active=False em trading_state.json.
+    NUNCA fecha posições — isso seria uma trade. Apenas impede novas entradas.
+    """
+    try:
+        state = _load_trading_state()
+        state["active"] = False
+        state["circuit_breaker_razao"] = razao
+        state["circuit_breaker_ts"] = datetime.now().isoformat()
+        TRADING_STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"[cfo] parar_bot: erro a escrever state: {e}", flush=True)
+        return
+
+    msg = f"[CFO CIRCUIT BREAKER] Bot parado automaticamente. Razão: {razao}"
+    print(msg, flush=True)
+
+    # Notificar CEO via ceo_events.json (CEO lê no próximo briefing)
+    try:
+        ceo_events_file = MEMORY_DIR / "ceo_events.json"
+        try:
+            eventos = json.loads(ceo_events_file.read_text())
+        except Exception:
+            eventos = []
+        eventos.append({
+            "ts": datetime.now().isoformat(),
+            "agente": "cfo",
+            "tipo": "circuit_breaker",
+            "mensagem": msg,
+            "urgencia": "critica",
+        })
+        ceo_events_file.write_text(json.dumps(eventos, ensure_ascii=False, indent=2))
+    except Exception as e:
+        print(f"[cfo] parar_bot: erro ceo_events: {e}", flush=True)
+
+    # Registar em memória episódica
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("cfo", "circuit_breaker", msg)
+    except Exception:
+        pass
+
+
+def circuit_breaker() -> bool:
+    """
+    Verifica thresholds críticos e para o bot se necessário.
+    Retorna True se activado, False caso contrário.
+    Condições: drawdown total >= 15% OU streak >= 10 perdas consecutivas.
+    """
+    r = avaliar_risco_trading()
+
+    if not r["active"]:
+        return False  # já parado
+
+    razao = None
+
+    if r["drawdown_total_pct"] >= DRAWDOWN_TOTAL_LIMITE * 100:
+        razao = (
+            f"Drawdown total atingiu {r['drawdown_total_pct']:.1f}% "
+            f"(limite: {DRAWDOWN_TOTAL_LIMITE * 100:.0f}%)"
+        )
+    elif r["streak_perdas"] >= 10:
+        razao = f"Streak de {r['streak_perdas']} perdas consecutivas (limite: 10)"
+
+    if razao:
+        parar_bot(razao)
+        return True
+
+    return False
+
+
+def iniciar_scheduler_cfo():
+    """Inicia loop autónomo do CFO — verifica circuit breaker a cada 30 minutos."""
+    def _loop():
+        time.sleep(60)  # 1min startup delay
+        while True:
+            try:
+                circuit_breaker()
+            except Exception as e:
+                print(f"[cfo] circuit_breaker erro: {e}", flush=True)
+            time.sleep(30 * 60)
+
+    t = threading.Thread(target=_loop, daemon=True, name="cfo-scheduler")
+    t.start()
 
 
 # ── Conversa com o CFO ───────────────────────────────────────────────────────

@@ -2426,6 +2426,13 @@ async def startup_event():
         print("[startup] Pulser scheduler iniciado (domingo 18h)", flush=True)
     except Exception as e:
         print(f"[startup] Pulser scheduler não iniciou: {e}", flush=True)
+    # CFO — circuit breaker autónomo a cada 30 minutos
+    try:
+        from cfo_agent import iniciar_scheduler_cfo
+        iniciar_scheduler_cfo()
+        print("[startup] CFO circuit breaker iniciado (30min interval)", flush=True)
+    except Exception as e:
+        print(f"[startup] CFO circuit breaker não iniciou: {e}", flush=True)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
