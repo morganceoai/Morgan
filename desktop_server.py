@@ -40,6 +40,8 @@ from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
 from marketeer_agent import get_marketeer_reply
 from operator_agent import get_operator_reply
+from patlas_agent import get_patlas_reply
+from pulser_agent import get_pulser_reply
 from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from episodic_memory import registar_evento, get_contexto_agente
@@ -429,8 +431,10 @@ Analisa a mensagem e responde APENAS com um destes labels (sem mais texto):
   solver     — erros, bugs, crashes, CI falhou, sistema não arranca, problema técnico, debugging, logs, fix
   cfo        — finanças, trading, BTC, capital, PnL, drawdown, Binance
   coach      — futebol, táticas, treino, Moreirense, adversário, plantel, jogadores
-  marketeer  — marketing, outreach, leads, campanhas, Etsy, copywriting, Pinterest, email frio, crescimento
-  operator   — estado das lojas, operações diárias, receita total, PlannerAtlas, directórios
+  patlas     — PlannerAtlas, Etsy, planners digitais, listings, Pinterest, SEO Etsy, vendas loja
+  pulser     — newsletter, AI Pulse, Beehiiv, subscribers, open rate, email marketing, crescimento newsletter
+  marketeer  — marketing genérico, outreach, leads, campanhas, copywriting, email frio
+  operator   — estado das lojas, operações diárias, receita total, directórios
   scout      — oportunidades de negócio, SaaS, rendimento passivo, startups, nicho, mercado
   ceo        — tudo o resto (conversa geral, tarefas, perguntas pessoais, status)
 Responde apenas com o label. Nenhuma outra palavra."""
@@ -442,7 +446,7 @@ def _classificar_agente(msg: str) -> str:
     m = msg.lower()
     if any(k in m for k in ["morgan ceo", "volta ao morgan", "morgan principal"]):
         return "ceo"
-    for agente in ("solver", "cfo", "coach", "marketeer", "operator", "scout"):
+    for agente in ("solver", "cfo", "coach", "patlas", "pulser", "marketeer", "operator", "scout"):
         if m.strip().startswith(agente) or f"[{agente}]" in m:
             return agente
 
@@ -454,7 +458,7 @@ def _classificar_agente(msg: str) -> str:
             messages=[{"role": "user", "content": msg[:400]}],
         )
         label = r.content[0].text.strip().lower().split()[0]
-        if label in ("solver", "cfo", "coach", "marketeer", "operator", "scout", "ceo"):
+        if label in ("solver", "cfo", "coach", "patlas", "pulser", "marketeer", "operator", "scout", "ceo"):
             return label
     except Exception:
         pass
@@ -466,9 +470,13 @@ def _classificar_agente(msg: str) -> str:
         return "cfo"
     if any(k in m for k in ["moreirense", "treino", "tático", "adversário"]):
         return "coach"
-    if any(k in m for k in ["etsy", "lead", "campanha", "marketing"]):
+    if any(k in m for k in ["planneratlas", "etsy", "planner", "pinterest", "listing"]):
+        return "patlas"
+    if any(k in m for k in ["newsletter", "beehiiv", "subscribers", "ai pulse"]):
+        return "pulser"
+    if any(k in m for k in ["lead", "campanha", "marketing", "outreach"]):
         return "marketeer"
-    if any(k in m for k in ["operações", "planneratlas", "receita total"]):
+    if any(k in m for k in ["operações", "receita total"]):
         return "operator"
     if any(k in m for k in ["oportunidade", "rendimento passivo", "startup"]):
         return "scout"
@@ -595,6 +603,22 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
+    if agente_alvo == "patlas":
+        try:
+            reply = "[PATLAS] " + get_patlas_reply(user_text)
+        except Exception as e:
+            reply = f"[PATLAS] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if agente_alvo == "pulser":
+        try:
+            reply = "[PULSER] " + get_pulser_reply(user_text)
+        except Exception as e:
+            reply = f"[PULSER] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
     if agente_alvo == "marketeer":
         try:
             reply = "[MARKETEER] " + get_marketeer_reply(user_text)
@@ -651,6 +675,22 @@ def chat_with_morgan(user_text: str) -> str:
             reply = "[COACH] " + get_coach_reply(user_text)
         except Exception as e:
             reply = f"[COACH] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if agente == "patlas":
+        try:
+            reply = "[PATLAS] " + get_patlas_reply(user_text)
+        except Exception as e:
+            reply = f"[PATLAS] Erro: {e}"
+        store_save(DESKTOP_USER_ID, "assistant", reply)
+        return reply
+
+    if agente == "pulser":
+        try:
+            reply = "[PULSER] " + get_pulser_reply(user_text)
+        except Exception as e:
+            reply = f"[PULSER] Erro: {e}"
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -1416,6 +1456,8 @@ async def get_agents():
         {"id": "coach",     "label": "Coach",     "role": "análise tática", "color": "0,255,157"},
         {"id": "cfo",       "label": "CFO",       "role": "financeiro",     "color": "110,130,160"},
         {"id": "creator",   "label": "Creator",   "role": "meta-tool",      "color": "255,170,0"},
+        {"id": "patlas",    "label": "PAtlas",    "role": "PlannerAtlas",   "color": "255,140,0"},
+        {"id": "pulser",    "label": "Pulser",    "role": "AI Pulse",       "color": "100,180,255"},
         {"id": "operator",  "label": "Operator",  "role": "operações",      "color": "0,200,130"},
         {"id": "marketeer", "label": "Marketeer", "role": "crescimento",    "color": "180,100,255"},
         {"id": "solver",    "label": "Solver",    "role": "manutenção",     "color": "155,109,255"},
@@ -1446,7 +1488,7 @@ async def set_agent(request: Request):
     """Define o agente ativo via canvas click."""
     body = await request.json()
     agent = body.get("agent", "ceo")
-    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator", "operator"}
+    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator", "operator", "patlas", "pulser", "marketeer"}
     if agent in valid:
         _desktop_agent["current"] = agent
     return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
@@ -2370,6 +2412,20 @@ async def startup_event():
         print("[startup] Scout sweep scheduler iniciado (6h interval)", flush=True)
     except Exception as e:
         print(f"[startup] Scout sweep scheduler não iniciou: {e}", flush=True)
+    # PAtlas — loop autónomo diário
+    try:
+        from patlas_agent import iniciar_scheduler_patlas
+        iniciar_scheduler_patlas()
+        print("[startup] PAtlas scheduler iniciado (24h interval)", flush=True)
+    except Exception as e:
+        print(f"[startup] PAtlas scheduler não iniciou: {e}", flush=True)
+    # Pulser — loop autónomo semanal
+    try:
+        from pulser_agent import iniciar_scheduler_pulser
+        iniciar_scheduler_pulser()
+        print("[startup] Pulser scheduler iniciado (domingo 18h)", flush=True)
+    except Exception as e:
+        print(f"[startup] Pulser scheduler não iniciou: {e}", flush=True)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
