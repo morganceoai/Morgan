@@ -1556,6 +1556,400 @@ async def etsy_plano():
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
+@app.get("/grid", response_class=HTMLResponse)
+async def grid_dashboard():
+    return HTMLResponse(content="""<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grid Bot · BCVertex</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #141820;
+    --border: #1e2535;
+    --accent: #00c9a7;
+    --accent-dim: #00c9a720;
+    --text: #e8eaf0;
+    --muted: #6b7489;
+    --up: #00c9a7;
+    --down: #f04f5a;
+    --warn: #f0a04f;
+    --font-mono: "SF Mono", "Fira Code", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 24px 20px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .logo-dot.paused { background: var(--down); box-shadow: 0 0 8px var(--down); }
+  h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.04em; color: var(--text); }
+  .badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .badge-live { background: #00c9a715; color: var(--accent); border: 1px solid #00c9a740; }
+  .badge-test { background: #f0a04f15; color: var(--warn); border: 1px solid #f0a04f40; }
+  .badge-paused { background: #f04f5a15; color: var(--down); border: 1px solid #f04f5a40; }
+
+  .price-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+  }
+  .price-main {
+    font-family: var(--font-mono);
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .price-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .price-change {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+  }
+  .pos { background: #00c9a715; color: var(--up); }
+  .neg { background: #f04f5a15; color: var(--down); }
+  .neu { background: var(--border); color: var(--muted); }
+
+  .grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .card-value {
+    font-family: var(--font-mono);
+    font-size: 22px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .card-sub {
+    font-size: 11px; color: var(--muted);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .range-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .range-bar-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .range-bar {
+    position: relative;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 8px 0 16px;
+  }
+  .range-fill {
+    position: absolute;
+    top: 0; height: 100%;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+  }
+  .range-cursor {
+    position: absolute;
+    top: -5px;
+    width: 4px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 6px var(--accent);
+  }
+  .range-limits {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .positions-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .positions-header {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+  .pos-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-item:last-child { border-bottom: none; }
+  .pos-level { color: var(--muted); font-size: 11px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  .refresh-bar {
+    width: 60px; height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .refresh-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 1s linear;
+  }
+  #err { color: var(--down); font-size: 12px; text-align: center; padding: 20px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-dot" id="status-dot"></div>
+    <h1>Grid Bot · BTC/USDT</h1>
+  </div>
+  <span class="badge" id="mode-badge">–</span>
+</header>
+
+<div class="price-hero">
+  <div>
+    <div class="price-label">Preço actual</div>
+    <div class="price-main" id="price">–</div>
+  </div>
+  <div>
+    <div class="price-change neu" id="pnl-day">PnL hoje: –</div>
+    <div class="price-change neu" id="pnl-total">PnL total: –</div>
+  </div>
+</div>
+
+<div class="grid-cards">
+  <div class="card">
+    <div class="card-label">Posições abertas</div>
+    <div class="card-value" id="open-pos">–</div>
+    <div class="card-sub">máx 5</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Trades fechados</div>
+    <div class="card-value" id="total-trades">–</div>
+    <div class="card-sub">histórico</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Capital / nível</div>
+    <div class="card-value" id="cap-level">–</div>
+    <div class="card-sub">USDT</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Tamanho nível</div>
+    <div class="card-value" id="level-size">–</div>
+    <div class="card-sub">USD por nível</div>
+  </div>
+</div>
+
+<div class="range-bar-wrap">
+  <div class="range-bar-label">Range do grid</div>
+  <div class="range-limits">
+    <span id="range-lower">–</span>
+    <span style="color:var(--accent)" id="range-ref">ref –</span>
+    <span id="range-upper">–</span>
+  </div>
+  <div class="range-bar">
+    <div class="range-fill" id="range-fill"></div>
+    <div class="range-cursor" id="range-cursor"></div>
+  </div>
+  <div class="range-limits">
+    <span>limite inferior</span>
+    <span>limite superior</span>
+  </div>
+</div>
+
+<div class="positions-wrap">
+  <div class="positions-header">Posições abertas</div>
+  <div id="positions-list"><div class="empty">Nenhuma posição aberta.</div></div>
+</div>
+
+<div id="err">Erro a carregar dados. A tentar novamente...</div>
+
+<footer>
+  <span id="last-check">–</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="countdown">30s</span>
+    <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
+  </div>
+</footer>
+
+<script>
+const INTERVAL = 30;
+let timer = INTERVAL;
+let countdown;
+
+function fmt(n, dec=2) {
+  if (n == null) return '–';
+  return Number(n).toLocaleString('pt-PT', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+}
+function pnlClass(v) {
+  if (v > 0) return 'pos';
+  if (v < 0) return 'neg';
+  return 'neu';
+}
+
+async function load() {
+  try {
+    const r = await fetch('/api/grid');
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('err').style.display = 'none';
+
+    const active = d.active;
+    const testnet = d.testnet;
+    const dot = document.getElementById('status-dot');
+    dot.className = 'logo-dot' + (active ? '' : ' paused');
+    const badge = document.getElementById('mode-badge');
+    if (!active) { badge.textContent = 'Pausado'; badge.className = 'badge badge-paused'; }
+    else if (testnet) { badge.textContent = 'Testnet'; badge.className = 'badge badge-test'; }
+    else { badge.textContent = 'Live'; badge.className = 'badge badge-live'; }
+
+    document.getElementById('price').textContent = d.last_price ? '$' + fmt(d.last_price) : '–';
+
+    const pd = d.pnl_today, pt = d.pnl_total;
+    const ed = document.getElementById('pnl-day');
+    ed.textContent = 'PnL hoje: ' + (pd >= 0 ? '+' : '') + fmt(pd, 4) + ' USDT';
+    ed.className = 'price-change ' + pnlClass(pd);
+    const et = document.getElementById('pnl-total');
+    et.textContent = 'PnL total: ' + (pt >= 0 ? '+' : '') + fmt(pt, 4) + ' USDT';
+    et.className = 'price-change ' + pnlClass(pt);
+
+    document.getElementById('open-pos').textContent = d.open_positions ?? '–';
+    document.getElementById('total-trades').textContent = d.total_trades ?? '–';
+    document.getElementById('cap-level').textContent = fmt(d.capital_per_level);
+    document.getElementById('level-size').textContent = fmt(d.level_size);
+
+    // Range bar
+    if (d.grid_range && d.ref_price && d.last_price) {
+      const lo = d.grid_range.lower, hi = d.grid_range.upper;
+      const ref = d.ref_price, cur = d.last_price;
+      const total = hi - lo;
+      const refPct = ((ref - lo) / total * 100).toFixed(1);
+      const curPct = Math.min(100, Math.max(0, (cur - lo) / total * 100)).toFixed(1);
+      document.getElementById('range-lower').textContent = '$' + fmt(lo, 0);
+      document.getElementById('range-upper').textContent = '$' + fmt(hi, 0);
+      document.getElementById('range-ref').textContent = 'ref $' + fmt(ref, 0);
+      document.getElementById('range-fill').style.left = '0';
+      document.getElementById('range-fill').style.width = '100%';
+      document.getElementById('range-cursor').style.left = curPct + '%';
+    }
+
+    // Positions
+    const posEl = document.getElementById('positions-list');
+    const positions = d.open_positions_detail || {};
+    const keys = Object.keys(positions);
+    if (keys.length === 0) {
+      posEl.innerHTML = '<div class="empty">Nenhuma posição aberta.</div>';
+    } else {
+      posEl.innerHTML = keys.sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const p = positions[k];
+        const cur = d.last_price || p.entry;
+        const unreal = ((cur - p.entry) * p.size).toFixed(4);
+        const cls = unreal >= 0 ? 'pos' : 'neg';
+        return `<div class="pos-item">
+          <div><span class="pos-level">Nível ${k}</span><br>entry $${fmt(p.entry)} · ${fmt(p.size,6)} BTC</div>
+          <div class="price-change ${cls}" style="font-size:12px">${unreal>=0?'+':''}${unreal} USDT</div>
+        </div>`;
+      }).join('');
+    }
+
+    // Last check
+    if (d.last_check) {
+      const dt = new Date(d.last_check);
+      document.getElementById('last-check').textContent = 'último ciclo: ' + dt.toLocaleTimeString('pt-PT');
+    }
+  } catch(e) {
+    document.getElementById('err').style.display = 'block';
+  }
+}
+
+function startCountdown() {
+  clearInterval(countdown);
+  timer = INTERVAL;
+  countdown = setInterval(() => {
+    timer--;
+    document.getElementById('countdown').textContent = timer + 's';
+    document.getElementById('rfill').style.width = (timer / INTERVAL * 100) + '%';
+    if (timer <= 0) {
+      timer = INTERVAL;
+      load();
+    }
+  }, 1000);
+}
+
+load();
+startCountdown();
+</script>
+</body>
+</html>""")
+
+
 @app.get("/api/grid")
 async def grid_status():
     """Estado completo do Grid Bot BTC/USDT."""
