@@ -2336,6 +2336,13 @@ async def _heartbeat_loop():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(_heartbeat_loop())
+    # Scout sweep — loop independente, a cada 6h, sem depender do CEO
+    try:
+        from scout_sweep import iniciar_scheduler_scout
+        iniciar_scheduler_scout()
+        _log.info("Scout sweep scheduler iniciado (6h interval)")
+    except Exception as e:
+        _log.warning("Scout sweep scheduler não iniciou: %s", e)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

@@ -63,6 +63,8 @@ playwright>=1.40.0
 
 pywebpush>=2.0.0
 ddgs>=0.1.0
+feedparser>=6.0.0
+pytrends>=4.9.0
 exa-py>=1.0.0
 firecrawl-py>=1.0.0
 zep-cloud>=2.0.0

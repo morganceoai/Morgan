@@ -67,11 +67,16 @@ QUALITY GATE — 10 critérios (todos obrigatórios):
    - Recusa se: todos os dados vêm de fontes com viés de sucesso (IndieHackers, Product Hunt)
    - Exemplo aceitável: "Reddit r/entrepreneur tem 3 posts de pessoas que tentaram e abandonaram por [razão]"
 
-8. Fit real com perfil do Vasco
-   - Horas de setup estimadas (não "fácil de configurar" — número real)
-   - Quantas decisões por semana requer o operador? (threshold: máximo 1h/semana após setup)
-   - O Morgan consegue executar 90%+ das tarefas operacionais? Especifica quais não consegue
-   - Recusa se: "automatizável" sem detalhar o que não é automático
+8. Fit real com perfil do Vasco — avaliação proporcional ao rendimento
+   - Horas de setup estimadas: número concreto (não "fácil de configurar")
+   - Horas de operação semanal após setup: número concreto
+   - O Morgan consegue executar 90%+ das tarefas operacionais? Listar explicitamente o que NÃO consegue
+   - Aplicar a tabela de threshold esforço/rendimento (ver CONTEXTO DO VASCO):
+     * Calcula o rendimento documentado real (não hipóteses)
+     * Verifica se o setup e operação cabem no tier correspondente
+     * Se cabe: FIT = SIM. Se não cabe: FIT = NÃO, mesmo que pareça prometedor.
+   - Recusa se: "automatizável" sem listar especificamente as tarefas que NÃO são automáticas
+   - Recusa se: rendimento projectado sem pelo menos 2 fundadores reais com números públicos
 
 9. Score de confiança ponderado (calcular explicitamente, campo a campo):
    - TAM com fonte verificável: 15 pts
@@ -96,7 +101,8 @@ QUALITY GATE — 10 critérios (todos obrigatórios):
    CAPITAL INICIAL: [itemização detalhada, total em €]
    RECEITA ESTIMADA: [30/60/90 dias com base em casos reais]
    TEMPO ATÉ 1º CLIENTE: [dias, baseado em dados reais]
-   INTERVENÇÃO DO VASCO: [horas de setup + horas/semana após + o que o Morgan não automatiza]
+   CAPITAL_MAXIMO_TIER: [€300 / €1.500 / €3.000 / €5.000 — baseado no rendimento documentado]
+   INTERVENÇÃO DO VASCO: [horas de setup reais] setup + [horas/semana reais] operação semanal | FIT: [SIM/NÃO segundo tabela] | O que o Morgan NÃO automatiza: [lista concreta]
    SCORE: [X/100 pts com detalhe por critério]
    PRÓXIMO PASSO: [acção concreta hoje]
 
@@ -106,12 +112,24 @@ Se não conseguires preencher todos os campos com dados reais, NÃO propões. Di
 SCOUT_MISSAO_A_PROMPT = """És o Morgan Scout. Hoje é domingo — Missão A: identificar as melhores oportunidades de negócio para o Vasco Botelho da Costa.
 
 CONTEXTO DO VASCO:
-- Treinador de futebol no Moreirense FC (Portugal) — muito pouco tempo disponível
+- Treinador de futebol no Moreirense FC (Portugal) — tempo limitado mas não zero
 - Objetivo: €10.000/mês de rendimento passivo
-- Capital disponível: pequeno (€200-1000 por oportunidade para começar)
-- Tem o Morgan (8 agentes IA) para executar automaticamente
-- Prefere negócios onde a sua intervenção seja ZERO após lançamento, ou máximo "aprovar uma vez por semana"
+- Tem o Morgan (8+ agentes IA) para executar automaticamente
 - NÃO quer negócios que dependam da sua identidade como treinador de futebol
+- O modelo de negócio pode ser qualquer coisa que o Morgan consiga operar — não limitar à stack actual (Python, Etsy). Se a oportunidade for grande, o Creator constrói o que for necessário.
+
+THRESHOLD DE ESFORÇO vs RENDIMENTO — aplicar esta tabela a cada oportunidade:
+
+  Rendimento projectado (6 meses)  | Setup máximo aceitável | Operação semanal após setup | Capital inicial máximo
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  < €1.000/mês                     | 5h                     | 30 min/semana               | €300
+  €1.000 – €3.000/mês              | 20h                    | 2h/semana                   | €1.500
+  €3.000 – €7.000/mês              | 40h                    | 4h/semana                   | €3.000
+  > €7.000/mês                     | 80h                    | 8h/semana                   | €5.000
+
+Regra: se o rendimento real documentado (não hipóteses) justificar o esforço segundo a tabela, a oportunidade passa. Um negócio que requer 60h de setup mas pode gerar €8k/mês é melhor do que um que requer 2h e gera €200/mês.
+
+"Rendimento documentado" significa: fundadores reais que reportaram esses números publicamente (IndieHackers, Twitter/X, Reddit, entrevistas). Projecções sem dados reais de pessoas reais = hipótese = não conta.
 
 MERCADOS ALVO — OBRIGATÓRIO pesquisar TODOS os 3 modos geográficos:
 - Modo A "anglofonico": US, UK, AU, CA — mercado maior, mais competitivo, mais data disponível
@@ -372,6 +390,40 @@ def missao_a_oportunidades() -> str:
     except Exception:
         pass
 
+    return relatorio
+
+
+def missao_a_oportunidades_triggered(contexto_sinais: str) -> str:
+    """
+    Versão da Missão A accionada pelo sweep quando detecta sinais muito fortes (velocity ≥3x).
+    Recebe o resumo dos sinais para dar contexto ao Scout.
+    """
+    state = _load_state()
+    mem_bloco = ""
+    try:
+        from episodic_memory import get_contexto_agente
+        mem = get_contexto_agente("scout", "oportunidades negócio aprovadas rejeitadas rendimento passivo")
+        if mem:
+            mem_bloco = f"\n## Memória relevante:\n{mem}\n"
+    except Exception:
+        pass
+
+    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT + mem_bloco
+
+    msgs = [{"role": "user", "content": (
+        f"O sweep automático detectou sinais de mercado muito fortes:\n\n{contexto_sinais}\n\n"
+        "Analisa estes sinais e decide se representam oportunidades reais. "
+        "Para cada candidato, aplica o Quality Gate completo. "
+        "Propõe apenas os que passam com ≥85% confiança. "
+        "Relatório estruturado com máximo 2 oportunidades."
+    )}]
+
+    relatorio = _chamar_claude_scout(system, msgs, max_tokens=4000)
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("scout", "missao_a_triggered", relatorio[:400])
+    except Exception:
+        pass
     return relatorio
 
 
