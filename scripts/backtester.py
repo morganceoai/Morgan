@@ -433,6 +433,8 @@ def strat_triple_ema(ohlcv, label="Triple EMA 8/21/55"):
     for i in range(1, len(closes)):
         if ema8[i] is None or ema21[i] is None or ema55[i] is None:
             continue
+        if ema8[i-1] is None or ema21[i-1] is None or ema55[i-1] is None:
+            continue
         bullish = ema8[i] > ema21[i] > ema55[i]
         bullish_prev = ema8[i-1] > ema21[i-1] > ema55[i-1]
         bearish = ema8[i] < ema21[i] < ema55[i]
