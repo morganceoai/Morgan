@@ -107,6 +107,17 @@ QUALITY GATE — 10 critérios (todos obrigatórios):
    PRÓXIMO PASSO: [acção concreta hoje]
 
 Se não conseguires preencher todos os campos com dados reais, NÃO propões. Dizes: "Dados insuficientes — em investigação."
+
+OBRIGAÇÃO DE VERIFICAÇÃO COM FERRAMENTAS:
+Para cada critério que exige dados reais, usa as ferramentas disponíveis ANTES de preencher o campo:
+- TAM: usa pesquisar_mercado("TAM [nicho] market size 2026") + pesquisar_web("site:statista.com OR site:grandviewresearch.com [nicho]")
+- Casos de sucesso: usa indiehackers_trending() + pesquisar_web("[nicho] founder revenue 2025 2026")
+- Caso de falhanço: usa pesquisar_web("[nicho] failed why reddit") + reddit_trending()
+- Competidores: usa scout_g2_capterra(nicho=...) + pesquisar_web("[competidor] traffic similarweb")
+- Mercado por país: usa scout_pesquisa_multilang() para cada modo geográfico
+
+Não preenches nenhum campo com conhecimento do teu treino sem verificar com pesquisa actual.
+Se a ferramenta não retornar dados suficientes, escreves "Dados insuficientes — em investigação" nesse campo.
 """
 
 SCOUT_MISSAO_A_PROMPT = """És o Morgan Scout. Hoje é domingo — Missão A: identificar as melhores oportunidades de negócio para o Vasco Botelho da Costa.
@@ -273,6 +284,45 @@ def _chamar_claude_scout(system: str, messages: list, max_tokens: int = 2000) ->
     return "[Scout: limite de iterações atingido após 30 chamadas — relatório pode estar incompleto]"
 
 
+_DECISION_LOG = Path(__file__).parent / "memory" / "scout_decision_log.jsonl"
+
+
+def _registar_decisao_scout(
+    oportunidade: str,
+    score: int,
+    decisao: str,
+    relatorio_completo: str,
+) -> None:
+    """Regista a decisão do Quality Gate com raciocínio completo. Append-only."""
+    import re
+    entrada = {
+        "ts": datetime.now().isoformat(),
+        "oportunidade": oportunidade,
+        "score": score,
+        "decisao": decisao,  # APROVADA | EM_INVESTIGACAO | REJEITADA
+        "criterios": {
+            "tam": _extrair_campo(relatorio_completo, "TAM"),
+            "casos_reais": _extrair_campo(relatorio_completo, "CASOS REAIS"),
+            "caso_falhanço": _extrair_campo(relatorio_completo, "CASO DE FALHANÇO"),
+            "competidores": _extrair_campo(relatorio_completo, "COMPETIDORES"),
+            "capital": _extrair_campo(relatorio_completo, "CAPITAL INICIAL"),
+            "timeline": _extrair_campo(relatorio_completo, "TEMPO ATÉ 1º CLIENTE"),
+            "fit_vasco": _extrair_campo(relatorio_completo, "INTERVENÇÃO DO VASCO"),
+        },
+        "relatorio": relatorio_completo[:2000],
+    }
+    _DECISION_LOG.parent.mkdir(exist_ok=True)
+    with open(_DECISION_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entrada, ensure_ascii=False) + "\n")
+
+
+def _extrair_campo(texto: str, campo: str) -> str:
+    """Extrai o valor de um campo do formato padronizado do Scout."""
+    import re
+    m = re.search(rf"{re.escape(campo)}:\s*(.+?)(?:\n[A-Z]|\Z)", texto, re.IGNORECASE | re.DOTALL)
+    return m.group(1).strip()[:300] if m else ""
+
+
 def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
     """Aplica o Quality Gate a uma oportunidade descrita em texto.
     Retorna (texto_validado, confianca).
@@ -290,6 +340,21 @@ def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
         re.search(r"CONFIANÇA:\s*(\d+)%", resultado, re.IGNORECASE)
     )
     confianca = int(m.group(1)) if m else 0
+
+    # Decision log — registo completo de cada avaliação
+    import re as _re2
+    nome_m = _re2.search(r"OPORTUNIDADE:\s*(.+)", resultado, _re2.IGNORECASE)
+    nome = nome_m.group(1).strip() if nome_m else oportunidade_raw[:60]
+    if confianca >= 85:
+        decisao = "APROVADA"
+    elif confianca >= 70:
+        decisao = "EM_INVESTIGACAO"
+    else:
+        decisao = "REJEITADA"
+    try:
+        _registar_decisao_scout(nome, confianca, decisao, resultado)
+    except Exception:
+        pass
 
     return resultado, confianca
 
@@ -310,7 +375,21 @@ def missao_a_oportunidades() -> str:
     except Exception:
         pass
 
-    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT + mem_bloco
+    # Sinais do sweep desta semana — alimenta a análise com dados reais já recolhidos
+    sinais_bloco = ""
+    try:
+        from scout_sweep import _get_top_signals_week
+        sinais = _get_top_signals_week(top_n=15)
+        if sinais:
+            linhas = "\n".join(
+                f"  - [{s['fonte']}] {s['titulo']} (velocity {s.get('velocity', '?')}x)"
+                for s in sinais
+            )
+            sinais_bloco = f"\n\n## SINAIS DO SWEEP (últimos 7 dias, por velocity):\n{linhas}\n\nAnalisa estes sinais como ponto de partida — podem indicar oportunidades emergentes."
+    except Exception:
+        pass
+
+    system = SCOUT_MISSAO_A_PROMPT + "\n\n" + QUALITY_GATE_PROMPT + mem_bloco + sinais_bloco
 
     msgs = [{"role": "user", "content": (
         "Inicia a Missão A. Pesquisa, identifica candidatos, e para cada um aplica o Quality Gate. "
@@ -419,11 +498,27 @@ def missao_a_oportunidades_triggered(contexto_sinais: str) -> str:
     )}]
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=4000)
+
     try:
         from episodic_memory import registar_evento
         registar_evento("scout", "missao_a_triggered", relatorio[:400])
     except Exception:
         pass
+
+    # Entregar ao Vasco via push se houver oportunidades aprovadas
+    try:
+        import re as _re_t
+        tem_aprovadas = bool(_re_t.search(r"OPORTUNIDADE:", relatorio, _re_t.IGNORECASE))
+        if tem_aprovadas and "dados insuficientes" not in relatorio.lower():
+            from push_service import send_push
+            send_push(
+                title="Scout — Sinal forte detectado",
+                body=relatorio[:180],
+                url="/pwa/",
+            )
+    except Exception:
+        pass
+
     return relatorio
 
 

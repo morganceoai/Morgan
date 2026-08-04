@@ -25,6 +25,10 @@ _BASE = Path(__file__).parent
 _QUEUE_FILE = _BASE / "memory" / "signal_queue.json"
 _BASELINE_FILE = _BASE / "memory" / "sweep_baseline.json"
 _TRIGGERED_FILE = _BASE / "memory" / "sweep_triggered.json"
+_SOURCE_HEALTH_FILE = _BASE / "memory" / "sweep_source_health.json"
+
+# Quantas falhas consecutivas até pausar a fonte
+_MAX_CONSECUTIVE_FAILS = 3
 
 # Keywords BCVertex para pytrends e filtragem de relevância
 BCVERTEX_KEYWORDS = [
@@ -118,13 +122,74 @@ def _save_baseline(b: dict) -> None:
     _BASELINE_FILE.write_text(json.dumps(b, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+# ── Source health tracking ────────────────────────────────────────────────────
+
+def _load_source_health() -> dict:
+    if _SOURCE_HEALTH_FILE.exists():
+        try:
+            return json.loads(_SOURCE_HEALTH_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _save_source_health(h: dict) -> None:
+    _SOURCE_HEALTH_FILE.parent.mkdir(exist_ok=True)
+    _SOURCE_HEALTH_FILE.write_text(json.dumps(h, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _record_source_success(source_name: str) -> None:
+    h = _load_source_health()
+    h[source_name] = {"consecutive_fails": 0, "last_success": datetime.now().isoformat()}
+    _save_source_health(h)
+
+
+def _record_source_fail(source_name: str, error: str = "") -> None:
+    h = _load_source_health()
+    entry = h.get(source_name, {"consecutive_fails": 0})
+    entry["consecutive_fails"] = entry.get("consecutive_fails", 0) + 1
+    entry["last_fail"] = datetime.now().isoformat()
+    entry["last_error"] = error[:200]
+    h[source_name] = entry
+    _save_source_health(h)
+
+
+def _should_skip_source(source_name: str) -> bool:
+    """Pausa fonte com ≥3 falhas consecutivas. Tenta de novo após 24h."""
+    h = _load_source_health()
+    entry = h.get(source_name, {})
+    if entry.get("consecutive_fails", 0) < _MAX_CONSECUTIVE_FAILS:
+        return False
+    last_fail = entry.get("last_fail", "")
+    if last_fail:
+        try:
+            delta_h = (datetime.now() - datetime.fromisoformat(last_fail)).total_seconds() / 3600
+            if delta_h > 24:
+                return False  # tentar de novo após 24h
+        except Exception:
+            pass
+    return True
+
+
+def _get_source_health_summary() -> dict:
+    """Retorna fontes pausadas para incluir no resumo do sweep."""
+    h = _load_source_health()
+    return {
+        nome: entry for nome, entry in h.items()
+        if entry.get("consecutive_fails", 0) >= _MAX_CONSECUTIVE_FAILS
+    }
+
+
 # ── Trajectory scoring ────────────────────────────────────────────────────────
+
+_COLD_START_VELOCITY = -1.0  # sentinel: sinal novo sem histórico suficiente
+
 
 def _record_signal(topic: str, source: str) -> float:
     """
     Regista uma menção e calcula o velocity score.
     Velocity = menções esta semana / média das últimas 4 semanas.
-    Retorna o velocity score (1.0 = normal, 2.0 = a crescer 2x, etc.)
+    Retorna -1.0 se não há histórico suficiente (cold start — sinal novo).
     """
     baseline = _load_baseline()
     semana = datetime.now().strftime("%Y-W%W")
@@ -135,10 +200,15 @@ def _record_signal(topic: str, source: str) -> float:
         baseline[topic][semana] = 0
     baseline[topic][semana] += 1
 
-    # Calcular velocity: semana actual vs média das últimas 4 semanas
     semanas = sorted(baseline[topic].keys())
     hist = [baseline[topic][s] for s in semanas[-5:-1]]  # 4 semanas anteriores
-    media = sum(hist) / len(hist) if hist else 1.0
+
+    # Cold start: < 2 semanas de histórico → marcar como sinal novo sem comparação
+    if len(hist) < 2:
+        _save_baseline(baseline)
+        return _COLD_START_VELOCITY
+
+    media = sum(hist) / len(hist)
     atual = baseline[topic][semana]
     velocity = atual / media if media > 0 else 1.0
 
@@ -551,53 +621,112 @@ def _sweep_indiehackers() -> list:
 
 # ── Ponto de entrada principal ────────────────────────────────────────────────
 
+# Nome interno da fonte → nome legível
 SWEEPERS = [
-    ("HN Firebase", _sweep_hacker_news),
-    ("Product Hunt", _sweep_product_hunt),
-    ("Reddit", _sweep_reddit),
-    ("arxiv", _sweep_arxiv),
-    ("GitHub Trending", _sweep_github_trending),
-    ("Remotive", _sweep_remotive),
-    ("Dev.to", _sweep_devto),
-    ("Lobsters", _sweep_lobsters),
-    ("Etsy Autocomplete", _sweep_etsy_autocomplete),
-    ("Google Trends", _sweep_pytrends),
-    ("BetaList", _sweep_betalist),
-    ("Gumroad", _sweep_gumroad),
-    ("App Store RSS", _sweep_appstore_rss),
-    ("IndieHackers", _sweep_indiehackers),
+    ("hn", "HN Firebase", _sweep_hacker_news),
+    ("product_hunt", "Product Hunt", _sweep_product_hunt),
+    ("reddit", "Reddit", _sweep_reddit),
+    ("arxiv", "arxiv", _sweep_arxiv),
+    ("github_trending", "GitHub Trending", _sweep_github_trending),
+    ("remotive", "Remotive", _sweep_remotive),
+    ("devto", "Dev.to", _sweep_devto),
+    ("lobsters", "Lobsters", _sweep_lobsters),
+    ("etsy_suggest", "Etsy Autocomplete", _sweep_etsy_autocomplete),
+    ("pytrends", "Google Trends", _sweep_pytrends),
+    ("betalist", "BetaList", _sweep_betalist),
+    ("gumroad", "Gumroad", _sweep_gumroad),
+    ("appstore", "App Store RSS", _sweep_appstore_rss),
+    ("indiehackers", "IndieHackers", _sweep_indiehackers),
 ]
+
+
+def _get_top_signals_week(top_n: int = 15) -> list:
+    """
+    Retorna os sinais mais fortes da última semana para a Missão A do Scout.
+    Inclui sinais com velocity ≥ 1.5 e sinais novos (cold start).
+    Ordenados por velocity descendente (novos ficam no fim).
+    """
+    queue = _load_queue()
+    semana_inicio = datetime.now() - timedelta(days=7)
+    recentes = []
+    for s in queue:
+        try:
+            ts = datetime.fromisoformat(s.get("ts", ""))
+            if ts >= semana_inicio:
+                recentes.append(s)
+        except Exception:
+            pass
+
+    # Separar: com velocity real vs novos (cold start)
+    com_velocity = [s for s in recentes if s.get("velocity", 0) > 0 and s.get("velocity", 0) >= 1.5]
+    novos = [s for s in recentes if s.get("velocity", 0) == _COLD_START_VELOCITY]
+
+    # Deduplicar por título
+    vistos = set()
+    resultado = []
+    for s in sorted(com_velocity, key=lambda x: x.get("velocity", 0), reverse=True):
+        chave = s.get("titulo", "")[:40]
+        if chave not in vistos:
+            vistos.add(chave)
+            resultado.append(s)
+        if len(resultado) >= top_n - 3:
+            break
+
+    # Adicionar até 3 sinais novos
+    for s in novos[:3]:
+        chave = s.get("titulo", "")[:40]
+        if chave not in vistos:
+            vistos.add(chave)
+            s = dict(s, velocity="NOVO")
+            resultado.append(s)
+
+    return resultado[:top_n]
 
 
 def run_sweep() -> dict:
     """
     Corre todos os sweepers. Devolve resumo com sinais fortes detectados.
-    Sinais fortes: velocity >= 2.0 (crescimento 2x acima do normal para esta semana).
+    - Sinais fortes: velocity >= 2.0
+    - Sinais novos (cold start): sem histórico — listados separadamente
+    - Fontes com ≥3 falhas consecutivas: pausadas automaticamente por 24h
     """
     todos_sinais = []
     erros = []
+    fontes_pausadas = []
 
-    for nome, fn in SWEEPERS:
+    for key, nome, fn in SWEEPERS:
+        if _should_skip_source(key):
+            fontes_pausadas.append(nome)
+            continue
         try:
             sinais = fn()
-            todos_sinais.extend(sinais)
+            if sinais is not None:
+                todos_sinais.extend(sinais)
+                _record_source_success(key)
         except Exception as e:
             erros.append(f"{nome}: {e}")
+            _record_source_fail(key, str(e))
 
     # Guardar todos na queue
     queue = _load_queue()
     queue.extend(todos_sinais)
     _save_queue(queue)
 
-    # Identificar sinais fortes (velocity >= 2x)
-    fortes = [s for s in todos_sinais if s.get("velocity", 1.0) >= 2.0]
+    # Sinais com velocity real forte (≥ 2x)
+    fortes = [s for s in todos_sinais if isinstance(s.get("velocity"), float) and s["velocity"] >= 2.0]
     fortes.sort(key=lambda x: x.get("velocity", 0), reverse=True)
+
+    # Sinais novos (cold start — sem histórico)
+    novos = [s for s in todos_sinais if s.get("velocity") == _COLD_START_VELOCITY]
 
     resumo = {
         "ts": datetime.now().isoformat(),
         "total_sinais": len(todos_sinais),
         "sinais_fortes": len(fortes),
+        "sinais_novos": len(novos),
+        "fontes_pausadas": fontes_pausadas,
         "top_sinais": fortes[:10],
+        "top_novos": novos[:5],
         "erros": erros,
     }
 
