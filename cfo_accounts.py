@@ -160,6 +160,18 @@ def _seed_contas_iniciais():
         notas="Grid 10 níveis, range 8%. Activo desde 04/08/2026.",
     )
     registar_conta(
+        id="binance_grid_eth",
+        nome="Grid Bot ETH/USDT",
+        tipo=TIPO_TRADING,
+        plataforma="Binance",
+        capital_alocado=100.0,
+        moeda="USDT",
+        collector="collector_eth_grid",
+        estado=ESTADO_ACTIVO,
+        meta_mensal=5.0,  # ETH mais volátil → mais trades → meta ligeiramente superior
+        notas="Grid 10 níveis, range 10%. Activo desde 05/08/2026.",
+    )
+    registar_conta(
         id="etsy_planneratlas",
         nome="PlannerAtlas",
         tipo=TIPO_LOJA,

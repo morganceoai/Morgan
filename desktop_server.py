@@ -1955,16 +1955,17 @@ async def grid_status():
     """Estado completo do Grid Bot BTC/USDT."""
     try:
         from grid_bot import get_status
-        s = get_status()
-        # Calcular range do grid para mostrar
-        if s.get("ref_price") and s.get("level_size"):
-            ref = s["ref_price"]
-            lvl = s["level_size"]
-            s["grid_range"] = {
-                "lower": round(ref - 5 * lvl, 2),
-                "upper": round(ref + 5 * lvl, 2),
-            }
-        return JSONResponse(s)
+        return JSONResponse(get_status())
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/grid/eth")
+async def eth_grid_status():
+    """Estado completo do Grid Bot ETH/USDT."""
+    try:
+        from eth_grid_bot import get_status
+        return JSONResponse(get_status())
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -2603,6 +2604,16 @@ async def _run_trading_cycle():
     except Exception as e:
         print(f"[grid_bot] erro: {e}", flush=True)
         registar_erro("grid_bot", str(e))
+
+    # Grid Bot ETH/USDT
+    try:
+        from eth_grid_bot import run_cycle as eth_grid_run_cycle
+        result_eth = await loop.run_in_executor(None, eth_grid_run_cycle)
+        _handle_trading_result(result_eth, "Grid ETH")
+        limpar_erro("eth_grid_bot")
+    except Exception as e:
+        print(f"[eth_grid_bot] erro: {e}", flush=True)
+        registar_erro("eth_grid_bot", str(e))
 
     # DCA SOL/USDT
     try:
