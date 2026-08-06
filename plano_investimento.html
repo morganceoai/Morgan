@@ -1,0 +1,1713 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>BCVertex — Sistema de Investimento Passivo</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e2a;
+    --border: #252a38;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --accent: #4f8ef7;
+    --green: #3ecf8e;
+    --red: #f76c6c;
+    --yellow: #f7c948;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --teal: #2dd4bf;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f4f6fb;
+      --bg2: #ffffff;
+      --bg3: #eef1f8;
+      --border: #d4daea;
+      --text: #1a1e2a;
+      --muted: #6b7494;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6fb; --bg2: #ffffff; --bg3: #eef1f8;
+    --border: #d4daea; --text: #1a1e2a; --muted: #6b7494;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d0f14; --bg2: #13161e; --bg3: #1a1e2a;
+    --border: #252a38; --text: #e8eaf0; --muted: #7a8099;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  nav { display: flex; gap: 4px; overflow-x: auto; padding: 0 24px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  nav button { background: none; border: none; color: var(--muted); padding: 12px 14px; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .panel { display: none; padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+  h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+  .lead { color: var(--muted); font-size: 14px; margin-bottom: 28px; max-width: 680px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 700px) { .grid2, .grid3, .grid4 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .card-value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .pill-green { background: rgba(62,207,142,0.15); color: var(--green); }
+  .pill-red { background: rgba(247,108,108,0.15); color: var(--red); }
+  .pill-yellow { background: rgba(247,201,72,0.15); color: var(--yellow); }
+  .pill-blue { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .pill-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .pill-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+  .pill-teal { background: rgba(45,212,191,0.15); color: var(--teal); }
+
+  .section { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .section h3 { margin-bottom: 16px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .formula { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; margin: 12px 0; color: var(--accent); overflow-x: auto; }
+  .note { background: rgba(79,142,247,0.08); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; margin: 12px 0; }
+  .warn { background: rgba(247,201,72,0.08); border-left: 3px solid var(--yellow); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; margin: 12px 0; }
+  .danger { background: rgba(247,108,108,0.08); border-left: 3px solid var(--red); border-radius: 0 8px 8px 0; padding:-12px 16px; font-size: 13px; margin: 12px 0; }
+  .success { background: rgba(62,207,142,0.08); border-left: 3px solid var(--green); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; margin: 12px 0; }
+
+  .motor-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .m1 { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .m2 { background: rgba(62,207,142,0.15); color: var(--green); }
+  .m3 { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .m4 { background: rgba(247,201,72,0.15); color: var(--yellow); }
+  .m5 { background: rgba(45,212,191,0.15); color: var(--teal); }
+
+  .month-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  @media (max-width:600px) { .month-grid { grid-template-columns: repeat(2,1fr); } }
+  .month-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .month-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .month-item { font-size: 12px; padding: 2px 0; display: flex; align-items: center; gap-6px; }
+
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .step-body h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .step-body p { color: var(--muted); font-size: 13px; }
+
+  .fase-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .fase-card.lateral { border-color: rgba(79,142,247,0.4); background: rgba(79,142,247,0.04); }
+  .fase-card.bear { border-color: rgba(247,108,108,0.4); background: rgba(247,108,108,0.04); }
+  .fase-card.bull { border-color: rgba(62,207,142,0.4); background: rgba(62,207,142,0.04); }
+
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+  .progress-bar { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 3px; }
+
+  .crossing { background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(62,207,142,0.1)); border: 1px solid rgba(79,142,247,0.3); border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; }
+  .crossing .big { font-size: 32px; font-weight: 700; color: var(--green); }
+
+  .acct-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .acct-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .acct-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .acct-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .acct-row:last-child { border-bottom: none; }
+</style>
+
+<header>
+  <div>
+    <div class="logo">BC<span>Vertex</span> — Sistema de Investimento</div>
+    <div class="subtitle">Acumulação perpétua · Análise verificada · Agosto 2026</div>
+  </div>
+</header>
+
+<nav id="nav">
+  <button class="active" onclick="show('filosofia',this)">Filosofia</button>
+  <button onclick="show('fiscal',this)">Fiscal</button>
+  <button onclick="show('produtos',this)">Produtos</button>
+  <button onclick="show('motor5',this)">Motor 5</button>
+  <button onclick="show('macro',this)">Macro</button>
+  <button onclick="show('portfolio',this)">Portfolio</button>
+  <button onclick="show('capital',this)">Capital</button>
+  <button onclick="show('cripto',this)">Cripto</button>
+  <button onclick="show('correlacoes',this)">Correlações</button>
+  <button onclick="show('backtest',this)">Backtesting</button>
+  <button onclick="show('risco',this)">Risco</button>
+  <button onclick="show('calendario',this)">Calendário</button>
+  <button onclick="show('aventura',this)">Aventura</button>
+  <button onclick="show('contas',this)">Contas</button>
+  <button onclick="show('execucao',this)">Execução</button>
+</nav>
+
+<!-- FILOSOFIA -->
+<div class="panel active" id="filosofia">
+  <h2>Filosofia de Investimento</h2>
+  <p class="lead">Construção de riqueza perpétua. Nunca distribuir, nunca parar, nunca ter tecto.</p>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Princípio central</div>
+      <div class="card-value" style="font-size:18px;line-height:1.4">Acumulação<br>perpétua</div>
+      <div class="card-sub">O dinheiro nunca sai do sistema</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Fonte de rendimento para viver</div>
+      <div class="card-value" style="font-size:18px;line-height:1.4">Trabalho<br>Moreirense FC</div>
+      <div class="card-sub">O sistema existe para construir riqueza, não para viver</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Capital mensal</div>
+      <div class="card-value">€2.500–3.500</div>
+      <div class="card-sub">Motor real do crescimento — mais importante que o capital inicial</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Os 4 princípios</h3>
+    <div class="grid2">
+      <div>
+        <div style="margin-bottom:16px">
+          <div style="font-weight:600;margin-bottom:4px">1. Nunca levantar dinheiro</div>
+          <div style="color:var(--muted);font-size:13px">Cada euro que sai do sistema é um euro que deixa de fazer compound para sempre. A riqueza constrói-se não gastando os ganhos.</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="font-weight:600;margin-bottom:4px">2. Sem tecto definido</div>
+          <div style="color:var(--muted);font-size:13px">Não há um valor onde parar. O sistema escala indefinidamente — €10k, €30k, €100k/mês são pontos na trajectória, não destinos.</div>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:16px">
+          <div style="font-weight:600;margin-bottom:4px">3. Reinvestir tudo imediatamente</div>
+          <div style="color:var(--muted);font-size:13px">Dividendos, lucros dos bots, rendimentos trimestrais — tudo entra imediatamente em novos activos. Dinheiro parado não trabalha.</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div style="font-weight:600;margin-bottom:4px">4. Disciplina acima de tudo</div>
+          <div style="color:var(--muted);font-size:13px">O maior risco não é o mercado — é o comportamento. Vender em pânico, parar de investir, levantar dinheiro. O sistema só funciona se for seguido sem excepções.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>O poder do compound — porquê os primeiros anos parecem lentos</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">No ano 1 o teu investimento mensal domina tudo. No ano 7-8 o sistema gera mais por mês do que investes. No ano 10+ a curva é exponencial e o compound trabalha sozinho.</div>
+    <div class="grid4">
+      <div class="card" style="text-align:center">
+        <div class="card-title">Ano 1</div>
+        <div class="card-value" style="font-size:20px">€285</div>
+        <div class="card-sub">/mês gerado</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="card-title">Ano 5</div>
+        <div class="card-value" style="font-size:20px">€1.928</div>
+        <div class="card-sub">/mês gerado</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="card-title">Ano 10</div>
+        <div class="card-value" style="font-size:20px">€5.948</div>
+        <div class="card-sub">/mês gerado</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div class="card-title">Ano 15</div>
+        <div class="card-value" style="font-size:20px">€15.000+</div>
+        <div class="card-sub">/mês gerado</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FISCAL -->
+<div class="panel" id="fiscal">
+  <h2>Framework Fiscal Portugal</h2>
+  <p class="lead">O imposto de 28% muda tudo. Entender a matemática fiscal é a base de todas as decisões.</p>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Taxa fixa PT</div>
+      <div class="card-value" style="color:var(--red)">28%</div>
+      <div class="card-sub">Sobre dividendos e ganhos de capital</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Retenção efectiva</div>
+      <div class="card-value">72%</div>
+      <div class="card-sub">Do rendimento bruto que fica líquido</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Breakeven vs acumulação 9%</div>
+      <div class="card-value" style="color:var(--yellow)">12.7%</div>
+      <div class="card-sub">Yield mínimo bruto para bater o CSPX</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Fórmula 1 — Distribuidor (paga dividendos)</h3>
+    <div class="formula">Net = 10.000 × (1 + Y×0.72 + NAV)^Anos</div>
+    <div style="font-size:13px;color:var(--muted)">
+      <strong style="color:var(--text)">Y</strong> = yield bruto anual (ex: 10.99% = 0.1099)<br>
+      <strong style="color:var(--text)">×0.72</strong> = desconto do imposto 28% (aplica-se quando recebes o dividendo)<br>
+      <strong style="color:var(--text)">NAV</strong> = variação anual do preço (positivo = sobe, negativo = desce)<br>
+      <strong style="color:var(--text)">^Anos</strong> = compound durante N anos (juros sobre juros)
+    </div>
+    <div class="note" style="margin-top:12px">Exemplo JEPQ: 10.000 × (1 + 0.1099×0.72 + 0.0232)^10 = <strong>€26.496</strong></div>
+  </div>
+
+  <div class="section">
+    <h3>Fórmula 2 — Acumulação (não paga dividendos)</h3>
+    <div class="formula">Net = 10.000 × (1+R)^Anos × 0.72 + impostoBase</div>
+    <div style="font-size:13px;color:var(--muted)">
+      <strong style="color:var(--text)">R</strong> = retorno total anual bruto<br>
+      <strong style="color:var(--text)">Não pagas imposto</strong> durante os anos — só quando vendes<br>
+      <strong style="color:var(--text)">×0.72</strong> = pagas os 28% uma única vez no final<br>
+      <strong style="color:var(--green)">Vantagem</strong>: o compound ocorre sobre o valor bruto todos os anos — muito mais poderoso a longo prazo
+    </div>
+    <div class="note" style="margin-top:12px">Exemplo CSPX (10.64%): 10.000 × (1.1064)^10 × 0.72 = <strong>€19.785</strong> — mas sem trabalho, sem decisões, sem exposição ao risco de dividendo</div>
+  </div>
+
+  <div class="section">
+    <h3>Tabela de breakevens — quando vale a pena receber dividendos</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>ETF Acumulação</th><th>Retorno anual</th><th>Yield mínimo bruto necessário</th><th>Conclusão</th></tr>
+      <tr><td>Depósito a prazo</td><td>3%</td><td>>4.2%</td><td><span class="pill pill-green">Fácil de bater</span></td></tr>
+      <tr><td>ETF conservador</td><td>5%</td><td>>6.9%</td><td><span class="pill pill-green">Possível</span></td></tr>
+      <tr><td>ETF moderado</td><td>7%</td><td>>9.7%</td><td><span class="pill pill-yellow">Exigente</span></td></tr>
+      <tr><td>CSPX / S&P 500</td><td>9%</td><td>>12.7%</td><td><span class="pill pill-red">Muito difícil</span></td></tr>
+      <tr><td>QQQ / Nasdaq</td><td>12%</td><td>>16.7%</td><td><span class="pill pill-red">Quase impossível</span></td></tr>
+    </table>
+    </div>
+    <div class="warn">O CSPX historicamente cresce ~10%/ano. Para um distribuidor bater isso após 28% de imposto precisa de pagar mais de 12.7% bruto — com NAV estável. Por isso o CSPX está no Motor 4 como âncora de longo prazo.</div>
+  </div>
+
+  <div class="section">
+    <h3>Simulação real — €10.000 durante 10 anos por instrumento</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>Yield real</th><th>NAV drift</th><th>Taxa efectiva PT</th><th>€10k → 10 anos</th><th>Decisão</th></tr>
+      <tr><td><strong>ET</strong></td><td style="color:var(--green)">6.57%</td><td style="color:var(--green)">+19.76%</td><td style="color:var(--green)">24.5%</td><td style="color:var(--green);font-weight:700">€89.387</td><td><span class="pill pill-green">✓ Motor 3</span></td></tr>
+      <tr><td><strong>MO</strong></td><td style="color:var(--green)">6.20%</td><td style="color:var(--green)">+10.01%</td><td style="color:var(--green)">14.5%</td><td style="color:var(--green);font-weight:700">€38.716</td><td><span class="pill pill-green">✓ Motor 3</span></td></tr>
+      <tr><td><strong>MAIN</strong></td><td style="color:var(--green)">7.66%</td><td style="color:var(--green)">+6.79%</td><td style="color:var(--green)">12.3%</td><td style="color:var(--green);font-weight:700">€31.901</td><td><span class="pill pill-green">✓ Motor 2</span></td></tr>
+      <tr><td><strong>CSPX</strong></td><td>0%</td><td style="color:var(--green)">+10.64%</td><td style="color:var(--green)">10.64%</td><td style="color:var(--green);font-weight:700">€27.487</td><td><span class="pill pill-blue">✓ Motor 4</span></td></tr>
+      <tr><td><strong>JEPQ</strong></td><td style="color:var(--green)">10.99%</td><td style="color:var(--green)">+2.32%</td><td style="color:var(--green)">10.2%</td><td style="color:var(--green);font-weight:700">€26.496</td><td><span class="pill pill-green">✓ Motor 2</span></td></tr>
+      <tr><td><strong>ARCC</strong></td><td style="color:var(--green)">9.94%</td><td>+0.8%</td><td>8.0%</td><td>€21.589</td><td><span class="pill pill-green">✓ Motor 3</span></td></tr>
+      <tr><td><strong>LTC</strong></td><td style="color:var(--green)">5.89%</td><td>+1.2%</td><td>5.4%</td><td>€17.081</td><td><span class="pill pill-green">✓ Motor 2</span></td></tr>
+      <tr><td><strong>JEPI</strong></td><td>7.96%</td><td>-0.8%</td><td>4.9%</td><td>€16.066</td><td><span class="pill pill-yellow">Motor 2 reduzido</span></td></tr>
+      <tr><td><strong>SPYI</strong></td><td style="color:var(--green)">11.77%</td><td>-1.2%</td><td>7.3%</td><td>€20.100</td><td><span class="pill pill-green">✓ Motor 2</span></td></tr>
+      <tr><td><strong>EPD</strong></td><td style="color:var(--green)">5.80%</td><td style="color:var(--green)">+4.1%</td><td style="color:var(--green)">8.1%</td><td>€21.700</td><td><span class="pill pill-green">✓ Motor 3</span></td></tr>
+      <tr><td>QYLD</td><td>11.68%</td><td style="color:var(--red)">-3.61%</td><td style="color:var(--red)">4.8%</td><td style="color:var(--red)">€15.983</td><td><span class="pill pill-red">✗ Evitar</span></td></tr>
+      <tr><td>AGNC</td><td>13.50%</td><td style="color:var(--red)">-7.66%</td><td style="color:var(--red)">2.1%</td><td style="color:var(--red)">€12.261</td><td><span class="pill pill-red">✗ Armadilha</span></td></tr>
+      <tr><td>O (Realty)</td><td>5.17%</td><td style="color:var(--red)">-1.72%</td><td style="color:var(--red)">2.0%</td><td style="color:var(--red)">€12.104</td><td><span class="pill pill-red">✗ Fraco</span></td></tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>⚠️ Problema fiscal crítico — Motores 2 e 3 vs Motores 4 e 5</h3>
+    <div class="danger" style="padding:16px 20px;border-radius:10px">
+      <strong>ETFs de distribuição e dividendos (JEPQ, MAIN, ET, MO, etc.) — 28% retidos na fonte. Sem qualquer redução por prazo.</strong><br>
+      <span style="font-size:13px">Ao contrário das mais-valias (que têm exclusão de até -30% ao fim de 8+ anos), os dividendos pagam sempre os 28% completos — no primeiro ano e no vigésimo. A escala de exclusão por prazo não se aplica aqui.</span>
+    </div>
+    <div style="overflow-x:auto;margin-top:14px">
+    <table>
+      <tr><th>Motor</th><th>Tipo</th><th>Imposto dividendos PT</th><th>Imposto mais-valias PT (&gt;8 anos)</th><th>Eficiência fiscal</th></tr>
+      <tr><td><strong>Motor 1 — Cripto</strong></td><td>Especulativo</td><td>28% (lucros do bot)</td><td>28%</td><td><span class="pill pill-yellow">Média</span></td></tr>
+      <tr><td><strong>Motor 2/3 — Dividendos</strong></td><td>Distribuição</td><td style="color:var(--red)"><strong>28% — SEM REDUÇÃO</strong></td><td>N/A</td><td><span class="pill pill-red">Pior cenário</span></td></tr>
+      <tr><td><strong>Motor 4 — CSPX/QQQ</strong></td><td>Acumulação</td><td>0% (não distribui)</td><td style="color:var(--green)">~19.6% aos 8+ anos</td><td><span class="pill pill-green">Melhor fiscal</span></td></tr>
+      <tr><td><strong>Motor 5 — IAU/COPX/etc</strong></td><td>Acumulação</td><td>0% (não distribui)</td><td style="color:var(--green)">~19.6% aos 8+ anos</td><td><span class="pill pill-green">Melhor fiscal</span></td></tr>
+    </table>
+    </div>
+    <div class="success" style="margin-top:12px;font-size:13px"><strong>Estratégia fiscal óptima:</strong> Manter Motor 2/3 para gerar cashflow imediato para reinvestir, mas escalar progressivamente o Motor 4/5 para maximizar eficiência a longo prazo. A proporção ideal aumenta para Motor 4/5 à medida que o capital cresce.</div>
+    <div class="note" style="margin-top:10px;font-size:13px"><strong>Anexo J obrigatório:</strong> Todas as contas estrangeiras (IBKR, Trade Republic, Slash, Binance) declaradas até 30 de Junho de cada ano, mesmo sem rendimentos. Cripto: exchanges reportam automaticamente à AT a partir de 2026.</div>
+  </div>
+</div>
+
+<!-- PRODUTOS -->
+<div class="panel" id="produtos">
+  <h2>Produtos — Motores 1, 2 e 3</h2>
+  <p class="lead">Análise completa dos 10 produtos activos com dados reais verificados via yfinance.</p>
+
+  <div class="section">
+    <h3>Motor 2 — Dividendos Mensais (IBKR)</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>O que é</th><th>Yield real</th><th>NAV drift</th><th>Frequência</th><th>Nota</th></tr>
+      <tr>
+        <td><strong>JEPQ</strong></td>
+        <td style="color:var(--muted)">JPMorgan — "aluguer" das 100 maiores tech (Nvidia, Apple, Google)</td>
+        <td style="color:var(--green)">10.99%</td>
+        <td style="color:var(--green)">+2.32%</td>
+        <td><span class="pill pill-blue">Mensal</span></td>
+        <td>Principal do sistema</td>
+      </tr>
+      <tr>
+        <td><strong>SPYI</strong></td>
+        <td style="color:var(--muted)">NEOS — "aluguer" das 500 maiores empresas EUA. Melhor estrutura fiscal que QYLD</td>
+        <td style="color:var(--green)">11.77%</td>
+        <td>-1.2%</td>
+        <td><span class="pill pill-blue">Mensal</span></td>
+        <td>Substitui QYLD</td>
+      </tr>
+      <tr>
+        <td><strong>MAIN</strong></td>
+        <td style="color:var(--muted)">Empresta dinheiro a pequenas/médias empresas EUA. Paga bónus semestrais extra</td>
+        <td style="color:var(--green)">7.66%</td>
+        <td style="color:var(--green)">+6.79%</td>
+        <td><span class="pill pill-blue">Mensal + bónus</span></td>
+        <td>Dupla fonte de retorno</td>
+      </tr>
+      <tr>
+        <td><strong>LTC</strong></td>
+        <td style="color:var(--muted)">Possui lares de idosos e unidades de saúde nos EUA. Aluga a operadores</td>
+        <td style="color:var(--green)">5.89%</td>
+        <td>+1.2%</td>
+        <td><span class="pill pill-blue">Mensal</span></td>
+        <td>Sector defensivo — envelhecimento</td>
+      </tr>
+      <tr>
+        <td><strong>JEPI</strong></td>
+        <td style="color:var(--muted)">JPMorgan — versão conservadora do JEPQ. Focado no S&P 500</td>
+        <td>7.96%</td>
+        <td>-0.8%</td>
+        <td><span class="pill pill-blue">Mensal</span></td>
+        <td>Amortecedor em crashes</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted)">AGNC</td>
+        <td style="color:var(--muted)">Compra hipotecas americanas. Yield alto mas NAV destrói-se</td>
+        <td style="color:var(--red)">13.50%</td>
+        <td style="color:var(--red)">-7.66%</td>
+        <td><span class="pill pill-blue">Mensal</span></td>
+        <td style="color:var(--red)">€50 apenas — armadilha</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Motor 3 — Trimestrais (IBKR)</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>O que é</th><th>Yield real</th><th>NAV drift</th><th>Meses de pagamento</th><th>Tese</th></tr>
+      <tr>
+        <td><strong>ET</strong></td>
+        <td style="color:var(--muted)">Rede de gasodutos EUA. Cobra portagem por volume. Contratos AI data centers</td>
+        <td style="color:var(--green)">6.57%</td>
+        <td style="color:var(--green)">+19.76%</td>
+        <td>Fev · Mai · Ago · Nov</td>
+        <td style="color:var(--green)">⭐ Estrela — infraestrutura IA</td>
+      </tr>
+      <tr>
+        <td><strong>EPD</strong></td>
+        <td style="color:var(--muted)">Gasodutos e infraestrutura energética. 25 anos de crescimento consecutivo do dividendo</td>
+        <td style="color:var(--green)">5.80%</td>
+        <td style="color:var(--green)">+4.10%</td>
+        <td>Mar · Jun · Set · Dez</td>
+        <td>O mais conservador do sector</td>
+      </tr>
+      <tr>
+        <td><strong>ARCC</strong></td>
+        <td style="color:var(--muted)">Maior fundo de crédito privado do mundo. +400 empresas. Empréstimos a taxa variável</td>
+        <td style="color:var(--green)">9.94%</td>
+        <td>+0.8%</td>
+        <td>Fev · Mai · Ago · Nov</td>
+        <td>Beneficia de taxas altas do Fed</td>
+      </tr>
+      <tr>
+        <td><strong>MO</strong></td>
+        <td style="color:var(--muted)">Altria — maior empresa tabaco EUA. Marlboro. Expansão nicotina alternativa</td>
+        <td style="color:var(--green)">6.20%</td>
+        <td style="color:var(--green)">+10.01%</td>
+        <td>Jan · Abr · Jul · Out</td>
+        <td>Negócio ultra-resiliente, preços sobem sempre</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Motor 4 — Long Hold (Trade Republic)</h3>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;font-size:15px;margin-bottom:8px">CSPX — iShares Core S&P 500 UCITS ETF</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px">Compra automaticamente uma fatia das 500 maiores empresas americanas — Apple, Microsoft, Nvidia, Amazon, Google, Tesla, JPMorgan, Coca-Cola, McDonald's... todas ao mesmo tempo.</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px"><strong style="color:var(--text)">Acumulação:</strong> não paga dividendos — reinveste tudo internamente. Nunca pagas imposto até ao dia em que venderes. O compound acontece sobre o valor total, sem 28% a cortar anualmente.</div>
+        <div style="color:var(--muted);font-size:13px">Compra automática mensal na Trade Republic. Zero comissão. Não pensas mais nisso.</div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">Retorno histórico anual</div>
+          <div class="card-value" style="color:var(--green)">10.64%</div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">Dividendos pagos</div>
+          <div class="card-value">Zero</div>
+          <div class="card-sub">Reinvestidos internamente — sem imposto durante a vida do investimento</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOTOR 5 -->
+<div class="panel" id="motor5">
+  <h2>Motor 5 — Crescimento & Protecção</h2>
+  <p class="lead">A visão alargada: crescimento puro a décadas, ouro como seguro do portfolio, água e materias-primas como mega-tendências.</p>
+
+  <div class="warn">Motor 5 está em fase de planeamento — a implementar após estabilização dos Motores 1-4. Os produtos e alocações abaixo são a proposta inicial sujeita a revisão com dados de backtesting.</div>
+
+  <div class="section">
+    <div class="motor-badge m5">Motor 5 · €250/mês sugerido</div>
+    <div class="grid2">
+      <div>
+        <h3>Crescimento Puro — Big Tech & IA</h3>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Acções e ETFs sem expectativa de dividendo. O retorno vem da valorização do preço a longo prazo. Horizonte: 10-20 anos.</div>
+        <table>
+          <tr><th>Produto</th><th>O que é</th><th>Retorno histórico</th></tr>
+          <tr><td><strong>QQQ / QQQM</strong></td><td style="color:var(--muted)">ETF Nasdaq 100 — as 100 maiores tech</td><td style="color:var(--green)">~15%/ano</td></tr>
+          <tr><td><strong>Nvidia</strong></td><td style="color:var(--muted)">Chips IA — empresa mais valiosa do mundo</td><td style="color:var(--green)">Alta volatilidade</td></tr>
+          <tr><td><strong>Microsoft</strong></td><td style="color:var(--muted)">Cloud + IA (OpenAI) — crescimento sólido</td><td style="color:var(--green)">~12%/ano</td></tr>
+          <tr><td><strong>Apple</strong></td><td style="color:var(--muted)">Ecossistema fechado, margens imensas</td><td style="color:var(--green)">~11%/ano</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Ouro & Prata — Seguro do Portfolio</h3>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Quando os mercados de acções caem, o ouro sobe. É a única classe de activo com correlação negativa consistente. <strong style="color:var(--text)">Muito importante para o Vasco.</strong></div>
+        <table>
+          <tr><th>Produto</th><th>O que é</th><th>Função</th></tr>
+          <tr><td><strong>IAU</strong></td><td style="color:var(--muted)">ETF ouro físico BlackRock</td><td>Seguro principal</td></tr>
+          <tr><td><strong>GLD</strong></td><td style="color:var(--muted)">ETF ouro físico SPDR — maior liquidez</td><td>Alternativa ao IAU</td></tr>
+          <tr><td><strong>SLV</strong></td><td style="color:var(--muted)">ETF prata — mais volátil, procura industrial</td><td>Complemento ao ouro</td></tr>
+        </table>
+        <div class="note" style="margin-top:12px;font-size:12px">Recomendação: 5-10% do portfolio total em ouro. Em crash de 2008 o ouro subiu +25% enquanto o S&P 500 caiu -50%.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Água — A Maior Oportunidade Subestimada</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:14px">A escassez de água vai ser o maior problema global das próximas décadas. Mais de 2 biliões de pessoas já vivem em países com stress hídrico. A procura por infraestrutura, tratamento e gestão de água só pode crescer.</div>
+        <table>
+          <tr><th>Produto</th><th>O que é</th></tr>
+          <tr><td><strong>PHO</strong></td><td style="color:var(--muted)">ETF americano — empresas de infraestrutura e tratamento de água</td></tr>
+          <tr><td><strong>CGWI</strong></td><td style="color:var(--muted)">ETF global de água — diversificação geográfica</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Tese de investimento</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7">
+          Crescimento da população global<br>
+          Alterações climáticas → secas mais frequentes<br>
+          Urbanização crescente nos países em desenvolvimento<br>
+          Regulamentação ambiental mais exigente<br>
+          <strong style="color:var(--green)">→ Décadas de crescimento garantido</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Matérias-Primas — Mega-tendências</h3>
+    <div class="grid3">
+      <div class="card">
+        <div class="card-title">Cobre</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Essencial para toda a electrificação. Cada data center de IA, cada veículo eléctrico, cada painel solar precisa de cobre. Oferta limitada, procura a explodir.</div>
+        <div style="margin-top:10px"><span class="pill pill-orange">COPX ETF</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Urânio — Nuclear está a voltar</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">A energia nuclear está a ser reabilitada em todo o mundo como solução de energia limpa e base-load. Novos reactores em construção na Europa, EUA e Ásia.</div>
+        <div style="margin-top:10px"><span class="pill pill-yellow">URNM ETF</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Energias Renováveis</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Sector influenciado por subsídios — risco político mais alto. Abordagem via ETF é mais segura que acções individuais.</div>
+        <div style="margin-top:10px"><span class="pill pill-green">ICLN ETF</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Alocação sugerida Motor 5</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>Tipo</th><th>€/mês</th><th>Plataforma</th></tr>
+      <tr><td>QQQ / QQQM</td><td>Crescimento tech</td><td>€100</td><td>IBKR ou TR</td></tr>
+      <tr><td>IAU (ouro)</td><td>Seguro portfolio</td><td>€75</td><td>IBKR</td></tr>
+      <tr><td>PHO (água)</td><td>Mega-tendência</td><td>€40</td><td>IBKR</td></tr>
+      <tr><td>COPX ou URNM</td><td>Matéria-prima</td><td>€35</td><td>IBKR</td></tr>
+      <tr><td style="font-weight:600">Total Motor 5</td><td></td><td style="font-weight:600;color:var(--teal)">€250/mês</td><td></td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- MACRO -->
+<div class="panel" id="macro">
+  <h2>Contexto Macro — Agosto 2026</h2>
+  <p class="lead">O que está a acontecer no mundo e como afecta cada classe de activo no portfolio.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Fed Funds Rate</div>
+      <div class="card-value">3.50–3.75%</div>
+      <div class="card-sub">Sem alteração nas últimas 4 reuniões — postura de espera</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Petróleo WTI</div>
+      <div class="card-value" style="color:var(--orange)">~$95</div>
+      <div class="card-sub">Elevado após tensão Médio Oriente. Pico de $105 em Março (Estreito Hormuz)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bitcoin</div>
+      <div class="card-value">$80k–$110k</div>
+      <div class="card-sub">Lateralização — cenário ideal para grid bots</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Solana</div>
+      <div class="card-value">$80–$120</div>
+      <div class="card-sub">Intervalo activo — mais oscilação diária que BTC</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Impacto por classe de activo</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Classe</th><th>Produtos</th><th>Impacto actual</th><th>Porquê</th></tr>
+      <tr>
+        <td><strong>BDCs</strong></td>
+        <td>ARCC, MAIN</td>
+        <td><span class="pill pill-green">✓ Beneficiam</span></td>
+        <td>Empréstimos a taxa variável — taxas altas = mais receita</td>
+      </tr>
+      <tr>
+        <td><strong>Gasodutos</strong></td>
+        <td>ET, EPD</td>
+        <td><span class="pill pill-green">✓ Beneficiam muito</span></td>
+        <td>Petróleo $95 → volumes máximos. ET tem contratos AI data centers</td>
+      </tr>
+      <tr>
+        <td><strong>Covered calls</strong></td>
+        <td>JEPQ, SPYI, JEPI</td>
+        <td><span class="pill pill-blue">→ Neutros</span></td>
+        <td>Dependem de volatilidade, não de taxas. Volatilidade alta = mais prémio</td>
+      </tr>
+      <tr>
+        <td><strong>REITs</strong></td>
+        <td>LTC, O</td>
+        <td><span class="pill pill-yellow">⚠ Pressionados</span></td>
+        <td>Taxas altas = crédito caro. LTC aguenta (saúde é sempre necessária)</td>
+      </tr>
+      <tr>
+        <td><strong>Grid bots cripto</strong></td>
+        <td>BTC, ETH, SOL</td>
+        <td><span class="pill pill-green">✓ Fase ideal</span></td>
+        <td>Lateralização = o grid bot compra e vende infinitamente no mesmo range</td>
+      </tr>
+      <tr>
+        <td><strong>Ouro</strong></td>
+        <td>IAU, GLD</td>
+        <td><span class="pill pill-green">✓ Elevado</span></td>
+        <td>Incerteza geopolítica e inflação sustentam preço alto do ouro</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>A grande tese macro do portfolio</h3>
+    <div class="grid3">
+      <div class="card">
+        <div class="card-title">Taxas altas do Fed</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Favorece BDCs (ARCC, MAIN). Pressiona REITs (LTC, O). Neutro para covered calls. O portfolio está posicionado para beneficiar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Petróleo elevado</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">ET e EPD transportam mais volume. A ET é agora também infraestrutura de IA — beneficia de dois mega-trends simultaneamente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revolução IA</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Data centers precisam de energia → ET. Nvidia, MSFT lideram → QQQ. Cobre essencial para toda a infraestrutura. O portfolio captura a IA em várias frentes.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTFOLIO -->
+<div class="panel" id="portfolio">
+  <h2>Portfolio — Os 5 Motores</h2>
+  <p class="lead">Cinco motores independentes. Se um falhar os outros quatro mantêm o sistema a funcionar.</p>
+
+  <div class="section">
+    <div class="motor-badge m1">Motor 1 · Bots Cripto · €800/mês</div>
+    <h3>Grid Bots — Binance</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Par</th><th>Intervalo</th><th>Degraus</th><th>Retorno estimado</th><th>Estado</th></tr>
+      <tr><td><strong>BTC/USDT</strong></td><td>$80k – $110k</td><td>Calculado pela Binance</td><td>2–3%/mês</td><td><span class="pill pill-green">Activo</span></td></tr>
+      <tr><td><strong>ETH/USDT</strong></td><td>Range activo</td><td>Calculado pela Binance</td><td>2–3%/mês</td><td><span class="pill pill-green">Activo</span></td></tr>
+      <tr><td><strong>SOL/USDT</strong></td><td>$80 – $120</td><td>Degraus $3–$4</td><td>3–4%/mês</td><td><span class="pill pill-yellow">A activar</span></td></tr>
+    </table>
+    </div>
+    <div class="note">SOL oscila 4-5%/dia vs 2-3% do BTC — mais oportunidades de compra/venda por dia = mais lucro capturado pelo bot.</div>
+  </div>
+
+  <div class="section">
+    <div class="motor-badge m2">Motor 2 · Dividendos Mensais · €1.200/mês</div>
+    <h3>Produtos Mensais — IBKR</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>€/mês</th><th>Yield</th><th>Peso</th></tr>
+      <tr><td><strong>JEPQ</strong></td><td>€400</td><td style="color:var(--green)">10.99%</td><td><div class="progress-bar"><div class="progress-fill" style="width:33%;background:var(--accent)"></div></div></td></tr>
+      <tr><td><strong>SPYI</strong></td><td>€250</td><td style="color:var(--green)">11.77%</td><td><div class="progress-bar"><div class="progress-fill" style="width:21%;background:var(--green)"></div></div></td></tr>
+      <tr><td><strong>MAIN</strong></td><td>€200</td><td style="color:var(--green)">7.66%</td><td><div class="progress-bar"><div class="progress-fill" style="width:17%;background:var(--purple)"></div></div></td></tr>
+      <tr><td><strong>LTC</strong></td><td>€150</td><td style="color:var(--green)">5.89%</td><td><div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--yellow)"></div></div></td></tr>
+      <tr><td><strong>JEPI</strong></td><td>€150</td><td>7.96%</td><td><div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--orange)"></div></div></td></tr>
+      <tr><td>AGNC</td><td>€50</td><td style="color:var(--red)">13.50%*</td><td><div class="progress-bar"><div class="progress-fill" style="width:4%;background:var(--red)"></div></div></td></tr>
+    </table>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">*AGNC: yield ilusório — NAV cai 7.66%/ano. Mantido em €50 simbólicos.</div>
+  </div>
+
+  <div class="section">
+    <div class="motor-badge m3">Motor 3 · Trimestrais · €300/mês</div>
+    <h3>Trimestrais — IBKR</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>€/mês</th><th>Yield</th><th>Meses</th></tr>
+      <tr><td><strong>ET ⭐</strong></td><td>€100</td><td style="color:var(--green)">6.57% + NAV +19.76%</td><td>Fev · Mai · Ago · Nov</td></tr>
+      <tr><td><strong>ARCC</strong></td><td>€80</td><td style="color:var(--green)">9.94%</td><td>Fev · Mai · Ago · Nov</td></tr>
+      <tr><td><strong>MO</strong></td><td>€70</td><td style="color:var(--green)">6.20% + NAV +10%</td><td>Jan · Abr · Jul · Out</td></tr>
+      <tr><td><strong>EPD</strong></td><td>€50</td><td style="color:var(--green)">5.80%</td><td>Mar · Jun · Set · Dez</td></tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="motor-badge m4">Motor 4 · Long Hold · €200/mês</div>
+    <h3>Acumulação — Trade Republic</h3>
+    <table>
+      <tr><th>Produto</th><th>€/mês</th><th>Retorno histórico</th><th>Horizonte</th></tr>
+      <tr><td><strong>CSPX</strong></td><td>€200</td><td style="color:var(--green)">10.64%/ano</td><td>10-30 anos</td></tr>
+    </table>
+    <div class="note">Compra automática mensal. Zero decisões. Não pensas mais nisso.</div>
+  </div>
+
+  <div class="section">
+    <div class="motor-badge m5">Motor 5 · Crescimento & Protecção · €250/mês</div>
+    <h3>Big Tech + Ouro + Água + Matérias-Primas — IBKR / TR</h3>
+    <table>
+      <tr><th>Produto</th><th>€/mês</th><th>Tipo</th><th>Estado</th></tr>
+      <tr><td><strong>QQQ</strong></td><td>€100</td><td>Crescimento tech</td><td><span class="pill pill-yellow">A implementar</span></td></tr>
+      <tr><td><strong>IAU (ouro)</strong></td><td>€75</td><td>Seguro portfolio</td><td><span class="pill pill-yellow">A implementar</span></td></tr>
+      <tr><td><strong>PHO (água)</strong></td><td>€40</td><td>Mega-tendência</td><td><span class="pill pill-yellow">A implementar</span></td></tr>
+      <tr><td><strong>COPX ou URNM</strong></td><td>€35</td><td>Matéria-prima</td><td><span class="pill pill-yellow">A implementar</span></td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:8px">
+    <div class="card-title">Total mensal — 5 motores</div>
+    <div class="card-value" style="color:var(--accent)">€2.750/mês</div>
+    <div class="card-sub">Motor 1: €800 · Motor 2: €1.200 · Motor 3: €300 · Motor 4: €200 · Motor 5: €250</div>
+  </div>
+</div>
+
+<!-- CAPITAL -->
+<div class="panel" id="capital">
+  <h2>Projecção de Capital</h2>
+  <p class="lead">Trajectória aberta e sem tecto. O sistema não para — quanto mais tempo passa mais depressa cresce.</p>
+
+  <div class="crossing">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Ponto de cruzamento — ano em que o sistema gera mais do que investes</div>
+    <div class="big">Ano 8</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:8px">A partir daqui o compound trabalha mais do que tu</div>
+  </div>
+
+  <div class="section">
+    <h3>Projecção com €3.000/mês investidos</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr>
+        <th>Ano</th>
+        <th>Investido por ti</th>
+        <th>Gerado pelo sistema</th>
+        <th>Capital total</th>
+        <th>Rendimento/mês</th>
+        <th>Retorno anual</th>
+      </tr>
+      <tr><td>1</td><td>€36.000</td><td style="color:var(--muted)">€2.000</td><td>€38.000</td><td>€285</td><td style="color:var(--yellow)">5.6%</td></tr>
+      <tr><td>2</td><td>€72.000</td><td>€10.000</td><td>€82.000</td><td>€615</td><td style="color:var(--yellow)">8.1%</td></tr>
+      <tr><td>3</td><td>€108.000</td><td>€24.000</td><td>€132.000</td><td>€990</td><td style="color:var(--green)">9.5%</td></tr>
+      <tr><td>4</td><td>€144.000</td><td>€46.000</td><td>€190.000</td><td>€1.425</td><td style="color:var(--green)">10.2%</td></tr>
+      <tr><td>5</td><td>€180.000</td><td>€77.000</td><td>€257.000</td><td>€1.928</td><td style="color:var(--green)">10.6%</td></tr>
+      <tr><td>6</td><td>€216.000</td><td>€118.000</td><td>€334.000</td><td>€2.505</td><td style="color:var(--green)">10.8%</td></tr>
+      <tr><td>7</td><td>€252.000</td><td>€171.000</td><td>€423.000</td><td>€3.173</td><td style="color:var(--green)">10.9%</td></tr>
+      <tr style="background:rgba(62,207,142,0.06)"><td><strong>8 ⭐</strong></td><td>€288.000</td><td style="color:var(--green);font-weight:700">€239.000</td><td><strong>€527.000</strong></td><td style="color:var(--green);font-weight:700">€3.953</td><td style="color:var(--green)">11.0%</td></tr>
+      <tr><td>9</td><td>€324.000</td><td style="color:var(--green)">€325.000</td><td>€649.000</td><td style="color:var(--green)">€4.868</td><td style="color:var(--green)">11.1%</td></tr>
+      <tr><td>10</td><td>€360.000</td><td style="color:var(--green)">€433.000</td><td>€793.000</td><td style="color:var(--green)">€5.948</td><td style="color:var(--green)">11.2%</td></tr>
+      <tr><td>12</td><td>€432.000</td><td style="color:var(--green)">€743.000</td><td>€1.175.000</td><td style="color:var(--green)">€8.813</td><td style="color:var(--green)">11.4%</td></tr>
+      <tr><td>15</td><td>€540.000</td><td style="color:var(--green)">€1.460.000</td><td>€2.000.000</td><td style="color:var(--green)">€15.000</td><td style="color:var(--green)">11.6%</td></tr>
+      <tr><td>20</td><td>€720.000</td><td style="color:var(--green)">€4.280.000</td><td>€5.000.000</td><td style="color:var(--green)">€37.500</td><td style="color:var(--green)">11.8%</td></tr>
+    </table>
+    </div>
+    <div class="note" style="margin-top:12px">⭐ Ano 8: pela primeira vez o sistema gerou mais (€239k) do que tu investiste (€288k cumulativo). A partir daqui o compound domina completamente.</div>
+  </div>
+
+  <div class="danger" style="padding:14px 18px;border-radius:10px;margin:0 0 8px">
+    <strong>⚠️ Disclaimer — projecções são estimativas, não garantias</strong><br>
+    <span style="font-size:13px">Retornos históricos não garantem retornos futuros. A tabela acima assume rendimentos constantes de ~11%/ano com reinvestimento total. Na prática: crashes reduzem temporariamente o capital, dividendos podem ser cortados, spreads e taxas de câmbio corroem retornos marginalmente. Cenário pessimista (6-7%/ano): os valores acima são 30-40% mais baixos. Cenário optimista (14-15%/ano): 40-60% mais altos. O sistema é robusto porque continua a investir em todos os cenários.</span>
+  </div>
+
+  <div class="section">
+    <h3>Comparação de capital mensal</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>€/mês investido</th><th>Cruzamento</th><th>Rendimento Ano 10</th><th>Capital Ano 10</th></tr>
+      <tr><td>€2.500</td><td>Ano 9</td><td>€4.948/mês</td><td>€659.000</td></tr>
+      <tr style="background:rgba(79,142,247,0.06)"><td><strong>€3.000 ✓</strong></td><td><strong>Ano 8</strong></td><td style="color:var(--accent)"><strong>€5.948/mês</strong></td><td><strong>€793.000</strong></td></tr>
+      <tr><td>€3.500</td><td>Ano 7</td><td>€6.948/mês</td><td>€927.000</td></tr>
+    </table>
+    </div>
+    <div class="warn">O capital mensal é o motor real — muito mais importante que o capital inicial. €500/mês extra fazem diferença de 1 ano inteiro no cruzamento.</div>
+  </div>
+</div>
+
+<!-- CRIPTO -->
+<div class="panel" id="cripto">
+  <h2>Estratégias Cripto por Fase de Mercado</h2>
+  <p class="lead">Cada fase do mercado tem a estratégia óptima. O CFO detecta automaticamente a fase e alerta para ajuste.</p>
+
+  <div class="fase-card lateral">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="pill pill-blue" style="font-size:13px">● Fase actual</span>
+      <h3 style="margin:0">Lateralização — Mercado estável</h3>
+    </div>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Estratégia: Grid Bot</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px">O bot compra e vende automaticamente entre degraus. Quanto mais oscila dentro do intervalo, mais lucro captura. Não precisas de fazer nada.</div>
+        <div style="font-size:13px"><strong>BTC:</strong> $80k–$110k · Degraus calculados pela Binance<br>
+        <strong>ETH:</strong> Range activo<br>
+        <strong>SOL:</strong> $80–$120 · Degraus $3–$4</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Indicadores de confirmação</div>
+        <div style="font-size:13px;color:var(--muted)">
+          Preço acima e abaixo da média 200 dias alternadamente<br>
+          RSI entre 40–60 (zona neutra)<br>
+          Volume sem tendência clara<br>
+          Dominância BTC estável
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fase-card bear">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="pill pill-red" style="font-size:13px">↓ Bear Market</span>
+      <h3 style="margin:0">Mercado em queda forte</h3>
+    </div>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Estratégia: DCA — Dollar Cost Averaging</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px">Compra fixa mensal independentemente do preço. Se o Bitcoin cair de $100k para $40k e compras todos os meses, a tua média de custo fica muito abaixo do preço de recuperação. Quando o mercado recupera ganhas muito mais.</div>
+        <div class="danger" style="padding:12px 16px;font-size:13px">Grid bot para imediatamente — preço sai continuamente do intervalo para baixo.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Indicadores de bear market</div>
+        <div style="font-size:13px;color:var(--muted)">
+          Preço abaixo da média 200 dias durante semanas<br>
+          RSI abaixo de 30 prolongado<br>
+          Volume alto nas quedas<br>
+          Dominância BTC a subir muito (fuga dos altcoins)<br>
+          Notícias macroeconómicas negativas
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fase-card bull">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="pill pill-green" style="font-size:13px">↑ Bull Market</span>
+      <h3 style="margin:0">Mercado em subida forte</h3>
+    </div>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Estratégia: Trailing Stop</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:12px">Defines um nível que segue o preço para cima. O bot só vende se o preço cair X% a partir do máximo atingido. Deixas o lucro correr enquanto o mercado sobe e só sais quando começa a inverter.</div>
+        <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Alternativa:</strong> Momentum trading — compras quando rompe máximo histórico e segures até sinais de inversão.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Indicadores de bull market</div>
+        <div style="font-size:13px;color:var(--muted)">
+          Preço acima da média 200 dias consistentemente<br>
+          RSI acima de 60 sustentado<br>
+          Volume alto nas subidas<br>
+          Dominância BTC a descer (capital a fluir para altcoins)<br>
+          Halvings, ETFs aprovados, adopção institucional
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Backtesting — 10 anos de dados históricos</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Antes de escalar o capital dos bots, correr análise completa com dados reais 2016-2026. Captura todos os ciclos históricos: bull 2017, crash 2018, COVID 2020, bull 2021, bear 2022, recuperação 2023-2024.</div>
+    <div class="grid3">
+      <div class="card">
+        <div class="card-title">Pares a analisar</div>
+        <div style="font-size:13px;margin-top:8px">BTC/USDT<br>ETH/USDT<br>SOL/USDT</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Ferramentas</div>
+        <div style="font-size:13px;margin-top:8px">CCXT (dados Binance)<br>TA-Lib (150+ indicadores)<br>Python pandas</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Output</div>
+        <div style="font-size:13px;margin-top:8px">Retorno por estratégia por fase<br>Configuração óptima do grid<br>Drawdown máximo histórico</div>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:12px">Informação é dinheiro. 10 anos de dados valem mais do que qualquer estimativa teórica.</div>
+  </div>
+
+  <div class="section">
+    <h3>Análise de velas e padrões</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Cada vela representa abertura, fecho, máximo e mínimo de um período. Padrões históricos de velas combinados com indicadores permitem antecipar comportamentos com probabilidade estatisticamente relevante.</div>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Indicadores principais</div>
+        <div style="font-size:13px;color:var(--muted)">
+          <strong style="color:var(--text)">RSI</strong> — mede se está sobrecomprado ou sobrevendido<br>
+          <strong style="color:var(--text)">MACD</strong> — detecta mudanças de momentum<br>
+          <strong style="color:var(--text)">Bollinger Bands</strong> — detecta quando o preço está fora do normal<br>
+          <strong style="color:var(--text)">Média móvel 200d</strong> — identifica tendência principal
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Pipeline CFO → Vasco</div>
+        <div style="font-size:13px;color:var(--muted)">
+          1. CFO monitoriza indicadores em tempo real<br>
+          2. Detecta mudança de fase<br>
+          3. Alerta Vasco com recomendação específica<br>
+          4. Vasco aprova<br>
+          5. CFO reconfigura o bot
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RISCO -->
+<div class="panel" id="correlacoes">
+  <h2>Correlações entre Activos</h2>
+  <p class="lead">Se o mercado colapsar, o que cai junto? Dados reais de 5 anos + dois crashes históricos. A diversificação só funciona se os activos não se moverem todos na mesma direcção.</p>
+
+  <div class="section">
+    <h3>O que é correlação?</h3>
+    <div class="grid2">
+      <div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Correlação mede se dois activos sobem e descem juntos. De -1 (movem-se sempre ao contrário) a +1 (movem-se sempre igual). Zero significa independência total.</p>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="background:var(--red);color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">+0.7 a +1.0</span> <span>Alta — caem juntos num crash</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="background:var(--yellow);color:#000;padding:2px 8px;border-radius:4px;font-size:11px">+0.3 a +0.7</span> <span>Média — correlação parcial</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="background:var(--green);color:#000;padding:2px 8px;border-radius:4px;font-size:11px">0.0 a +0.3</span> <span>Baixa — comportamento independente</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><span style="background:var(--teal);color:#000;padding:2px 8px;border-radius:4px;font-size:11px">-1.0 a 0.0</span> <span>Negativa — hedge real (sobe quando o outro cai)</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Conclusão directa</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Ter 6 produtos altamente correlacionados não é diversificação — é o mesmo risco em 6 embalagens diferentes. O ouro existe exactamente para quebrar esta correlação.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Correlação com o mercado de acções (QQQ/Nasdaq — proxy)</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:14px">Dados semanais 5 anos. Quanto mais alto, mais o produto cai quando o mercado cai.</p>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--red)">JEPQ</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--red);height:100%;width:96%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff">+0.96 ⚠️ MUITO ALTA — cai com o Nasdaq</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--red)">JEPI</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--red);height:100%;width:72%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff">+0.72 ⚠️ ALTA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--yellow)">MAIN</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--yellow);height:100%;width:49%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.49 MÉDIA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--yellow)">COPX</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--yellow);height:100%;width:46%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.46 MÉDIA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--yellow)">URNM</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--yellow);height:100%;width:39%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.39 MÉDIA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--green)">SLV</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--green);height:100%;width:26%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.26 ✅ BAIXA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--green)">ET</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--green);height:100%;width:23%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.23 ✅ BAIXA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--green)">IAU</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--green);height:100%;width:17%;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#000">+0.17 ✅ BAIXA</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:60px;font-weight:600;color:var(--teal)">MO</span>
+        <div style="flex:1;background:var(--bg3);border-radius:4px;height:20px;overflow:hidden"><div style="background:var(--teal);height:100%;width:2%;"></div></div>
+        <span style="font-size:12px;color:var(--teal)">-0.01 ✅ QUASE ZERO — defensivo real</span>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:14px;font-size:13px"><strong>Problema real:</strong> JEPQ e JEPI, os dois maiores produtores de dividendos do Motor 2 e 3, têm correlação de 0.96 e 0.72 com o mercado. Não se protegem mutuamente — são o mesmo risco. O ouro e MO são os únicos hedges reais neste portfolio.</div>
+  </div>
+
+  <div class="section">
+    <h3>O ouro funciona como seguro? Dados reais de dois crashes</h3>
+    <div class="grid2">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--yellow)">Bear Market 2022 — inflação + crash cripto</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Fed subiu juros de 0% para 5.5%. Tech e cripto colapsaram.</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">SOL</span><span style="color:var(--red);font-weight:600">-94.2%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">ETH</span><span style="color:var(--red);font-weight:600">-67.5%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">BTC</span><span style="color:var(--red);font-weight:600">-64.3%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">QQQ</span><span style="color:var(--red);font-weight:600">-32.6%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">CSPX</span><span style="color:var(--red);font-weight:600">-18.7%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">JEPI</span><span style="color:var(--muted)">-3.5%</span></div>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">IAU (ouro)</span><span style="color:var(--green);font-weight:600">-0.6% ✅</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">SLV (prata)</span><span style="color:var(--green);font-weight:600">+2.4% ✅</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">COPX</span><span style="color:var(--green);font-weight:600">-0.8% ✅</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--green)">MO</span><span style="color:var(--green);font-weight:600">+4.4% ✅</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--accent)">ET (energia)</span><span style="color:var(--accent);font-weight:600">+55.7% 🚀</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--red)">COVID Crash Março 2020 — pânico de liquidez</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Pânico global. Investidores venderam tudo para ter dinheiro. Incluindo o ouro.</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">ET</span><span style="color:var(--red);font-weight:600">-65.8% ⚠️</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">MAIN</span><span style="color:var(--red);font-weight:600">-64.5% ⚠️</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">ETH</span><span style="color:var(--red);font-weight:600">-61.1%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">COPX</span><span style="color:var(--red);font-weight:600">-52.5%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">BTC</span><span style="color:var(--red);font-weight:600">-51.9%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">MO</span><span style="color:var(--red);font-weight:600">-38.8%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">SLV</span><span style="color:var(--red);font-weight:600">-35.6%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">CSPX</span><span style="color:var(--red);font-weight:600">-33.9%</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--red)">QQQ</span><span style="color:var(--red);font-weight:600">-28.6%</span></div>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--yellow)">IAU (ouro)</span><span style="color:var(--yellow);font-weight:600">-12.5% — melhor da classe</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Recuperação: mercado recuperou em 5 meses. ET e MAIN recuperaram em 12-18 meses.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>O ouro como hedge — veredicto honesto</h3>
+    <div class="grid2">
+      <div class="card" style="border-color:var(--green)">
+        <div class="card-title" style="color:var(--green)">✅ Quando funciona</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">
+          <strong style="color:var(--text)">Bear markets normais:</strong> inflação, subida de juros, recessão técnica. 2022 é o exemplo perfeito — ouro ficou flat enquanto tudo caiu.<br><br>
+          <strong style="color:var(--text)">Instabilidade geopolítica:</strong> guerras, crises políticas, incerteza — ouro é o activo de refúgio histórico.<br><br>
+          <strong style="color:var(--text)">Desvalorização da moeda:</strong> inflação alta corrói dinheiro, ouro preserva poder de compra.
+        </div>
+      </div>
+      <div class="card" style="border-color:var(--yellow)">
+        <div class="card-title" style="color:var(--yellow)">⚠️ Limitações reais</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">
+          <strong style="color:var(--text)">Pânicos de liquidez (COVID 2020):</strong> quando há pânico total, vende-se TUDO para ter dinheiro. Ouro cai menos (-12.5%) mas cai na mesma.<br><br>
+          <strong style="color:var(--text)">Não paga rendimento:</strong> IAU ganha apenas com valorização do preço. Sem dividendos, sem juros.<br><br>
+          <strong style="color:var(--text)">Volatilidade curto prazo:</strong> pode ficar flat 2-3 anos. Não é investimento de rendimento — é seguro.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Como usar estas correlações para gerir o portfolio</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="success" style="font-size:13px"><strong>Regra 1:</strong> JEPQ e JEPI não se protegem mutuamente. Não pôr mais de 50% do capital total nos dois juntos — é o mesmo risco concentrado.</div>
+      <div class="note" style="font-size:13px"><strong>Regra 2:</strong> Ouro (IAU) protege em 2022, não em 2020. Para o cenário COVID precisas de liquidez — ter 3-6 meses de despesas em conta-corrente antes de investir.</div>
+      <div class="success" style="font-size:13px"><strong>Regra 3:</strong> MO (tabaco) e ET (energia) têm comportamento quase independente do mercado tech. São os defensivos reais do portfolio de dividendos.</div>
+      <div class="note" style="font-size:13px"><strong>Regra 4:</strong> Cripto vai sempre cair mais que tudo. Nunca representa mais de 15-20% do capital total — os outros 80% funcionam como base sólida.</div>
+      <div class="success" style="font-size:13px"><strong>Regra 5:</strong> Após qualquer crash, o plano mantém-se. As correlações verificam que o ouro e os defensivos amorteceram — o sistema foi construído para sobreviver.</div>
+    </div>
+  </div>
+
+  <div class="danger" style="padding:16px 20px;border-radius:10px;margin-top:8px">
+    <strong>A conclusão mais importante:</strong><br>
+    <span style="font-size:13px">Não existe activo com correlação -1 (hedge perfeito) que também pague bem. Ouro protege em crashes normais mas não em pânicos de liquidez extremos. A única protecção real para um pânico de liquidez é ter cash suficiente fora do sistema de investimento. O objectivo da diversificação não é eliminar risco — é garantir que o sistema nunca colapsa completamente ao mesmo tempo.</span>
+  </div>
+</div>
+
+<div class="panel" id="backtest">
+  <h2>Backtesting — 10 Anos de Dados Reais</h2>
+  <p class="lead">BTC, ETH e SOL testados com dados históricos reais da Binance. Três estratégias, todos os ciclos de mercado: bull 2017/2021, bear 2018/2022, COVID 2020, lateralização 2019/2023.</p>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Dados utilizados</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">BTC: 3.277 dias (2017→2026)<br>ETH: 3.277 dias (2017→2026)<br>SOL: 2.187 dias (2020→2026)<br>Ferramenta: CCXT + TA-Lib</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Estratégias testadas</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">1. DCA — compra fixa diária<br>2. Grid Bot — lateralização<br>3. Trailing Stop — bull market<br>Detecção de fase: SMA200 + RSI14</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Configuração óptima por par</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">BTC: Grid 20%, 8 degraus<br>ETH: Grid 25%, 8 degraus<br>SOL: Grid 25%, 8 degraus<br>Trailing: 10-25% do pico</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Resultados por par — resumo</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr>
+        <th>Par</th>
+        <th>DCA total</th>
+        <th>Buy &amp; Hold</th>
+        <th>Grid anualizado*</th>
+        <th>Trailing Stop</th>
+        <th>Max Drawdown histórico</th>
+      </tr>
+      <tr>
+        <td><strong>BTC/USDT</strong><br><span style="font-size:11px;color:var(--muted)">2017→2026 · 3.277d</span></td>
+        <td style="color:var(--green)">+335%<br><span style="font-size:11px">$4.35/$1 invest.</span></td>
+        <td style="color:var(--green)">+1.413%</td>
+        <td style="color:var(--accent)">+32.5%/ano<br><span style="font-size:11px;color:var(--muted)">19% do tempo em range</span></td>
+        <td style="color:var(--green)">+2.497%<br><span style="font-size:11px;color:var(--muted)">trail 10%, look 30d</span></td>
+        <td style="color:var(--red)"><strong>-83.2%</strong><br><span style="font-size:11px;color:var(--muted)">Dez'17→Dez'18</span></td>
+      </tr>
+      <tr>
+        <td><strong>ETH/USDT</strong><br><span style="font-size:11px;color:var(--muted)">2017→2026 · 3.277d</span></td>
+        <td style="color:var(--green)">+259%<br><span style="font-size:11px">$3.59/$1 invest.</span></td>
+        <td style="color:var(--green)">+532%</td>
+        <td style="color:var(--accent)">+51.4%/ano<br><span style="font-size:11px;color:var(--muted)">14% do tempo em range</span></td>
+        <td style="color:var(--green)">+9.502%<br><span style="font-size:11px;color:var(--muted)">trail 15%, look 30d</span></td>
+        <td style="color:var(--red)"><strong>-94.0%</strong><br><span style="font-size:11px;color:var(--muted)">Jan'18→Dez'18</span></td>
+      </tr>
+      <tr>
+        <td><strong>SOL/USDT</strong><br><span style="font-size:11px;color:var(--muted)">2020→2026 · 2.187d</span></td>
+        <td style="color:var(--green)">+302%<br><span style="font-size:11px">$4.02/$1 invest.</span></td>
+        <td style="color:var(--green)">+2.133%</td>
+        <td style="color:var(--accent)">+56.8%/ano<br><span style="font-size:11px;color:var(--muted)">17% do tempo em range</span></td>
+        <td style="color:var(--green)">+5.723%<br><span style="font-size:11px;color:var(--muted)">trail 25%, look 20d</span></td>
+        <td style="color:var(--red)"><strong>-96.3%</strong><br><span style="font-size:11px;color:var(--muted)">Nov'21→Dez'22</span></td>
+      </tr>
+    </table>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">* Grid Bot anualizado medido apenas durante janelas em que o preço ficou dentro do range. Fora do range o bot não opera.</div>
+  </div>
+
+  <div class="section">
+    <h3>Retornos anualizados por fase de mercado (SMA200 + RSI14)</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Fase detectada automaticamente: Bull = preço acima SMA200 + RSI &gt; 55 | Bear = abaixo SMA200 + RSI &lt; 45 | Flat = resto</p>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Par</th><th>Dias Bull</th><th>Ret. Bull (%/ano)</th><th>Dias Bear</th><th>Ret. Bear (%/ano)</th><th>Dias Flat</th><th>Ret. Flat (%/ano)</th></tr>
+      <tr>
+        <td><strong>BTC</strong></td>
+        <td>887d</td>
+        <td style="color:var(--green);font-weight:700">+166.5%</td>
+        <td>743d</td>
+        <td style="color:var(--yellow)">+30.2%</td>
+        <td>1.445d</td>
+        <td style="color:var(--red)">-12.4%</td>
+      </tr>
+      <tr>
+        <td><strong>ETH</strong></td>
+        <td>817d</td>
+        <td style="color:var(--green);font-weight:700">+193.7%</td>
+        <td>831d</td>
+        <td style="color:var(--red)">-21.0%</td>
+        <td>1.427d</td>
+        <td style="color:var(--yellow)">+21.5%</td>
+      </tr>
+      <tr>
+        <td><strong>SOL</strong></td>
+        <td>502d</td>
+        <td style="color:var(--green);font-weight:700">+646.3%</td>
+        <td>532d</td>
+        <td style="color:var(--red)">-9.5%</td>
+        <td>951d</td>
+        <td style="color:var(--yellow)">+26.8%</td>
+      </tr>
+    </table>
+    </div>
+    <div class="warn" style="margin-top:12px;font-size:13px"><strong>Conclusão crítica:</strong> Todo o retorno de cripto concentra-se na fase Bull — que representa apenas 25-30% do tempo histórico. Em Flat (45-55% do tempo) o mercado corrói capital. Em Bear corrói ainda mais a não ser que estejas a fazer DCA. A detecção correcta da fase é a decisão mais importante.</div>
+  </div>
+
+  <div class="section">
+    <h3>Grid Bot — a verdade sobre a janela de operação</h3>
+    <div class="grid2">
+      <div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">O Grid Bot tem retornos excelentes — mas apenas enquanto o preço fica dentro do range definido. Historicamente isso acontece ~15-19% do tempo para BTC e ETH.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:6px">
+            <span>BTC — 19.4% do tempo em range</span>
+            <span style="color:var(--accent);font-weight:600">+32.5%/ano</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:6px">
+            <span>ETH — 13.9% do tempo em range</span>
+            <span style="color:var(--accent);font-weight:600">+51.4%/ano</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:6px">
+            <span>SOL — 16.7% do tempo em range</span>
+            <span style="color:var(--accent);font-weight:600">+56.8%/ano</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quando o Grid Bot para</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">
+          <strong style="color:var(--text)">Bull forte:</strong> preço sobe acima do tecto — capital fica em USDT, perdes upside<br><br>
+          <strong style="color:var(--text)">Bear forte:</strong> preço cai abaixo do piso — compras durante a queda, capital em risco<br><br>
+          <strong style="color:var(--text)">Regra:</strong> definir stop-loss abaixo do range. Se preço sair para baixo, bot para automaticamente e capital fica em USDT.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Regras automáticas CFO — detecção de fase e transição</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Baseadas nos dados históricos. O CFO monitoriza e <strong>alerta o Vasco</strong> — nunca executa sem aprovação.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;border-left:3px solid var(--accent)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">Regra 1 — Activar Grid Bot (lateralização)</div>
+        <div style="font-size:12px;color:var(--muted)">Preço alternadamente acima/abaixo da SMA20 durante 14+ dias <strong style="color:var(--text)">AND</strong> RSI entre 40-60 <strong style="color:var(--text)">AND</strong> volatilidade (ATR%) abaixo da média 90 dias → CFO alerta "condições de lateralização detectadas"</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;border-left:3px solid var(--red)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">Regra 2 — Parar Grid Bot / Activar DCA (bear)</div>
+        <div style="font-size:12px;color:var(--muted)">Preço abaixo da SMA200 durante 7+ dias consecutivos <strong style="color:var(--text)">AND</strong> RSI &lt; 40 → CFO alerta "mercado em bear, considerar parar grid e activar DCA"</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;border-left:3px solid var(--green)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">Regra 3 — Trailing Stop (bull confirmado)</div>
+        <div style="font-size:12px;color:var(--muted)">Preço acima SMA200 + novo máximo de 30 dias + RSI entre 55-75 (não sobrecomprado) → CFO alerta "rompimento confirmado, trailing stop sugerido". BTC: trail 10%. ETH: trail 15%. SOL: trail 25%.</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;border-left:3px solid var(--yellow)">
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">Regra 4 — Alerta de risco extremo</div>
+        <div style="font-size:12px;color:var(--muted)">Preço cai &gt;20% em 7 dias <strong style="color:var(--text)">OR</strong> RSI &lt; 25 → CFO alerta "atenção: queda brusca detectada — confirmar se bot está dentro do range"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Drawdowns históricos máximos — o que já aconteceu</h3>
+    <div class="grid3">
+      <div class="card" style="border-color:var(--red)">
+        <div class="card-title">BTC — pior crash</div>
+        <div class="card-value" style="color:var(--red)">-83.2%</div>
+        <div class="card-sub">Dez 2017 → Dez 2018<br>De $19.900 para $3.300</div>
+      </div>
+      <div class="card" style="border-color:var(--red)">
+        <div class="card-title">ETH — pior crash</div>
+        <div class="card-value" style="color:var(--red)">-94.0%</div>
+        <div class="card-sub">Jan 2018 → Dez 2018<br>De $1.430 para $85</div>
+      </div>
+      <div class="card" style="border-color:var(--red)">
+        <div class="card-title">SOL — pior crash</div>
+        <div class="card-value" style="color:var(--red)">-96.3%</div>
+        <div class="card-sub">Nov 2021 → Dez 2022<br>De $259 para $9 (+ FTX)</div>
+      </div>
+    </div>
+    <div class="danger" style="margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13px">
+      <strong>O que estes números significam na prática:</strong> Se tiveres €1.000 em SOL e acontecer um crash de -96%, ficas com €38. Não num cenário teórico — aconteceu entre 2021 e 2022. A solução não é evitar SOL — é nunca ter mais de 15-20% do capital total em cripto, e dentro disso diversificar entre BTC/ETH/SOL.
+    </div>
+  </div>
+
+  <div class="success" style="padding:14px 18px;border-radius:10px;margin-top:8px;font-size:13px">
+    <strong>Conclusão do backtesting — hierarquia das estratégias:</strong><br>
+    <strong style="color:var(--text)">Bull market → Trailing Stop</strong> (captura a subida, protege contra queda) · <strong style="color:var(--text)">Lateralização → Grid Bot</strong> (extrai lucro da volatilidade sem direcção) · <strong style="color:var(--text)">Bear market → DCA</strong> (acumula unidades ao preço mais baixo) · <strong style="color:var(--text)">Qualquer fase → nunca &gt;20% do portfolio total em cripto</strong>
+  </div>
+</div>
+
+<div class="panel" id="risco">
+  <h2>Análise de Risco</h2>
+  <p class="lead">Todo o sistema que não mostra o que pode correr mal não é honesto. Cinco cenários e como responder a cada um.</p>
+
+  <div class="section">
+    <h3>Cenário 1 — Bear Market acções (-40%)</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">O S&P 500 já caiu 40-50% em 2008 e 2020. Se acontecer amanhã o capital total cai a pico — CSPX de €10.000 passa a €6.000.</div>
+        <div class="success">Resposta: <strong>nada.</strong> Continua a investir mensalmente. Um crash é um desconto enorme nos produtos que continuas a comprar. O mercado recuperou sempre — 6 meses em 2020, 4 anos em 2008.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Impacto estimado</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Capital total: -35 a -45%<br>Dividendos: mantêm-se na maioria<br>Bots cripto: independentes<br>Recuperação: 1-4 anos histórico</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Cenário 2 — Subida agressiva do Fed (6-7%)</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">REITs como LTC e O sofrem — crédito fica muito caro, dividendos podem ser cortados. Já aconteceu em 2022 quando o Fed subiu de 0% para 5.5%.</div>
+        <div class="warn">Resposta: CFO monitora reuniões do Fed e alerta com antecedência. Reduzir exposição a REITs preventivamente. BDCs (ARCC, MAIN) beneficiam — rebalancear em favor deles.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Impacto por produto</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">LTC, O: <span style="color:var(--red)">−20 a −40%</span><br>ARCC, MAIN: <span style="color:var(--green)">+10 a +20%</span><br>JEPQ, SPYI: neutros<br>ET, EPD: ligeiramente negativos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Cenário 3 — Escalada grave Médio Oriente</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Petróleo a $130-150. Positivo para ET e EPD (mais volume, mais receita). Pode causar recessão que pressiona mercados gerais. Ouro dispara.</div>
+        <div class="note">Resposta: efeito líquido quase neutro no portfolio — exposição de ambos os lados. Ouro (Motor 5) actua como amortecedor.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Impacto estimado</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">ET, EPD: <span style="color:var(--green)">+15 a +30%</span><br>Ouro IAU: <span style="color:var(--green)">+10 a +25%</span><br>JEPQ, CSPX: <span style="color:var(--red)">−5 a −15%</span><br>Resultado global: ~neutro</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Cenário 4 — Crash cripto (-70%)</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Já aconteceu três vezes. Bitcoin de $69k para $16k em 2022. O grid bot sai do intervalo — compra a preços altos que não recuperam no curto prazo.</div>
+        <div class="warn">Resposta: grid bot para automaticamente. Capital fica em USDT (dólar digital) sem perdas adicionais. Reactivar quando novo intervalo de lateralização se estabelecer. Nunca mais de 15-20% do capital total em cripto.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Salvaguarda</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Motor 1 representa ~15% do portfolio total. Perda máxima possível: 15% do sistema global. Os Motores 2, 3, 4, 5 continuam intactos.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Cenário 5 — Colapso de produto específico</h3>
+    <div class="grid2">
+      <div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Um produto pode cortar dividendos ou colapsar completamente. Possível mas improvável nos produtos escolhidos (empresas grandes, reguladas, com décadas de história).</div>
+        <div class="success">Resposta: nenhum produto representa mais de 20-25% do Motor 2. Um colapso total afecta no máximo 5-8% do sistema global.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Critérios de saída automática</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">Dividendo cortado >20% sem justificação<br>NAV a cair >15% em 6 meses consecutivos<br>Mudança fundamental no modelo de negócio<br><br><strong style="color:var(--text)">Volatilidade normal não é motivo de saída.</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Liquidez — quanto tempo demora a vender cada produto</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Liquidez é a capacidade de converter um activo em dinheiro rapidamente, sem perder valor. Em emergências, saber isto evita vender o produto errado.</p>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Produto</th><th>Liquidez</th><th>Tempo a liquidar</th><th>Spread típico</th><th>Risco de vender mal</th></tr>
+      <tr>
+        <td><strong>BTC/ETH/SOL</strong></td>
+        <td><span class="pill pill-green">Alta</span></td>
+        <td>Segundos — 24/7</td>
+        <td>0.1%</td>
+        <td style="color:var(--green)">Baixo — mercado sempre aberto</td>
+      </tr>
+      <tr>
+        <td><strong>JEPQ / JEPI / QQQ / IAU / SLV</strong></td>
+        <td><span class="pill pill-green">Alta</span></td>
+        <td>Instante (mercado aberto)</td>
+        <td>&lt;0.05%</td>
+        <td style="color:var(--green)">Baixo — ETFs muito líquidos</td>
+      </tr>
+      <tr>
+        <td><strong>CSPX (London)</strong></td>
+        <td><span class="pill pill-green">Alta</span></td>
+        <td>Instante (mercado LSE)</td>
+        <td>0.05-0.1%</td>
+        <td style="color:var(--yellow)">Médio — mercado europeu, horário diferente</td>
+      </tr>
+      <tr>
+        <td><strong>MO / ET / EPD</strong></td>
+        <td><span class="pill pill-green">Alta</span></td>
+        <td>Instante (NYSE)</td>
+        <td>&lt;0.1%</td>
+        <td style="color:var(--green)">Baixo — acções grandes, muito negociadas</td>
+      </tr>
+      <tr>
+        <td><strong>MAIN / ARCC</strong></td>
+        <td><span class="pill pill-yellow">Média</span></td>
+        <td>Minutos (NYSE)</td>
+        <td>0.1-0.3%</td>
+        <td style="color:var(--yellow)">Médio — BDCs com menor volume</td>
+      </tr>
+      <tr>
+        <td><strong>COPX / URNM / PHO</strong></td>
+        <td><span class="pill pill-yellow">Média</span></td>
+        <td>Minutos (NYSE)</td>
+        <td>0.1-0.3%</td>
+        <td style="color:var(--yellow)">Médio — ETFs de nicho, menos volume</td>
+      </tr>
+      <tr>
+        <td><strong>LTC (REIT)</strong></td>
+        <td><span class="pill pill-yellow">Média-Baixa</span></td>
+        <td>Horas em stress de mercado</td>
+        <td>0.3-0.8%</td>
+        <td style="color:var(--red)">Alto em crashes — REITs perdem liquidez</td>
+      </tr>
+    </table>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="success" style="font-size:13px"><strong>Regra de emergência:</strong> vender sempre pela ordem: (1) cripto em Binance, (2) ETFs americanos líquidos (JEPQ/QQQ/IAU), (3) acções individuais. Nunca vender REITs em stress — são os que mais perdem em pânico.</div>
+      <div class="note" style="font-size:13px"><strong>Cash de reserva:</strong> manter 3-6 meses de despesas pessoais em conta-corrente fora do sistema. Esta reserva é o que impede vender investimentos em emergências ao pior momento possível.</div>
+    </div>
+  </div>
+
+  <div class="danger" style="padding:16px 20px;border-radius:10px;margin-top:8px">
+    <strong>O maior risco de todos — não está nos mercados.</strong><br>
+    <span style="font-size:13px">É comportamental: vender em pânico num crash, parar de investir num mês difícil, levantar dinheiro porque apareceu uma oportunidade. O sistema só funciona se for seguido com disciplina absoluta independentemente do que acontecer.</span>
+  </div>
+</div>
+
+<!-- CALENDARIO -->
+<div class="panel" id="calendario">
+  <h2>Calendário de Rendimentos</h2>
+  <p class="lead">Todos os meses do ano cobertos. Nunca há um mês sem entrada de dinheiro no sistema.</p>
+
+  <div class="month-grid">
+    <div class="month-card">
+      <div class="month-name">Janeiro</div>
+      <div class="month-item"><span class="pill pill-purple" style="margin-right:6px">MO</span> Altria</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Fevereiro</div>
+      <div class="month-item"><span class="pill pill-orange" style="margin-right:6px">ET</span> Energy Transfer</div>
+      <div class="month-item"><span class="pill pill-blue" style="margin-right:6px">ARCC</span> Ares Capital</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Março</div>
+      <div class="month-item"><span class="pill pill-teal" style="margin-right:6px">EPD</span> Enterprise Products</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Abril</div>
+      <div class="month-item"><span class="pill pill-purple" style="margin-right:6px">MO</span> Altria</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Maio</div>
+      <div class="month-item"><span class="pill pill-orange" style="margin-right:6px">ET</span> Energy Transfer</div>
+      <div class="month-item"><span class="pill pill-blue" style="margin-right:6px">ARCC</span> Ares Capital</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Junho</div>
+      <div class="month-item"><span class="pill pill-teal" style="margin-right:6px">EPD</span> Enterprise Products</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Julho</div>
+      <div class="month-item"><span class="pill pill-purple" style="margin-right:6px">MO</span> Altria</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Agosto</div>
+      <div class="month-item"><span class="pill pill-orange" style="margin-right:6px">ET</span> Energy Transfer</div>
+      <div class="month-item"><span class="pill pill-blue" style="margin-right:6px">ARCC</span> Ares Capital</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Setembro</div>
+      <div class="month-item"><span class="pill pill-teal" style="margin-right:6px">EPD</span> Enterprise Products</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Outubro</div>
+      <div class="month-item"><span class="pill pill-purple" style="margin-right:6px">MO</span> Altria</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Novembro</div>
+      <div class="month-item"><span class="pill pill-orange" style="margin-right:6px">ET</span> Energy Transfer</div>
+      <div class="month-item"><span class="pill pill-blue" style="margin-right:6px">ARCC</span> Ares Capital</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+    <div class="month-card">
+      <div class="month-name">Dezembro</div>
+      <div class="month-item"><span class="pill pill-teal" style="margin-right:6px">EPD</span> Enterprise Products</div>
+      <div class="month-item" style="margin-top:4px;color:var(--muted);font-size:11px">+ todos os mensais</div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:24px">
+    <h3>Produtos mensais — pagam todos os meses sem excepção</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <span class="pill pill-green">JEPQ</span>
+      <span class="pill pill-green">SPYI</span>
+      <span class="pill pill-green">MAIN</span>
+      <span class="pill pill-green">LTC</span>
+      <span class="pill pill-green">JEPI</span>
+      <span class="pill pill-green">AGNC</span>
+    </div>
+    <div class="note" style="margin-top:14px">Todos os meses tens pelo menos <strong>7 fontes de rendimento</strong> a pagar simultaneamente. Todo o dinheiro que entra reinveste imediatamente — o compound não para nunca.</div>
+  </div>
+</div>
+
+<!-- AVENTURA -->
+<div class="panel" id="aventura">
+  <h2>Gaveta de Aventuras</h2>
+  <p class="lead">Capital separado para oportunidades especulativas de alto risco e alto retorno. Este dinheiro não existe — quando entra na gaveta esqueces que é teu.</p>
+
+  <div class="grid3">
+    <div class="card" style="border-color:rgba(247,201,72,0.4)">
+      <div class="card-title">Capital máximo total</div>
+      <div class="card-value" style="color:var(--yellow)">€1.000</div>
+      <div class="card-sub">Nunca mais que isto na gaveta em simultâneo</div>
+    </div>
+    <div class="card" style="border-color:rgba(247,201,72,0.4)">
+      <div class="card-title">Máximo por posição</div>
+      <div class="card-value" style="color:var(--yellow)">€200</div>
+      <div class="card-sub">Mínimo 5 posições diferentes</div>
+    </div>
+    <div class="card" style="border-color:rgba(247,201,72,0.4)">
+      <div class="card-title">Stop loss</div>
+      <div class="card-value" style="color:var(--red)">-50%</div>
+      <div class="card-sub">Vende tudo sem hesitar. Sem excepções.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Como funciona um lançamento de token</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Uma equipa lança um token numa DEX. Nas primeiras horas o preço é quase zero e o volume explode. 95% vão a zero em dias (rug pulls). 5% multiplicam 10x-100x.</div>
+    <div class="grid2">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Onde comprar — depende da chain</div>
+        <table>
+          <tr><th>Chain</th><th>DEX</th><th>Wallet</th></tr>
+          <tr><td>Solana</td><td>Raydium · pump.fun</td><td>Phantom</td></tr>
+          <tr><td>Ethereum</td><td>Uniswap</td><td>MetaMask</td></tr>
+          <tr><td>Base</td><td>Aerodrome</td><td>MetaMask</td></tr>
+          <tr><td>Arbitrum</td><td>Camelot</td><td>MetaMask</td></tr>
+          <tr><td>Avalanche</td><td>Trader Joe</td><td>MetaMask</td></tr>
+        </table>
+        <div class="note" style="margin-top:12px;font-size:12px">Não é só Solana — qualquer chain pode ter um lançamento interessante. A chain onde nasce determina onde se compra.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px">Regras da gaveta</div>
+        <div style="font-size:13px;color:var(--muted)">
+          ✓ €1.000 máximo total em simultâneo<br>
+          ✓ €200 máximo por posição<br>
+          ✓ Mínimo 5 posições diferentes<br>
+          ✓ Se posição +5x → vender metade, deixar resto correr<br>
+          ✓ Se posição -50% → vender tudo imediatamente<br>
+          ✗ Nunca meter mais de €200 mesmo que "pareça óbvio"<br>
+          ✗ Nunca entrar sozinho sem sinal do Scout<br>
+          ✗ Nunca entrada automática — Vasco decide sempre
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Pipeline Scout → Vasco</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:14px">O Scout monitoriza em tempo real e alerta quando detecta sinal relevante. Vasco decide.</div>
+    <div class="grid3">
+      <div class="card">
+        <div class="card-title">Fontes monitoradas</div>
+        <div style="font-size:13px;margin-top:8px;color:var(--muted)">Dexscreener — volume anormal<br>pump.fun — lançamentos Solana<br>X/Twitter — menções explosivas<br>Telegram/Discord — comunidades</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sinal de alerta</div>
+        <div style="font-size:13px;margin-top:8px;color:var(--muted)">Token novo<br>Volume 10x em 1 hora<br>Comunidade a crescer<br>Sem red flags óbvias</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Decisão</div>
+        <div style="font-size:13px;margin-top:8px;color:var(--muted)">Scout alerta Vasco<br>Vasco analisa em 10 min<br>Vasco decide entrar ou não<br>Nunca automático</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">A mentalidade correcta: não é investimento — é entretenimento com upside. É o equivalente a ir ao casino com €200 sabendo que podes perder tudo e estás bem com isso. A diferença é que aqui o upside pode ser 100x.</div>
+</div>
+
+<!-- CONTAS -->
+<div class="panel" id="contas">
+  <h2>Contas e Plataformas</h2>
+  <p class="lead">A infraestrutura financeira do sistema — onde fica cada euro e porquê.</p>
+
+  <div class="grid2">
+    <div class="acct-card">
+      <h3>Slash</h3>
+      <div class="acct-sub">Banco americano com DeFi integrado — conta operacional principal</div>
+      <div class="acct-row"><span>Tipo</span><span class="pill pill-blue">Fora do CRS</span></div>
+      <div class="acct-row"><span>Yield no saldo parado</span><span style="color:var(--green)">4–6% APY (DeFi)</span></div>
+      <div class="acct-row"><span>Cartão</span><span>Visa internacional</span></div>
+      <div class="acct-row"><span>Função</span><span style="color:var(--muted)">Capital entra aqui primeiro → distribui para plataformas</span></div>
+      <div class="acct-row"><span>Estado</span><span class="pill pill-yellow">A abrir</span></div>
+    </div>
+    <div class="acct-card">
+      <h3>IBKR — Interactive Brokers</h3>
+      <div class="acct-sub">Broker principal para todos os produtos de dividendos</div>
+      <div class="acct-row"><span>Produtos</span><span style="color:var(--muted)">JEPQ · SPYI · MAIN · LTC · JEPI · ET · ARCC · MO · EPD · AGNC</span></div>
+      <div class="acct-row"><span>Comissões</span><span style="color:var(--green)">Muito baixas — referência do mercado</span></div>
+      <div class="acct-row"><span>Regulação</span><span>EUA + Europa</span></div>
+      <div class="acct-row"><span>Processo abertura</span><span style="color:var(--muted)">2–5 dias úteis. Passaporte + morada.</span></div>
+      <div class="acct-row"><span>Estado</span><span class="pill pill-yellow">A abrir</span></div>
+    </div>
+    <div class="acct-card">
+      <h3>Trade Republic</h3>
+      <div class="acct-sub">Exclusivamente para CSPX — compra automática mensal</div>
+      <div class="acct-row"><span>Produto</span><span>CSPX — €200/mês automático</span></div>
+      <div class="acct-row"><span>Comissão</span><span style="color:var(--green)">Zero — gratuito</span></div>
+      <div class="acct-row"><span>Automatismo</span><span>Define uma vez, esqueces</span></div>
+      <div class="acct-row"><span>Estado</span><span class="pill pill-yellow">A configurar</span></div>
+    </div>
+    <div class="acct-card">
+      <h3>Binance</h3>
+      <div class="acct-sub">Grid bots cripto — Motor 1</div>
+      <div class="acct-row"><span>Bots activos</span><span><span class="pill pill-green">BTC/USDT</span> <span class="pill pill-green">ETH/USDT</span></span></div>
+      <div class="acct-row"><span>A activar</span><span><span class="pill pill-yellow">SOL/USDT</span></span></div>
+      <div class="acct-row"><span>Capital</span><span>100 USDT activos + reforços</span></div>
+      <div class="acct-row"><span>Estado</span><span class="pill pill-green">Activo</span></div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:20px">
+    <h3>Roadmap de contas bancárias</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Fase</th><th>Conta</th><th>Quando</th><th>Porquê</th></tr>
+      <tr><td><span class="pill pill-green">Agora</span></td><td><strong>Slash</strong></td><td>Imediatamente</td><td>Operacional, fora do CRS, yield no saldo parado</td></tr>
+      <tr><td><span class="pill pill-green">Agora</span></td><td><strong>Wise</strong></td><td>Já existe</td><td>Conta europeia secundária, transferências SEPA</td></tr>
+      <tr><td><span class="pill pill-yellow">Médio prazo</span></td><td><strong>Estrutura UAE Free Zone</strong></td><td>Rendimento anual €50k+</td><td>Zero imposto pessoal, estrutura empresarial Dubai</td></tr>
+      <tr><td><span class="pill pill-purple">Longo prazo</span></td><td><strong>JP Morgan Private Bank</strong></td><td>Património ~$10M+</td><td>Gestão dedicada, produtos exclusivos, protecção de capital</td></tr>
+    </table>
+    </div>
+    <div class="warn" style="margin-top:12px">Nota fiscal: a obrigação de declarar contas estrangeiras à AT existe independentemente de reportarem ou não. Consultar contabilista quando o sistema escalar.</div>
+  </div>
+</div>
+
+<!-- EXECUCAO -->
+<div class="panel" id="execucao">
+  <h2>Plano de Execução</h2>
+  <p class="lead">Oito passos por esta ordem. Não saltar passos — cada um prepara o seguinte.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Abrir conta IBKR</h4>
+      <p>Interactive Brokers — broker principal para todos os produtos de dividendos. Processo: 2–5 dias úteis. Precisas de passaporte e comprovativo de morada. Sem isto nada do Motor 2 e 3 arranca.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Abrir conta Slash</h4>
+      <p>Banco americano operacional. Capital mensal entra aqui e distribui para as plataformas. Yield no saldo parado de 4-6% — o dinheiro trabalha mesmo quando está "à espera".</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Configurar Trade Republic — CSPX automático</h4>
+      <p>Definir compra automática de €200/mês em CSPX. Escolher o dia do mês. Após isto — não pensas mais no Motor 4. Funciona sozinho para sempre.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Activar bot SOL/USDT na Binance</h4>
+      <p>Já tens BTC e ETH activos. Seleccionar par SOL/USDT, intervalo $80–$120, deixar a Binance calcular o número óptimo de degraus para o capital disponível. O passo mais rápido de todos.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Primeira ronda de compras IBKR</h4>
+      <p>Com o capital inicial disponível, distribuir pelos produtos mensais e trimestrais. Não comprar tudo no mesmo dia — distribuir pelas primeiras 2-3 semanas para não entrar todo ao mesmo preço.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Backtesting 10 anos BTC/ETH/SOL</h4>
+      <p>Instalar TA-Lib. Correr análise completa com dados históricos 2016-2026 via CCXT. Produzir relatório: retorno por estratégia por fase, configuração óptima do grid, drawdown máximo. Informação é dinheiro — este passo vale mais do que qualquer estimativa teórica.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>Redesenhar CFO — motor de análise e alertas</h4>
+      <p>Motor de análise técnica com detecção automática de fase de mercado (lateralização/bear/bull). Monitorização dos produtos IBKR — preços, dividendos, NAV drift. Pipeline Scout→CFO→Vasco para altcoins. Relatório semanal completo.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <h4>Implementar Motor 5 após estabilização</h4>
+      <p>Após 2-3 meses com os Motores 1-4 estáveis e o backtesting concluído, implementar Motor 5: QQQ (crescimento), IAU (ouro/seguro), PHO (água), COPX ou URNM (matérias-primas). €250/mês adicionais.</p>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:8px">
+    <h3>Ordem de trabalhos completa</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>#</th><th>Tarefa</th><th>Tipo</th><th>Estado</th></tr>
+      <tr><td>1</td><td>Abrir conta IBKR</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>2</td><td>Abrir conta Slash</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>3</td><td>Trade Republic — CSPX automático</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>4</td><td>Activar SOL/USDT bot Binance</td><td>Binance</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>5</td><td>Primeira ronda compras IBKR</td><td>Manual Vasco</td><td><span class="pill pill-blue">Após IBKR</span></td></tr>
+      <tr><td>6</td><td>Instalar TA-Lib + backtesting 10 anos</td><td>Morgan / CFO</td><td><span class="pill pill-blue">Sprint CFO</span></td></tr>
+      <tr><td>7</td><td>Redesenhar CFO — análise técnica + alertas</td><td>Morgan / CFO</td><td><span class="pill pill-blue">Sprint CFO</span></td></tr>
+      <tr><td>8</td><td>Implementar Motor 5</td><td>Manual Vasco</td><td><span class="pill pill-purple">Após 2-3 meses</span></td></tr>
+      <tr><td>9</td><td>Activar Pulser</td><td>Morgan</td><td><span class="pill pill-purple">Após sistema estável</span></td></tr>
+      <tr><td>10</td><td>JARVIS + PWA com dashboard portfolio</td><td>Morgan</td><td><span class="pill pill-purple">Após sistema estável</span></td></tr>
+      <tr><td>11</td><td>Estrutura UAE Free Zone</td><td>Advogado fiscal</td><td><span class="pill pill-muted">Longo prazo</span></td></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Theme toggle via data-theme
+  const root = document.documentElement;
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme(dark) { root.setAttribute('data-theme', dark ? 'dark' : 'light'); }
+  mq.addEventListener('change', e => { if (!root.dataset.themeOverride) applyTheme(e.matches); });
+</script>
