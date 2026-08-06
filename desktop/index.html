@@ -199,6 +199,7 @@
   .node-label.active-scout  .node-label-name { color: var(--amber); text-shadow: 0 0 12px var(--amber); }
   .node-label.active-solver .node-label-name { color: var(--violet); text-shadow: 0 0 12px var(--violet); }
   .node-label.active-coach  .node-label-name { color: var(--green);  text-shadow: 0 0 12px var(--green); }
+  .node-label.active-cfo    .node-label-name { color: #f0c040;       text-shadow: 0 0 12px #f0c040; }
 
   .vasco-label {
     position: absolute; transform: translateX(-50%);
@@ -466,13 +467,18 @@
         font-family:inherit; transition:all .2s; display:none;
       ">Registar Voz</button>
     </div>
-    <div class="data-block" style="flex:1">
+    <div class="data-block">
       <div class="d-label">Agentes</div>
       <div class="d-bar-wrap">
         <div class="d-bar-row">
           <div class="d-bar-label">CEO</div>
           <div class="d-bar-track"><div class="d-bar-fill" style="width:100%;background:var(--cyan)"></div></div>
           <div class="d-bar-val" style="color:var(--cyan)">ON</div>
+        </div>
+        <div class="d-bar-row">
+          <div class="d-bar-label">CFO</div>
+          <div class="d-bar-track"><div class="d-bar-fill" id="barCfo" style="width:100%;background:#f0c040"></div></div>
+          <div class="d-bar-val" id="valCfo" style="color:#f0c040">ON</div>
         </div>
         <div class="d-bar-row">
           <div class="d-bar-label">Scout</div>
@@ -488,6 +494,32 @@
           <div class="d-bar-label">Coach</div>
           <div class="d-bar-track"><div class="d-bar-fill" style="width:100%;background:var(--green)"></div></div>
           <div class="d-bar-val" style="color:var(--green)">ON</div>
+        </div>
+      </div>
+    </div>
+    <div class="data-block" style="flex:1">
+      <div class="d-label">Trading</div>
+      <div class="d-bar-wrap" id="tradingBlocks">
+        <div class="d-bar-row">
+          <div class="d-bar-label" style="width:34px">BTC</div>
+          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="btcPnl">--</div>
+          <div class="d-bar-val" id="btcPos" style="width:auto;color:rgba(0,212,255,0.4)">--</div>
+        </div>
+        <div class="d-bar-row">
+          <div class="d-bar-label" style="width:34px">ETH</div>
+          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="ethPnl">--</div>
+          <div class="d-bar-val" id="ethPos" style="width:auto;color:rgba(0,212,255,0.4)">--</div>
+        </div>
+        <div class="d-bar-row">
+          <div class="d-bar-label" style="width:34px">SOL</div>
+          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="solPnl">--</div>
+          <div class="d-bar-val" id="solStrat" style="width:auto;color:rgba(0,212,255,0.35);font-size:6px">--</div>
+        </div>
+        <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">
+          <div class="d-bar-row">
+            <div class="d-bar-label" style="width:auto;flex:1">Total PnL</div>
+            <div style="font-size:9px;letter-spacing:1px" id="totalPnl">--</div>
+          </div>
         </div>
       </div>
     </div>
@@ -524,6 +556,7 @@
     <div class="hit" id="hit-scout"  onclick="selectAgent('scout')"  style="width:110px;height:110px"></div>
     <div class="hit" id="hit-solver" onclick="selectAgent('solver')" style="width:100px;height:100px"></div>
     <div class="hit" id="hit-coach"  onclick="selectAgent('coach')"  style="width:100px;height:100px"></div>
+    <div class="hit" id="hit-cfo"    onclick="selectAgent('cfo')"    style="width:90px;height:90px"></div>
 
     <!-- Labels -->
     <div class="vasco-label" id="label-vasco"><span>Vasco</span></div>
@@ -542,6 +575,10 @@
     <div class="node-label visible" id="label-coach">
       <div class="node-label-name">Morgan Coach</div>
       <div class="node-label-role">análise tática</div>
+    </div>
+    <div class="node-label visible" id="label-cfo">
+      <div class="node-label-name">Morgan CFO</div>
+      <div class="node-label-role">trading · finanças</div>
     </div>
 
     <!-- Overlay -->
@@ -588,7 +625,7 @@
         <div style="font-size:26px;font-weight:200;margin-top:6px;letter-spacing:3px" id="lastScore">--</div>
       </div>
     </div>
-    <div class="info-panel" style="flex:2">
+    <div class="info-panel">
       <div>
         <div class="i-label">Scout</div>
         <div class="i-line">
@@ -599,14 +636,44 @@
           <span class="i-ll">Aprovadas</span>
           <span class="i-lv" id="scoutAprovadas">--</span>
         </div>
-        <div class="r-bar-wrap" style="margin-top:10px">
-          <div class="d-label" style="margin-bottom:6px">Top Ops</div>
+        <div class="r-bar-wrap" style="margin-top:8px">
           <div id="scoutTopOps">
             <div class="r-bar-row">
               <div class="r-bar-label">--</div>
               <div class="r-bar-track"><div class="r-bar-fill" style="width:0%"></div></div>
               <div class="r-bar-val">--%</div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-panel" style="flex:2">
+      <div style="width:100%">
+        <div class="i-label">Portfolio BCVertex</div>
+        <div class="i-line" style="margin-top:4px">
+          <span class="i-ll">Total</span>
+          <span class="i-lv" id="portTotal">-- USDT</span>
+        </div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px" id="portMotors">
+          <div class="d-bar-row" style="gap:4px">
+            <div class="d-bar-label" style="width:28px;font-size:6px">M1</div>
+            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m1val">--</div>
+          </div>
+          <div class="d-bar-row" style="gap:4px">
+            <div class="d-bar-label" style="width:28px;font-size:6px">M2</div>
+            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m2val">--</div>
+          </div>
+          <div class="d-bar-row" style="gap:4px">
+            <div class="d-bar-label" style="width:28px;font-size:6px">M3</div>
+            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m3val">--</div>
+          </div>
+          <div class="d-bar-row" style="gap:4px">
+            <div class="d-bar-label" style="width:28px;font-size:6px">M4</div>
+            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m4val">--</div>
+          </div>
+          <div class="d-bar-row" style="gap:4px">
+            <div class="d-bar-label" style="width:28px;font-size:6px">M5</div>
+            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m5val">--</div>
           </div>
         </div>
       </div>
@@ -783,6 +850,7 @@ const spheres = {
   scout:  new ParticleSphere({ n:1800, radius:80,  color:'245,166,35',  speed:0.0014 }),
   solver: new ParticleSphere({ n:1500, radius:70,  color:'155,109,255', speed:0.0016 }),
   coach:  new ParticleSphere({ n:1600, radius:72,  color:'0,255,157',   speed:0.0013 }),
+  cfo:    new ParticleSphere({ n:1400, radius:65,  color:'240,192,64',  speed:0.0012 }),
 };
 
 function nodePositions() {
@@ -793,6 +861,7 @@ function nodePositions() {
     scout:  { x: cx + r * Math.cos(-0.55),  y: cy + r * Math.sin(-0.55) },
     solver: { x: cx + r * Math.cos(2.65),   y: cy + r * Math.sin(2.65)  },
     coach:  { x: cx + r * Math.cos(0.55),   y: cy + r * Math.sin(0.55)  },
+    cfo:    { x: cx + r * Math.cos(1.90),   y: cy + r * Math.sin(1.90)  },
     vasco:  { x: cx,                        y: cy - r * 0.90             },
   };
 }
@@ -827,11 +896,13 @@ function placeLabels() {
   placeEl('label-scout',  pos.scout.x,  pos.scout.y  +  80*0.85 + 12);
   placeEl('label-solver', pos.solver.x, pos.solver.y +  70*0.85 + 12);
   placeEl('label-coach',  pos.coach.x,  pos.coach.y  +  72*0.85 + 12);
+  placeEl('label-cfo',    pos.cfo.x,    pos.cfo.y    +  65*0.85 + 12);
   placeEl('label-vasco',  pos.vasco.x,  pos.vasco.y  - 14);
   placeHit('hit-ceo',    pos.ceo.x,    pos.ceo.y);
   placeHit('hit-scout',  pos.scout.x,  pos.scout.y);
   placeHit('hit-solver', pos.solver.x, pos.solver.y);
   placeHit('hit-coach',  pos.coach.x,  pos.coach.y);
+  placeHit('hit-cfo',    pos.cfo.x,    pos.cfo.y);
 }
 function placeEl(id, x, y)  { const e=document.getElementById(id); e.style.left=x+'px'; e.style.top=y+'px'; }
 function placeHit(id, x, y) { const e=document.getElementById(id); e.style.left=x+'px'; e.style.top=y+'px'; }
@@ -932,6 +1003,7 @@ function draw() {
   drawLine(pos.ceo.x, pos.ceo.y, pos.scout.x,  pos.scout.y,  'rgba(245,166,35,0.07)');
   drawLine(pos.ceo.x, pos.ceo.y, pos.solver.x, pos.solver.y, 'rgba(155,109,255,0.05)');
   drawLine(pos.ceo.x, pos.ceo.y, pos.coach.x,  pos.coach.y,  'rgba(0,255,157,0.06)');
+  drawLine(pos.ceo.x, pos.ceo.y, pos.cfo.x,    pos.cfo.y,    'rgba(240,192,64,0.06)');
 
   // Rings around CEO
   drawRings(pos.ceo.x, pos.ceo.y, breathe);
@@ -1091,6 +1163,76 @@ async function loadWidgets() {
 }
 loadWidgets(); setInterval(loadWidgets, 30000);
 
+// ─── TRADING WIDGETS ──────────────────────────────────────────────────────────
+
+function pnlColor(v) {
+  if (v > 0) return 'var(--green)';
+  if (v < 0) return 'var(--red)';
+  return 'rgba(0,212,255,0.4)';
+}
+function fmtPnl(v) {
+  if (v === null || v === undefined) return '--';
+  const s = v >= 0 ? '+' : '';
+  return `${s}$${Number(v).toFixed(2)}`;
+}
+
+async function loadTrading() {
+  try {
+    const [btc, eth, sol] = await Promise.all([
+      fetch('/api/grid').then(r=>r.json()).catch(()=>null),
+      fetch('/api/grid/eth').then(r=>r.json()).catch(()=>null),
+      fetch('/api/grid/sol').then(r=>r.json()).catch(()=>null),
+    ]);
+
+    if (btc) {
+      const pnl = btc.pnl_total ?? 0;
+      document.getElementById('btcPnl').textContent = fmtPnl(pnl);
+      document.getElementById('btcPnl').style.color = pnlColor(pnl);
+      document.getElementById('btcPos').textContent = (btc.open_positions ?? '--') + 'p';
+    }
+    if (eth) {
+      const pnl = eth.pnl_total ?? 0;
+      document.getElementById('ethPnl').textContent = fmtPnl(pnl);
+      document.getElementById('ethPnl').style.color = pnlColor(pnl);
+      document.getElementById('ethPos').textContent = (eth.open_positions ?? '--') + 'p';
+    }
+    if (sol) {
+      const pnl = sol.pnl_total ?? 0;
+      document.getElementById('solPnl').textContent = fmtPnl(pnl);
+      document.getElementById('solPnl').style.color = pnlColor(pnl);
+      document.getElementById('solStrat').textContent = (sol.estrategia ?? '--').toUpperCase();
+    }
+
+    const total = (btc?.pnl_total ?? 0) + (eth?.pnl_total ?? 0) + (sol?.pnl_total ?? 0);
+    const el = document.getElementById('totalPnl');
+    el.textContent = fmtPnl(total);
+    el.style.color = pnlColor(total);
+  } catch(e) {}
+}
+loadTrading(); setInterval(loadTrading, 60000);
+
+// ─── PORTFOLIO M1-M5 ──────────────────────────────────────────────────────────
+
+async function loadPortfolio() {
+  try {
+    const d = await fetch('/api/portfolio').then(r=>r.json()).catch(()=>null);
+    if (!d) return;
+    if (d.total !== undefined) {
+      document.getElementById('portTotal').textContent = '$' + Number(d.total).toFixed(0) + ' USDT';
+    }
+    const motors = ['m1','m2','m3','m4','m5'];
+    motors.forEach(m => {
+      const el = document.getElementById(m+'val');
+      if (!el) return;
+      const v = d[m];
+      if (v !== undefined && v !== null) {
+        el.textContent = typeof v === 'number' ? '$' + v.toFixed(0) : v;
+      }
+    });
+  } catch(e) {}
+}
+loadPortfolio(); setInterval(loadPortfolio, 120000);
+
 // ─── TRANSCRIPT ───────────────────────────────────────────────────────────────
 
 function showTranscript(u, m) {
@@ -1221,12 +1363,12 @@ function handleKey(e) {
 function selectAgent(id) {
   activeAgent = id;
   document.querySelectorAll('.node-label').forEach(el =>
-    el.classList.remove('active','active-scout','active-solver','active-coach')
+    el.classList.remove('active','active-scout','active-solver','active-coach','active-cfo')
   );
   document.getElementById('label-'+id).classList.add(
     id === 'ceo' ? 'active' : 'active-'+id
   );
-  const names = {ceo:'Morgan CEO', scout:'Morgan Scout', solver:'Morgan Solver', coach:'Morgan Coach'};
+  const names = {ceo:'Morgan CEO', scout:'Morgan Scout', solver:'Morgan Solver', coach:'Morgan Coach', cfo:'Morgan CFO'};
   document.getElementById('hdrAgent').textContent = names[id] || 'Morgan';
 }
 

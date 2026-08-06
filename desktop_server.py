@@ -1984,6 +1984,26 @@ async def bot_multi_status():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@app.get("/api/portfolio")
+async def get_portfolio():
+    """Snapshot do portfolio M1-M5 para a JARVIS."""
+    try:
+        from cfo_portfolio import get_portfolio_snapshot
+        snap = get_portfolio_snapshot()
+        motores = snap.get("motores", {})
+        total = snap.get("total_usdt", 0)
+        return JSONResponse({
+            "total": round(total, 2),
+            "m1": motores.get("M1", {}).get("valor_usdt", "--"),
+            "m2": motores.get("M2", {}).get("valor_usdt", "--"),
+            "m3": motores.get("M3", {}).get("valor_usdt", "--"),
+            "m4": motores.get("M4", {}).get("valor_usdt", "--"),
+            "m5": motores.get("M5", {}).get("valor_usdt", "--"),
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 _NOTIF_FILE = Path(__file__).parent / "memory" / "notificacoes.json"
 
 def _load_notifs() -> list:
