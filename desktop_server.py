@@ -1936,6 +1936,44 @@ async def eth_grid_status():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@app.get("/api/grid/sol")
+async def sol_grid_status():
+    """Estado completo do Grid Bot SOL/USDT."""
+    try:
+        from sol_grid_bot import get_status
+        return JSONResponse(get_status())
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/sol/estrategia")
+async def sol_estrategia():
+    """Analisa fase SOL e recomenda estratégia (grid vs DCA)."""
+    try:
+        from cfo_strategy_switch import analisar_e_recomendar
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, analisar_e_recomendar)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/sol/trocar-estrategia")
+async def sol_trocar_estrategia(request: Request):
+    """Executa troca de estratégia SOL após aprovação do Vasco."""
+    try:
+        body = await request.json()
+        nova = body.get("estrategia")
+        if not nova:
+            return JSONResponse({"error": "campo 'estrategia' obrigatório"}, status_code=400)
+        from cfo_strategy_switch import executar_troca
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, executar_troca, nova, "vasco")
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.get("/api/bot/multi")
 async def bot_multi_status():
     """Estado do trading bot em modo multi-par."""
@@ -2593,11 +2631,27 @@ async def _run_trading_cycle():
         print(f"[eth_grid_bot] erro: {e}", flush=True)
         registar_erro("eth_grid_bot", str(e))
 
-    # DCA SOL/USDT
+    # SOL — Grid ou DCA conforme estratégia activa
     try:
-        from dca_bot import run_dca_cycle
-        result_dca = await loop.run_in_executor(None, run_dca_cycle)
-        _handle_trading_result(result_dca, "DCA SOL")
+        from cfo_strategy_switch import _load_state as _sol_state
+        sol_estrategia_activa = _sol_state().get("estrategia_activa", "dca_apenas")
+        if sol_estrategia_activa == "grid_bot":
+            from sol_grid_bot import run_cycle as sol_grid_run_cycle
+            result_sol = await loop.run_in_executor(None, sol_grid_run_cycle)
+            _handle_trading_result(result_sol, "Grid SOL")
+            limpar_erro("sol_grid_bot")
+        # dca_bot já corre abaixo — não duplicar
+    except Exception as e:
+        print(f"[sol_strategy] erro: {e}", flush=True)
+        registar_erro("sol_grid_bot", str(e))
+
+    # DCA SOL/USDT — só corre se estratégia activa for dca_apenas
+    try:
+        from cfo_strategy_switch import _load_state as _sol_state
+        if _sol_state().get("estrategia_activa", "dca_apenas") == "dca_apenas":
+            from dca_bot import run_dca_cycle
+            result_dca = await loop.run_in_executor(None, run_dca_cycle)
+            _handle_trading_result(result_dca, "DCA SOL")
     except Exception as e:
         print(f"[dca_bot] erro: {e}", flush=True)
 
