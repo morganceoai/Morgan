@@ -2591,10 +2591,10 @@ def _handle_trading_result(result: dict, label: str):
 
 
 async def _run_trading_cycle():
-    """Corre ciclo do Supertrend BTC + DCA SOL e envia push se necessário."""
+    """Bots geridos pelo CFO scheduler (5min). Aqui só corre o Supertrend legado."""
     loop = asyncio.get_event_loop()
 
-    # Supertrend BTC/USDT
+    # Supertrend BTC/USDT (legado — mantido para referência)
     try:
         from trading_bot import run_cycle
         result = await loop.run_in_executor(None, run_cycle)
@@ -2610,36 +2610,6 @@ async def _run_trading_cycle():
     except Exception as e:
         print(f"[trading_bot] erro: {e}", flush=True)
         registar_erro("trading_bot", str(e))
-
-    # Grid Bot BTC/USDT
-    try:
-        from grid_bot import run_cycle as grid_run_cycle
-        result_grid = await loop.run_in_executor(None, grid_run_cycle)
-        _handle_trading_result(result_grid, "Grid BTC")
-        limpar_erro("grid_bot")
-    except Exception as e:
-        print(f"[grid_bot] erro: {e}", flush=True)
-        registar_erro("grid_bot", str(e))
-
-    # Grid Bot ETH/USDT
-    try:
-        from eth_grid_bot import run_cycle as eth_grid_run_cycle
-        result_eth = await loop.run_in_executor(None, eth_grid_run_cycle)
-        _handle_trading_result(result_eth, "Grid ETH")
-        limpar_erro("eth_grid_bot")
-    except Exception as e:
-        print(f"[eth_grid_bot] erro: {e}", flush=True)
-        registar_erro("eth_grid_bot", str(e))
-
-    # SOL — estratégia gerida pelo CFO (dca ou grid num único bot)
-    try:
-        from sol_bot import run_cycle as sol_run_cycle
-        result_sol = await loop.run_in_executor(None, sol_run_cycle)
-        _handle_trading_result(result_sol, "SOL")
-        limpar_erro("sol_bot")
-    except Exception as e:
-        print(f"[sol_bot] erro: {e}", flush=True)
-        registar_erro("sol_bot", str(e))
 
 
 async def _heartbeat_loop():

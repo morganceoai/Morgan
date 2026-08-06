@@ -768,15 +768,58 @@ Responde APENAS com JSON válido, sem mais texto:
         return {"acao": "erro", "razao": str(e)}
 
 
+def _run_bots_cycle():
+    """Corre um ciclo de execução nos 3 bots. Sem LLM — só CCXT."""
+    # BTC grid
+    try:
+        from grid_bot import run_cycle as btc_cycle
+        r = btc_cycle()
+        if r.get("acoes"):
+            print(f"[cfo/bots] BTC: {r['acoes']}", flush=True)
+    except Exception as e:
+        print(f"[cfo/bots] BTC erro: {e}", flush=True)
+    # ETH grid
+    try:
+        from eth_grid_bot import run_cycle as eth_cycle
+        r = eth_cycle()
+        if r.get("acoes"):
+            print(f"[cfo/bots] ETH: {r['acoes']}", flush=True)
+    except Exception as e:
+        print(f"[cfo/bots] ETH erro: {e}", flush=True)
+    # SOL (dca ou grid conforme estratégia activa)
+    try:
+        from sol_bot import run_cycle as sol_cycle
+        r = sol_cycle()
+        if r.get("acoes"):
+            print(f"[cfo/bots] SOL: {r['acoes']}", flush=True)
+    except Exception as e:
+        print(f"[cfo/bots] SOL erro: {e}", flush=True)
+
+
 def iniciar_scheduler_cfo():
     """
-    Inicia loop autónomo do CFO — a cada 30 minutos:
-    1. Circuit breaker (drawdown/streak)
-    2. Defesa completa (saldo, velocidade, range)
-    3. Ciclo de decisão inteligente (LLM)
+    Inicia dois loops autónomos do CFO:
+
+    Loop A — bots (5min, sem LLM):
+      Executa ciclos dos 3 bots (BTC grid, ETH grid, SOL bot).
+
+    Loop B — inteligência (30min, com LLM):
+      1. Circuit breaker (drawdown/streak)
+      2. Defesa completa (saldo, velocidade, range)
+      3. Ciclo de decisão inteligente (LLM)
+      4. ETF + portfolio (a cada 4 ciclos = 2h)
     """
-    def _loop():
-        time.sleep(60)  # 1min startup delay
+    def _loop_bots():
+        time.sleep(30)  # 30s startup delay
+        while True:
+            try:
+                _run_bots_cycle()
+            except Exception as e:
+                print(f"[cfo/bots] erro geral: {e}", flush=True)
+            time.sleep(5 * 60)
+
+    def _loop_inteligencia():
+        time.sleep(90)  # 90s startup delay — depois dos bots
         ciclo_count = 0
         while True:
             try:
@@ -812,8 +855,8 @@ def iniciar_scheduler_cfo():
 
             time.sleep(30 * 60)
 
-    t = threading.Thread(target=_loop, daemon=True, name="cfo-scheduler")
-    t.start()
+    threading.Thread(target=_loop_bots, daemon=True, name="cfo-bots").start()
+    threading.Thread(target=_loop_inteligencia, daemon=True, name="cfo-inteligencia").start()
 
 
 # ── Conversa com o CFO ───────────────────────────────────────────────────────
