@@ -1,0 +1,33 @@
+{
+  "patlas": {
+    "agente": "patlas",
+    "ts": "2026-08-03T19:51:00.530176",
+    "status": "✅ normal",
+    "resumo": "Vendas: 24 | Receita: €47.80 | Alertas: 0",
+    "listings": 24,
+    "receita": 47.8,
+    "alertas": [],
+    "etsy_oauth": true
+  },
+  "pulser": {
+    "agente": "pulser",
+    "ts": "2026-08-03T19:51:00.530376",
+    "status": "✅ normal",
+    "resumo": "Subs: 0 | Fase: setup | Alertas: 0",
+    "subscribers": 0,
+    "fase": "setup",
+    "ultimo_draft": "",
+    "alertas": []
+  },
+  "cfo": {
+    "agente": "cfo",
+    "ts": "2026-08-03T19:51:00.530488",
+    "status": "✅ activo",
+    "resumo": "PnL hoje: +0.0012 USDT | Total: +0.0034 | Trades: 7",
+    "pnl_today": 0.0012,
+    "pnl_total": 0.0034,
+    "position": null,
+    "last_signal": "hold",
+    "testnet": false
+  }
+}

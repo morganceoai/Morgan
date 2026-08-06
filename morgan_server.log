@@ -531,3 +531,381 @@ INFO:     127.0.0.1:58206 - "GET / HTTP/1.1" 200 OK
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
 [BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
+[BOT] Erro no ciclo: ccxt não instalado. Corre: pip install ccxt
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[creator] erro plano etsy: cannot import name 'gerar_plano_semana_planneratlas' from 'creator_agent' (/Users/vascobotelhodacosta/Morgan/creator_agent.py)
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784534695226&recvWindow=10000&signature=dceda9d8c1fcbae95c5095d36431e768e0b508b2a88b9a6bbd397ecced142fd9
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784539656334&recvWindow=10000&signature=8d795e6b81a29b0c94e986a92381ca83e8d5af1d65023c0499284eb166b652b2
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784546001702&recvWindow=10000&signature=d3f9f6f46f5e5fcb95dc17f2b059ae09f57bd440299fe7688e4afc94ae57e071
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784549013616&recvWindow=10000&signature=b5d8a6afdadb77246b9e39d5178cb2ad46dd698a85eaf5ee15e3e2c4a658dc1a
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784552987799&recvWindow=10000&signature=a9545a44fa9c33bed5551cbb9ac14b40b281506ec954be3f5b9d0e9d5d3c6850
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784561577259&recvWindow=10000&signature=800c078637ab5b0efb35d46f34f455564d3caeac618d54d181886ff758798170
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784567605979&recvWindow=10000&signature=9fd1d93872fa2cce380440d931fcc331807210dc74f1d7c9994f782ff9b6ce83
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784574028373&recvWindow=10000&signature=7c805c996ee887c4bfe08cb21583204be6102f9f97cbc450abad9188a36be827
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784577630767&recvWindow=10000&signature=c688502d106c0ef4345647821e219f470aaa884c40ec093a21cb613ebd76b642
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784581231676&recvWindow=10000&signature=3e1fcc939243a1e44e585e1e798b3892c3c0501de26d7df2ce8bf9dd3adcb2b7
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[heartbeat] erro: Connection error.
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784587797916&recvWindow=10000&signature=04decb917c6fe47913f7ab0ed611c4b6c3b68bbe09c98ec870cae09fa025cddb
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784591867916&recvWindow=10000&signature=8b58979a9ba00b5c92680d36ab3e21d6692741753a26f90c55f8859be1a80e2c
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784596863005&recvWindow=10000&signature=e3d589f123923931a3f01840d09a0756a074d31a4a4191c6f817561834bb63c5
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784600286142&recvWindow=10000&signature=bd7bf327073bb2bf0ee8ca9eb789c43da8a377612dd169ed1cf9420a52437369
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784604183111&recvWindow=10000&signature=d4596d9e63593773e2f7b8e1acc9d12780806f61ac30f3b524e7ac5d85e002ea
+[BOT] Erro no ciclo: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1784611506965&recvWindow=10000&signature=1ebf58750c79afc4c27dc38854dd6963d54bd3fd2829c3b538378349d7c6737f
+[BOT] Erro no ciclo: binance {"code":-2008,"msg":"Invalid Api-Key ID."}
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+[heartbeat] erro: sequence item 0: expected str instance, dict found
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33866]

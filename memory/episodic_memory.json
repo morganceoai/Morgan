@@ -1,29 +1,190 @@
 {
   "eventos": [
     {
-      "ts": "2026-07-18T15:05:04.400743+00:00",
-      "agente": "coach",
-      "tema": "moreirense_briefing",
-      "conteudo": "Próximo jogo: Moreirense vs FC Porto, Sábado 20h.",
-      "hash": "56a386a54ccc5640"
+      "ts": "2026-07-24T08:48:18.236735+00:00",
+      "agente": "cfo",
+      "tema": "conversa",
+      "conteudo": "Q: Qual é o estado do portfolio BTC hoje? | R: Capital: $100.00 USDT | PnL hoje: +$0.00 (0.0%) | Risco: VERDE\n\n0 trades executados — amostra insuficiente para métricas estatísticas. Bot activo, sem alertas.",
+      "hash": "8fc141b0ab57f720"
     },
     {
-      "ts": "2026-07-18T15:05:04.401102+00:00",
-      "agente": "coach",
-      "tema": "moreirense_briefing",
-      "conteudo": "Alexandre Parsemain assinou pelo Moreirense. Próximo jogo: vs FC Porto, Sábado 20h.",
-      "hash": "1469a7b7e994ba43"
+      "ts": "2026-07-24T11:52:29.066626+00:00",
+      "agente": "ceo",
+      "tema": "teste",
+      "conteudo": "Sistema Morgan testado com sucesso. 8 agentes activos. BCVertex operacional.",
+      "hash": "99ce3a2ee163563f"
     },
     {
-      "ts": "2026-07-18T15:32:32.395457+00:00",
-      "agente": "test_agente_novo",
-      "tema": "bootstrap_completo",
-      "conteudo": "bootstrap em 2026-07-18 — 2 eventos lidos",
-      "hash": "fead3597d8281aa0"
+      "ts": "2026-07-24T11:52:29.066956+00:00",
+      "agente": "scout",
+      "tema": "oportunidade",
+      "conteudo": "Directório terapeutas Portugal — mercado validado, baixa concorrência.",
+      "hash": "0c22198478d7a56d"
+    },
+    {
+      "ts": "2026-07-24T11:52:29.067130+00:00",
+      "agente": "cfo",
+      "tema": "trading",
+      "conteudo": "BTC/USDT bot activo, 100 USDT, risco verde.",
+      "hash": "495d7e8f51b18fff"
+    },
+    {
+      "ts": "2026-08-02T16:09:23.352449+00:00",
+      "agente": "scout",
+      "tema": "conversa",
+      "conteudo": "Q: Faz uma análise PROFUNDA e DETALHADA das seguintes duas oportunidades de negócio aprovadas pelo Vasc | R: Tenho todos os dados necessários, incluindo múltiplos casos de falhanço documentados. Aqui está a análise completa.\n\n---\n\n# ANÁLISE PROFUNDA — DIRECTÓRIOS PT/BR: TERAPEUTAS vs TUTORES IT\n\n*Morgan Scou",
+      "hash": "a26d1622a009faf6"
+    },
+    {
+      "ts": "2026-08-02T16:11:06.674240+00:00",
+      "agente": "scout",
+      "tema": "conversa",
+      "conteudo": "Q: Continua o relatório anterior a partir da secção 'Stack técnica para implementar' para o directório  | R: Tenho dados sólidos para ambos os nichos. Aqui está o relatório completo.\n\n---\n\n# RELATÓRIO SCOUT — CONTINUAÇÃO E ANÁLISE COMPARATIVA\n\n## PARTE 1 — DIRECTÓRIO DE TERAPEUTAS (continuação)\n\n### Stack té",
+      "hash": "96568eb063a55e0e"
+    },
+    {
+      "ts": "2026-08-02T16:11:49.681778+00:00",
+      "agente": "scout",
+      "tema": "conversa",
+      "conteudo": "Q: Finaliza o relatório com: \n1. Tabela comparativa final: directório terapeutas vs tutores IT (5 crité | R: # FINALIZAÇÃO DO RELATÓRIO — DIRECTÓRIO TERAPEUTAS vs TUTORES IT\n\n---\n\n## 1. TABELA COMPARATIVA FINAL\n\n| Critério (peso) | Directório Terapeutas PT | Tutores IT | Justificação |\n|---|---|---|---|\n| **",
+      "hash": "bd34d82cc784da27"
+    },
+    {
+      "ts": "2026-08-02T22:51:33.561489+00:00",
+      "agente": "ceo",
+      "tema": "sistema",
+      "conteudo": "Novo negócio no sistema: The AI Pulse (Beehiiv) — Newsletter faceless EN — AI tools & productivity para founders (US/UK/CA). Curadoria semanal automatizada pelo Morgan.",
+      "hash": "d67dd6e8bb015b5f"
+    },
+    {
+      "ts": "2026-08-02T22:51:33.562229+00:00",
+      "agente": "marketeer",
+      "tema": "sistema",
+      "conteudo": "Novo negócio para gerir: The AI Pulse em Beehiiv. Assumir marketing imediatamente.",
+      "hash": "10982ca80e6e8c8e"
+    },
+    {
+      "ts": "2026-08-02T22:51:33.562560+00:00",
+      "agente": "operator",
+      "tema": "sistema",
+      "conteudo": "Novo negócio operacional: The AI Pulse em Beehiiv. Monitorizar estado diário.",
+      "hash": "9489046914cc16ff"
+    },
+    {
+      "ts": "2026-08-02T22:51:33.562760+00:00",
+      "agente": "cfo",
+      "tema": "sistema",
+      "conteudo": "Novo negócio: The AI Pulse. Incluir nas projeções financeiras mensais.",
+      "hash": "c13ef06e94cf6edc"
+    },
+    {
+      "ts": "2026-08-02T22:51:33.563013+00:00",
+      "agente": "solver",
+      "tema": "sistema",
+      "conteudo": "Novo negócio The AI Pulse criado. Monitorizar erros e dependências.",
+      "hash": "5d7a85d59ff5f7cc"
+    },
+    {
+      "ts": "2026-08-02T23:07:40.727340+00:00",
+      "agente": "scout",
+      "tema": "conversa",
+      "conteudo": "Q: Investiga micro-SaaS com distribuição SEO-pura — critério eliminatório: cliente chega via pesquisa o | R: Tenho tudo o que preciso. Vou compilar o relatório com Quality Gate completo por vertical.\n\n---\n\n# RELATÓRIO SCOUT — Micro-SaaS de distribuição SEO-pura\n\n**Critério eliminatório aplicado:** cliente ch",
+      "hash": "11726efc9ad1cabc"
+    },
+    {
+      "ts": "2026-08-03T12:46:46.173108+00:00",
+      "agente": "ceo",
+      "tema": "conversa",
+      "conteudo": "Vasco: Boa tarde Morgan | Morgan: Boa tarde, Vasco. O que precisas?",
+      "hash": "94a27104879adc74"
+    },
+    {
+      "ts": "2026-08-03T12:51:31.297375+00:00",
+      "agente": "ceo",
+      "tema": "creator_build",
+      "conteudo": "Creator iniciou construção de 'Directório de terapeutas global' — sub-Morgan directorio_terapeutas_20260803 criado automaticamente.",
+      "hash": "ba27571b825e5098"
+    },
+    {
+      "ts": "2026-08-03T12:51:31.506818+00:00",
+      "agente": "ceo",
+      "tema": "creator_build",
+      "conteudo": "Creator iniciou construção de 'Templates planners digitais — mercados não-ingleses' — sub-Morgan templates_digitais_20260803 criado automaticamente.",
+      "hash": "39d4f8dde83cfb58"
+    },
+    {
+      "ts": "2026-08-03T12:51:31.507701+00:00",
+      "agente": "ceo",
+      "tema": "creator_build",
+      "conteudo": "Creator iniciou construção de 'Directório de tutores global' — sub-Morgan directorio_tutores_20260803 criado automaticamente.",
+      "hash": "ba7f70c84362e780"
+    },
+    {
+      "ts": "2026-08-03T12:51:31.508600+00:00",
+      "agente": "ceo",
+      "tema": "creator_build",
+      "conteudo": "Creator iniciou construção de 'Templates Notion — mercados não-ingleses' — sub-Morgan templates_notion_20260803 criado automaticamente.",
+      "hash": "a434e5b2a08de815"
+    },
+    {
+      "ts": "2026-08-03T18:41:53.576066+00:00",
+      "agente": "ceo",
+      "tema": "evento_critico",
+      "conteudo": "[CEO ALERTA] CFO — Teste crítico — perda >5%: Teste crítico — perda >5%",
+      "hash": "945811739ebd74e8"
+    },
+    {
+      "ts": "2026-08-03T18:42:03.127310+00:00",
+      "agente": "ceo",
+      "tema": "evento_critico",
+      "conteudo": "[CEO ALERTA] SOLVER — Erro 'erro_critico' repetido 4x em 'solver': Falha módulo X — tentativa 4",
+      "hash": "f02f5371e7a198ac"
+    },
+    {
+      "ts": "2026-08-03T18:42:14.497593+00:00",
+      "agente": "ceo",
+      "tema": "patlas_alerta",
+      "conteudo": "🚨 URGENTE — PAtlas — teste integração: CTR abaixo de 0.5%",
+      "hash": "ddc525231bbec489"
+    },
+    {
+      "ts": "2026-08-03T18:42:14.498320+00:00",
+      "agente": "operator",
+      "tema": "patlas_update",
+      "conteudo": "PAtlas — teste integração: CTR abaixo de 0.5%",
+      "hash": "c83f46fa27d14534"
+    },
+    {
+      "ts": "2026-08-03T18:42:14.499789+00:00",
+      "agente": "ceo",
+      "tema": "evento_critico",
+      "conteudo": "[CEO ALERTA] PATLAS — PAtlas — teste integração: CTR abaixo de 0.5%: PAtlas — teste integração: CTR abaixo de 0.5%",
+      "hash": "ed4bd815fc3e4be1"
+    },
+    {
+      "ts": "2026-08-03T19:02:24.695228+00:00",
+      "agente": "scout",
+      "tema": "missao_b_solver",
+      "conteudo": "Tenho material excelente e diretamente aplicável — incluindo projetos que correm exatamente no cenário do Morgan (7-8 agentes Python num Mac Mini). Tenho tudo o que preciso para o relatório.\n\n---\n\n# Relatório de Investigação — Detecção Proactiva de Erros Silenciosos\n\n**Missão:** tornar o Solver do Morgan proactivo (detectar antes de reportado)\n**Contexto-alvo:** 8 agentes Python 3.12 num Mac Mini ",
+      "hash": "b52f5cb0cd2f6dd2"
     }
   ],
   "ultimo_hash": {
-    "coach:moreirense_briefing": "1469a7b7e994ba43",
-    "test_agente_novo:bootstrap_completo": "fead3597d8281aa0"
+    "cfo:conversa": "8fc141b0ab57f720",
+    "ceo:teste": "99ce3a2ee163563f",
+    "scout:oportunidade": "0c22198478d7a56d",
+    "cfo:trading": "495d7e8f51b18fff",
+    "scout:conversa": "11726efc9ad1cabc",
+    "ceo:sistema": "d67dd6e8bb015b5f",
+    "marketeer:sistema": "10982ca80e6e8c8e",
+    "operator:sistema": "9489046914cc16ff",
+    "cfo:sistema": "c13ef06e94cf6edc",
+    "solver:sistema": "5d7a85d59ff5f7cc",
+    "ceo:conversa": "94a27104879adc74",
+    "ceo:creator_build": "a434e5b2a08de815",
+    "ceo:evento_critico": "ed4bd815fc3e4be1",
+    "ceo:patlas_alerta": "ddc525231bbec489",
+    "operator:patlas_update": "c83f46fa27d14534",
+    "scout:missao_b_solver": "b52f5cb0cd2f6dd2"
   }
 }

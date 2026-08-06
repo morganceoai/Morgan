@@ -1938,9 +1938,9 @@ async def eth_grid_status():
 
 @app.get("/api/grid/sol")
 async def sol_grid_status():
-    """Estado completo do Grid Bot SOL/USDT."""
+    """Estado completo do SOL Bot (DCA ou Grid)."""
     try:
-        from sol_grid_bot import get_status
+        from sol_bot import get_status
         return JSONResponse(get_status())
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
@@ -2631,29 +2631,15 @@ async def _run_trading_cycle():
         print(f"[eth_grid_bot] erro: {e}", flush=True)
         registar_erro("eth_grid_bot", str(e))
 
-    # SOL — Grid ou DCA conforme estratégia activa
+    # SOL — estratégia gerida pelo CFO (dca ou grid num único bot)
     try:
-        from cfo_strategy_switch import _load_state as _sol_state
-        sol_estrategia_activa = _sol_state().get("estrategia_activa", "dca_apenas")
-        if sol_estrategia_activa == "grid_bot":
-            from sol_grid_bot import run_cycle as sol_grid_run_cycle
-            result_sol = await loop.run_in_executor(None, sol_grid_run_cycle)
-            _handle_trading_result(result_sol, "Grid SOL")
-            limpar_erro("sol_grid_bot")
-        # dca_bot já corre abaixo — não duplicar
+        from sol_bot import run_cycle as sol_run_cycle
+        result_sol = await loop.run_in_executor(None, sol_run_cycle)
+        _handle_trading_result(result_sol, "SOL")
+        limpar_erro("sol_bot")
     except Exception as e:
-        print(f"[sol_strategy] erro: {e}", flush=True)
-        registar_erro("sol_grid_bot", str(e))
-
-    # DCA SOL/USDT — só corre se estratégia activa for dca_apenas
-    try:
-        from cfo_strategy_switch import _load_state as _sol_state
-        if _sol_state().get("estrategia_activa", "dca_apenas") == "dca_apenas":
-            from dca_bot import run_dca_cycle
-            result_dca = await loop.run_in_executor(None, run_dca_cycle)
-            _handle_trading_result(result_dca, "DCA SOL")
-    except Exception as e:
-        print(f"[dca_bot] erro: {e}", flush=True)
+        print(f"[sol_bot] erro: {e}", flush=True)
+        registar_erro("sol_bot", str(e))
 
 
 async def _heartbeat_loop():
@@ -2672,8 +2658,8 @@ async def _heartbeat_loop():
                 except Exception:
                     pass
                 try:
-                    from dca_bot import reset_dca_daily_pnl
-                    asyncio.get_event_loop().run_in_executor(None, reset_dca_daily_pnl)
+                    from sol_bot import reset_daily_pnl as sol_reset_pnl
+                    asyncio.get_event_loop().run_in_executor(None, sol_reset_pnl)
                 except Exception:
                     pass
 

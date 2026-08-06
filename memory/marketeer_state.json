@@ -1,0 +1,32 @@
+{
+  "campanhas": [],
+  "leads": [],
+  "metricas": {},
+  "ultimo_relatorio": "",
+  "pins_history": [
+    {
+      "data": "2026-07-24T23:32",
+      "produto": "Weekly Planner Printable — 52 Weeks PDF",
+      "idioma": "en",
+      "variantes_geradas": 3,
+      "status": "gerado",
+      "engagement": null
+    },
+    {
+      "data": "2026-07-24T23:32",
+      "produto": "Habit Tracker Printable — Monthly PDF",
+      "idioma": "en",
+      "variantes_geradas": 3,
+      "status": "gerado",
+      "engagement": null
+    },
+    {
+      "data": "2026-07-24T23:32",
+      "produto": "Budget Tracker Printable — Monthly Budget Planner",
+      "idioma": "en",
+      "variantes_geradas": 3,
+      "status": "gerado",
+      "engagement": null
+    }
+  ]
+}

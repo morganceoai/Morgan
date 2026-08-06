@@ -1,0 +1,34 @@
+{
+  "directorio_terapeutas_20260803": {
+    "nome": "Morgan Terapisti IT",
+    "descricao": "Directório de terapeutas — primeiro mercado: Itália",
+    "ferramentas": [
+      "pesquisar_web"
+    ],
+    "criado_em": "2026-08-03"
+  },
+  "templates_digitais_20260803": {
+    "nome": "Morgan Planners",
+    "descricao": "Cria e vende planners digitais em idiomas sub-representados no Etsy",
+    "ferramentas": [
+      "pesquisar_web"
+    ],
+    "criado_em": "2026-08-03"
+  },
+  "directorio_tutores_20260803": {
+    "nome": "Morgan Tutori IT",
+    "descricao": "Directório de tutores — primeiro mercado: Itália",
+    "ferramentas": [
+      "pesquisar_web"
+    ],
+    "criado_em": "2026-08-03"
+  },
+  "templates_notion_20260803": {
+    "nome": "Morgan Notion",
+    "descricao": "Cria e vende Notion templates em idiomas sub-representados",
+    "ferramentas": [
+      "pesquisar_web"
+    ],
+    "criado_em": "2026-08-03"
+  }
+}
