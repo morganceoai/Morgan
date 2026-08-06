@@ -551,36 +551,6 @@
     <div class="hud-tag hud-tag-tr" id="hudTr">——</div>
     <div class="hud-tag hud-tag-bl">BCVertex · Secure Channel</div>
 
-    <!-- Hit areas -->
-    <div class="hit" id="hit-ceo"    onclick="selectAgent('ceo')"    style="width:200px;height:200px"></div>
-    <div class="hit" id="hit-scout"  onclick="selectAgent('scout')"  style="width:110px;height:110px"></div>
-    <div class="hit" id="hit-solver" onclick="selectAgent('solver')" style="width:100px;height:100px"></div>
-    <div class="hit" id="hit-coach"  onclick="selectAgent('coach')"  style="width:100px;height:100px"></div>
-    <div class="hit" id="hit-cfo"    onclick="selectAgent('cfo')"    style="width:90px;height:90px"></div>
-
-    <!-- Labels -->
-    <div class="vasco-label" id="label-vasco"><span>Vasco</span></div>
-    <div class="node-label visible active" id="label-ceo">
-      <div class="node-label-name">Morgan CEO</div>
-      <div class="node-label-role">braço direito</div>
-    </div>
-    <div class="node-label visible" id="label-scout">
-      <div class="node-label-name">Morgan Scout</div>
-      <div class="node-label-role">oportunidades</div>
-    </div>
-    <div class="node-label visible" id="label-solver">
-      <div class="node-label-name">Morgan Solver</div>
-      <div class="node-label-role">manutenção</div>
-    </div>
-    <div class="node-label visible" id="label-coach">
-      <div class="node-label-name">Morgan Coach</div>
-      <div class="node-label-role">análise tática</div>
-    </div>
-    <div class="node-label visible" id="label-cfo">
-      <div class="node-label-name">Morgan CFO</div>
-      <div class="node-label-role">trading · finanças</div>
-    </div>
-
     <!-- Overlay -->
     <div class="overlay">
       <div class="waveform">
@@ -828,226 +798,334 @@ class ParticleSphere {
   }
 }
 
-// ─── CANVAS SETUP ────────────────────────────────────────────────────────────
+// ─── NODES ────────────────────────────────────────────────────────────────────
+
+const NODES = [
+  { id:'vasco',   label:'Vasco Botelho da Costa', role:'', color:'255,255,255', ring: 240, angle:-Math.PI/2, size:11, isVasco:true },
+  { id:'scout',   label:'Scout',   role:'inteligência',  color:'190,150,10',  ring: 295, angle:-0.52, size:7 },
+  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 285, angle: 0.58, size:7 },
+  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'240,192,64',  ring: 280, angle:-2.55, size:7 },
+  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring: 400, angle: 2.65, size:7 },
+  { id:'creator', label:'Creator', role:'meta-tool',     color:'255,170,0',   ring: 405, angle: 1.62, size:7 },
+  { id:'memoria', label:'Memória', role:'',              color:'0,212,255',   ring: 510, angle:-0.85, size:6 },
+  { id:'voz',     label:'Voz',     role:'',              color:'0,212,255',   ring: 500, angle:-0.15, size:6 },
+  { id:'web',     label:'Web',     role:'',              color:'0,212,255',   ring: 520, angle: 0.22, size:6 },
+  { id:'futebol', label:'Futebol', role:'',              color:'0,212,255',   ring: 510, angle: 0.95, size:6 },
+  { id:'ia',      label:'IA',      role:'',              color:'0,212,255',   ring: 525, angle: 1.30, size:6 },
+  { id:'app',     label:'App',     role:'',              color:'0,180,220',   ring: 495, angle: 2.00, size:6 },
+  { id:'desktop', label:'Desktop', role:'',              color:'0,180,220',   ring: 485, angle: 2.40, size:6 },
+  { id:'pwa',     label:'PWA',     role:'',              color:'0,180,220',   ring: 505, angle:-1.20, size:6 },
+];
+
+// ─── CANVAS STATE ─────────────────────────────────────────────────────────────
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const centerEl = document.getElementById('centerEl');
-
-let W, H, t = 0;
-let stars = [];
-let rings = [
-  { r: 0, speed: 0.004,  angle: 0, gapStart: 0.3, gapEnd: 0.9,  dash: false, color: '0,212,255', opacity: 0.18 },
-  { r: 0, speed:-0.0025, angle: 1, gapStart: 1.5, gapEnd: 2.3,  dash: true,  color: '0,212,255', opacity: 0.10 },
-  { r: 0, speed: 0.0015, angle: 2, gapStart: 0.8, gapEnd: 1.2,  dash: false, color: '0,212,255', opacity: 0.07 },
-];
-let scanAngle = 0;
-let activeAgent = 'ceo';
+let W, H, CX, CY, t = 0, SCALE = 1;
 let morganState = 'idle';
+let activeAgent = 'ceo';
 
-const spheres = {
-  ceo:    new ParticleSphere({ n:7000, radius:185, color:'0,212,255',   speed:0.0008 }),
-  scout:  new ParticleSphere({ n:1800, radius:80,  color:'245,166,35',  speed:0.0014 }),
-  solver: new ParticleSphere({ n:1500, radius:70,  color:'155,109,255', speed:0.0016 }),
-  coach:  new ParticleSphere({ n:1600, radius:72,  color:'0,255,157',   speed:0.0013 }),
-  cfo:    new ParticleSphere({ n:1400, radius:65,  color:'240,192,64',  speed:0.0012 }),
-};
+const AGENT_IDS = ['scout','coach','cfo','creator','solver'];
+let centeredId = null;
+let sphereRGB = [190, 150, 10];
 
-function nodePositions() {
-  const cx = W * 0.44, cy = H * 0.46;
-  const r  = Math.min(W * 0.22, H * 0.22, 160);
-  return {
-    ceo:    { x: cx,                        y: cy                        },
-    scout:  { x: cx + r * Math.cos(-0.55),  y: cy + r * Math.sin(-0.55) },
-    solver: { x: cx + r * Math.cos(2.65),   y: cy + r * Math.sin(2.65)  },
-    coach:  { x: cx + r * Math.cos(0.55),   y: cy + r * Math.sin(0.55)  },
-    cfo:    { x: cx + r * Math.cos(1.90),   y: cy + r * Math.sin(1.90)  },
-    vasco:  { x: cx,                        y: cy - r * 0.90             },
-  };
-}
+function parseRGB(s) { return s.split(',').map(Number); }
+function lerpRGB(a, b, k) { return a.map((v,i) => Math.round(v + (b[i]-v)*k)); }
+const CEO_RGB = [190, 150, 10];
 
-function initCanvas() {
-  W = cv.width  = centerEl.offsetWidth;
-  H = cv.height = centerEl.offsetHeight;
-  const pos = nodePositions();
-  rings[0].r = 210; rings[1].r = 240; rings[2].r = 275;
-  buildStars(); placeLabels();
-}
+const CEO_N = 4000;
+let CEO_R = 110;
+let ceoRotY = 0;
+let ceoPts = [];
 
-function buildStars() {
-  let seed = 42;
-  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed-1)/2147483646; };
-  const palette = ['255,255,255','200,230,255','180,210,255','255,240,200','200,255,220'];
-  stars = Array.from({length: 520}, () => {
-    const bright = rng() > 0.93;
+function buildCeoPts() {
+  CEO_R = Math.round(110 * SCALE);
+  ceoPts = Array.from({length: CEO_N}, () => {
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const dist  = CEO_R * Math.pow(Math.random(), 0.2);
     return {
-      x: rng()*W, y: rng()*H,
-      r: bright ? rng()*0.9+0.4 : rng()*0.4+0.1,
-      a: bright ? 0.2+rng()*0.25 : 0.03+rng()*0.1,
-      da: (rng()-0.5) * (bright ? 0.002 : 0.0008),
-      c: palette[Math.floor(rng()*palette.length)],
+      ox: dist * Math.sin(phi) * Math.cos(theta),
+      oy: dist * Math.sin(phi) * Math.sin(theta),
+      oz: dist * Math.cos(phi),
+      sz: 0.2 + Math.random() * 0.9,
+      ba: 0.35 + Math.random() * 0.65,
     };
   });
 }
 
-function placeLabels() {
-  const pos = nodePositions();
-  placeEl('label-ceo',    pos.ceo.x,    pos.ceo.y    + 185*0.85 + 14);
-  placeEl('label-scout',  pos.scout.x,  pos.scout.y  +  80*0.85 + 12);
-  placeEl('label-solver', pos.solver.x, pos.solver.y +  70*0.85 + 12);
-  placeEl('label-coach',  pos.coach.x,  pos.coach.y  +  72*0.85 + 12);
-  placeEl('label-cfo',    pos.cfo.x,    pos.cfo.y    +  65*0.85 + 12);
-  placeEl('label-vasco',  pos.vasco.x,  pos.vasco.y  - 14);
-  placeHit('hit-ceo',    pos.ceo.x,    pos.ceo.y);
-  placeHit('hit-scout',  pos.scout.x,  pos.scout.y);
-  placeHit('hit-solver', pos.solver.x, pos.solver.y);
-  placeHit('hit-coach',  pos.coach.x,  pos.coach.y);
-  placeHit('hit-cfo',    pos.cfo.x,    pos.cfo.y);
+const TAIL_LEN = 16;
+const TAIL_GAP = 0.028;
+const lineTails = NODES.map(() => ({
+  t: Math.random(), speed: 0.0008 + Math.random() * 0.0006,
+  phase: Math.random() * Math.PI * 2,
+  waveFreq: 0.18 + Math.random() * 0.12,
+}));
+
+function initCanvas() {
+  W = cv.width  = centerEl.offsetWidth;
+  H = cv.height = centerEl.offsetHeight;
+  CX = W * 0.50;
+  CY = H * 0.50;
+  SCALE = Math.min(W, H) / 1400;
+  buildCeoPts();
+  buildStars();
 }
-function placeEl(id, x, y)  { const e=document.getElementById(id); e.style.left=x+'px'; e.style.top=y+'px'; }
-function placeHit(id, x, y) { const e=document.getElementById(id); e.style.left=x+'px'; e.style.top=y+'px'; }
+window.addEventListener('resize', initCanvas);
 
-// ─── RINGS ────────────────────────────────────────────────────────────────────
+function nodePos(n) {
+  return {
+    x: CX + n.ring * SCALE * Math.cos(n.angle),
+    y: CY + n.ring * SCALE * Math.sin(n.angle),
+  };
+}
 
-function drawRings(cx, cy, breathe) {
-  rings.forEach(ring => {
-    ring.angle += ring.speed;
-    const a = ring.angle;
-    const r = ring.r * (1 + breathe * 0.01);
+// ─── DRAW CEO SPHERE ─────────────────────────────────────────────────────────
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(a);
+function drawCeoSphere(breathe) {
+  const targetRGB = centeredId
+    ? parseRGB(NODES.find(n => n.id === centeredId).color)
+    : CEO_RGB;
+  sphereRGB = lerpRGB(sphereRGB, targetRGB, 0.04);
+  const sc = sphereRGB.join(',');
 
-    // Main arc with gap
-    ctx.beginPath();
-    ctx.arc(0, 0, r, ring.gapEnd, ring.gapStart + Math.PI*2);
-    ctx.strokeStyle = `rgba(${ring.color},${ring.opacity})`;
-    ctx.lineWidth = ring.dash ? 0.5 : 0.8;
-    if (ring.dash) ctx.setLineDash([4, 8]);
-    else ctx.setLineDash([]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  ceoRotY += 0.0008;
+  const cos = Math.cos(ceoRotY), sin = Math.sin(ceoRotY);
+  const fov = 900;
+  const proj = ceoPts.map(p => {
+    const x = p.ox * cos + p.oz * sin;
+    const z = -p.ox * sin + p.oz * cos;
+    const s = fov / (fov + z + CEO_R);
+    const d3 = Math.sqrt(p.ox*p.ox + p.oy*p.oy + p.oz*p.oz) / CEO_R;
+    const cb = Math.pow(Math.max(0, 1 - d3), 1.5);
+    return {
+      px: CX + x*s, py: CY + p.oy*s, z,
+      sz: Math.max(0.3, p.sz*s*(1+breathe*0.06)*(1+cb*0.8)),
+      a:  Math.min(0.95, p.ba*(0.3+cb*0.9)*s),
+    };
+  }).sort((a,b) => a.z - b.z);
 
-    // Tick marks on the full ring
-    for (let i = 0; i < 36; i++) {
-      const angle = (i / 36) * Math.PI * 2;
-      if (angle > ring.gapStart && angle < ring.gapEnd) continue;
-      const len = i % 9 === 0 ? 6 : i % 3 === 0 ? 3 : 1.5;
-      const x1 = Math.cos(angle) * r;
-      const y1 = Math.sin(angle) * r;
-      const x2 = Math.cos(angle) * (r + len);
-      const y2 = Math.sin(angle) * (r + len);
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-      ctx.strokeStyle = `rgba(${ring.color},${ring.opacity * 1.5})`;
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-    }
-
-    ctx.restore();
+  proj.forEach(p => {
+    ctx.fillStyle = `rgba(${sc},${p.a})`;
+    ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
   });
 
-  // Radar sweep
-  scanAngle += 0.008;
-  const sweep = ctx.createConicalGradient ? null : null; // fallback
-  ctx.save();
-  ctx.translate(cx, cy);
-  const sweepR = rings[2].r;
-  // Sweep arc
+  const ringR2 = CEO_R * (1.32 + breathe * 0.02);
   ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.arc(0, 0, sweepR, scanAngle - 0.6, scanAngle);
-  ctx.closePath();
-  const sweepGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, sweepR);
-  sweepGrad.addColorStop(0,   'rgba(0,212,255,0)');
-  sweepGrad.addColorStop(0.6, 'rgba(0,212,255,0.02)');
-  sweepGrad.addColorStop(1,   'rgba(0,212,255,0.06)');
-  ctx.fillStyle = sweepGrad;
-  ctx.fill();
-  // Sweep leading edge line
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(Math.cos(scanAngle)*sweepR, Math.sin(scanAngle)*sweepR);
-  ctx.strokeStyle = 'rgba(0,212,255,0.2)';
-  ctx.lineWidth = 0.8;
+  ctx.arc(CX, CY, ringR2, 0, Math.PI*2);
+  ctx.strokeStyle = `rgba(${sc},${0.55 + breathe*0.1})`;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = `rgba(${sc},0.7)`;
+  ctx.shadowBlur = 14;
   ctx.stroke();
-  ctx.restore();
+  ctx.shadowBlur = 0;
 
-  // Outer circle (static)
+  const centerLabel = centeredId
+    ? NODES.find(n => n.id === centeredId).label.toUpperCase()
+    : 'MORGAN CEO';
+  ctx.textAlign = 'center';
+  ctx.font = "9px 'SF Mono', monospace";
+  ctx.fillStyle = `rgba(${sc},${0.35 + breathe*0.05})`;
+  ctx.fillText(centerLabel, CX, CY + CEO_R + 20);
+  ctx.font = "7px 'SF Mono', monospace";
+  ctx.fillStyle = `rgba(${sc},0.18)`;
+  ctx.fillText(centeredId ? NODES.find(n=>n.id===centeredId).role : 'braço direito', CX, CY + CEO_R + 32);
+}
+
+// ─── DRAW CONNECTIONS ─────────────────────────────────────────────────────────
+
+function drawConnections() {
+  NODES.forEach((n, i) => {
+    if (n.isVasco) return;
+    if (centeredId && n.id === centeredId) return;
+    const p = nodePos(n);
+    const alpha = n.size >= 11 ? 0.55 : 0.28;
+    const lt = lineTails[i];
+    lt.t += lt.speed;
+    if (lt.t > 1) lt.t = 0;
+
+    const dx = p.x - CX, dy = p.y - CY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const px = -dy / dist, py = dx / dist;
+    const waveAmp = n.size >= 11 ? 65 : 40;
+    const waveOffset = Math.sin(t * lt.waveFreq + lt.phase) * waveAmp;
+    const mx = (CX + p.x) / 2 + px * waveOffset;
+    const my = (CY + p.y) / 2 + py * waveOffset;
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.quadraticCurveTo(mx, my, p.x, p.y);
+    ctx.strokeStyle = `rgba(${n.color},${alpha * 0.07})`;
+    ctx.lineWidth = n.size >= 11 ? 10 : 5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.quadraticCurveTo(mx, my, p.x, p.y);
+    ctx.strokeStyle = `rgba(${n.color},${alpha * 0.35})`;
+    ctx.lineWidth = n.size >= 11 ? 1.4 : 0.7;
+    ctx.stroke();
+
+    const STEPS = 28;
+    const tailStart = Math.max(0, lt.t - TAIL_LEN * TAIL_GAP);
+    const tailEnd   = lt.t;
+    const pts = [];
+    for (let s = 0; s <= STEPS; s++) {
+      const tt = tailStart + (tailEnd - tailStart) * (s / STEPS);
+      pts.push({
+        x: (1-tt)*(1-tt)*CX + 2*(1-tt)*tt*mx + tt*tt*p.x,
+        y: (1-tt)*(1-tt)*CY + 2*(1-tt)*tt*my + tt*tt*p.y,
+      });
+    }
+    const hx = pts[STEPS].x, hy = pts[STEPS].y;
+    const tx0 = pts[0].x, ty0 = pts[0].y;
+    const grad = ctx.createLinearGradient(tx0, ty0, hx, hy);
+    grad.addColorStop(0,    `rgba(${n.color},0)`);
+    grad.addColorStop(0.55, `rgba(${n.color},0.15)`);
+    grad.addColorStop(1,    `rgba(${n.color},1)`);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let s = 1; s <= STEPS; s++) ctx.lineTo(pts[s].x, pts[s].y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = n.size >= 11 ? 3.5 : 2;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    const hglow = ctx.createRadialGradient(hx, hy, 0, hx, hy, n.size >= 11 ? 14 : 8);
+    hglow.addColorStop(0, `rgba(${n.color},1)`);
+    hglow.addColorStop(0.3, `rgba(${n.color},0.6)`);
+    hglow.addColorStop(1, `rgba(${n.color},0)`);
+    ctx.fillStyle = hglow;
+    ctx.beginPath(); ctx.arc(hx, hy, n.size >= 11 ? 14 : 8, 0, Math.PI*2); ctx.fill();
+  });
+
+  const vp = nodePos(NODES.find(n => n.isVasco));
   ctx.beginPath();
-  ctx.arc(cx, cy, rings[2].r + 8, 0, Math.PI*2);
-  ctx.strokeStyle = 'rgba(0,212,255,0.04)';
-  ctx.lineWidth = 1;
+  ctx.moveTo(CX, CY - CEO_R);
+  ctx.lineTo(vp.x, vp.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 0.5;
   ctx.stroke();
+}
+
+// ─── DRAW NODES ──────────────────────────────────────────────────────────────
+
+function drawSingleNode(p, r, color, label, role, isVasco, isCeoProxy) {
+  const halo = ctx.createRadialGradient(p.x, p.y, r * 0.8, p.x, p.y, r * 4);
+  halo.addColorStop(0, `rgba(${color},0.18)`);
+  halo.addColorStop(1, `rgba(${color},0)`);
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = `rgba(5,12,24,0.75)`;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.fill();
+
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+  if (isCeoProxy) ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = `rgba(${color},${isCeoProxy ? 0.38 : 0.95})`;
+  ctx.lineWidth = r >= 11 ? 3 : 1.8;
+  ctx.shadowColor = `rgba(${color},0.8)`;
+  ctx.shadowBlur = isCeoProxy ? 0 : (r >= 11 ? 18 : 8);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.setLineDash([]);
+
+  ctx.font = `${r >= 11 ? 9 : 8}px 'SF Mono', monospace`;
+  if (isVasco) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(label, p.x, p.y - r - 20);
+  } else {
+    const lx = p.x + (p.x > CX ? 1 : -1) * (r + 10);
+    ctx.textAlign = p.x > CX ? 'left' : 'right';
+    ctx.fillStyle = isCeoProxy ? `rgba(${color},0.7)` : `rgba(${color},0.55)`;
+    ctx.fillText(label, lx, p.y + 3);
+    if (role) {
+      ctx.font = "7px 'SF Mono', monospace";
+      ctx.fillStyle = `rgba(${color},0.28)`;
+      ctx.fillText(role, lx, p.y + 13);
+    }
+  }
+}
+
+function drawNodes() {
+  NODES.forEach(n => {
+    if (centeredId && n.id === centeredId) return;
+    drawSingleNode(nodePos(n), n.size, n.color, n.label, n.role, !!n.isVasco, false);
+  });
+  if (centeredId) {
+    const an = NODES.find(n => n.id === centeredId);
+    drawSingleNode(nodePos(an), 7, CEO_RGB.join(','), 'CEO', 'morgan', false, true);
+  }
+}
+
+let stars = [];
+function buildStars() {
+  let seed = 42;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed-1)/2147483646; };
+  stars = Array.from({length: 300}, () => ({
+    x: rng()*W, y: rng()*H,
+    r: rng()*1.2 + 0.4,
+    baseA: rng()*0.35 + 0.15,
+    a: 0,
+    twinklePhase: rng()*Math.PI*2,
+    twinkleSpeed: 1.5 + rng()*2.0,
+  }));
 }
 
 // ─── DRAW LOOP ────────────────────────────────────────────────────────────────
 
 function draw() {
   t += 0.004;
+  const breathe = Math.sin(t);
   ctx.clearRect(0, 0, W, H);
 
-  // Stars
   stars.forEach(s => {
-    s.a += s.da;
-    if (s.a > 0.35 || s.a < 0.03) s.da *= -1;
-    ctx.fillStyle = `rgba(${s.c},${s.a})`;
+    s.a = s.baseA * (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.twinkleSpeed + s.twinklePhase)));
+    ctx.fillStyle = `rgba(180,220,255,${s.a})`;
     ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
   });
 
-  const pos = nodePositions();
-  const breathe = Math.sin(t);
+  const ag = ctx.createRadialGradient(CX, CY, 0, CX, CY, CEO_R * 2.5);
+  ag.addColorStop(0, `rgba(190,150,10,${0.04 + breathe*0.01})`);
+  ag.addColorStop(1, 'rgba(190,150,10,0)');
+  ctx.fillStyle = ag;
+  ctx.beginPath(); ctx.arc(CX, CY, CEO_R*2.5, 0, Math.PI*2); ctx.fill();
 
-  // Connection lines
-  drawLine(pos.vasco.x, pos.vasco.y, pos.ceo.x, pos.ceo.y, 'rgba(0,212,255,0.08)');
-  drawLine(pos.ceo.x, pos.ceo.y, pos.scout.x,  pos.scout.y,  'rgba(245,166,35,0.07)');
-  drawLine(pos.ceo.x, pos.ceo.y, pos.solver.x, pos.solver.y, 'rgba(155,109,255,0.05)');
-  drawLine(pos.ceo.x, pos.ceo.y, pos.coach.x,  pos.coach.y,  'rgba(0,255,157,0.06)');
-  drawLine(pos.ceo.x, pos.ceo.y, pos.cfo.x,    pos.cfo.y,    'rgba(240,192,64,0.06)');
-
-  // Rings around CEO
-  drawRings(pos.ceo.x, pos.ceo.y, breathe);
-
-  // Crosshair on CEO
-  const crs = 14 + breathe * 1.5;
-  ctx.strokeStyle = 'rgba(0,212,255,0.15)';
-  ctx.lineWidth = 0.6;
-  [[0,-crs,0,-crs*1.8],[0,crs,0,crs*1.8],[-crs,0,-crs*1.8,0],[crs,0,crs*1.8,0]].forEach(([x1,y1,x2,y2]) => {
-    ctx.beginPath();
-    ctx.moveTo(pos.ceo.x+x1, pos.ceo.y+y1);
-    ctx.lineTo(pos.ceo.x+x2, pos.ceo.y+y2);
-    ctx.stroke();
-  });
-
-  // Vasco point
-  const vg = ctx.createRadialGradient(pos.vasco.x, pos.vasco.y, 0, pos.vasco.x, pos.vasco.y, 14);
-  vg.addColorStop(0, 'rgba(0,212,255,0.18)'); vg.addColorStop(1, 'rgba(0,212,255,0)');
-  ctx.fillStyle = vg;
-  ctx.beginPath(); ctx.arc(pos.vasco.x, pos.vasco.y, 14, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(0,212,255,0.6)';
-  ctx.beginPath(); ctx.arc(pos.vasco.x, pos.vasco.y, 1.5, 0, Math.PI*2); ctx.fill();
-
-  // Spheres
-  Object.entries(spheres).forEach(([id, sphere]) => {
-    const p = pos[id];
-    const isActive = id === activeAgent;
-    let iMult = isActive ? 1.0 : (id === 'ceo' ? 0.45 : 0.35);
-    if (isActive && morganState === 'listening') iMult = 1.25;
-    if (isActive && morganState === 'thinking')  iMult = 1.1;
-    if (isActive && morganState === 'speaking')  iMult = 1.3 + Math.sin(t*3)*0.15;
-    sphere.tick(breathe);
-    sphere.draw(ctx, p.x, p.y, breathe, iMult);
-  });
+  drawConnections();
+  drawCeoSphere(breathe);
+  drawNodes();
 
   requestAnimationFrame(draw);
 }
 
-function drawLine(x1, y1, x2, y2, color) {
-  const mx = (x1+x2)/2 + (y2-y1)*0.08;
-  const my = (y1+y2)/2 - (x2-x1)*0.08;
-  ctx.strokeStyle = color; ctx.lineWidth = 0.7;
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.quadraticCurveTo(mx,my,x2,y2); ctx.stroke();
-}
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const dCenter = Math.hypot(mx - CX, my - CY);
+  if (dCenter < CEO_R * 1.3 && centeredId) {
+    centeredId = null;
+    setActiveAgent('ceo');
+    return;
+  }
+  for (const n of NODES) {
+    if (!AGENT_IDS.includes(n.id)) continue;
+    if (centeredId === n.id) continue;
+    const p = nodePos(n);
+    if (Math.hypot(mx - p.x, my - p.y) < n.size * 4) {
+      centeredId = n.id;
+      setActiveAgent(n.id);
+      return;
+    }
+  }
+  if (centeredId) {
+    const p = nodePos(NODES.find(n => n.id === centeredId));
+    if (Math.hypot(mx - p.x, my - p.y) < 28) { centeredId = null; setActiveAgent('ceo'); }
+  }
+});
 
 // ─── MINI CANVAS ─────────────────────────────────────────────────────────────
 
@@ -1112,7 +1190,6 @@ setInterval(updateUptime, 1000);
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
 initCanvas(); draw();
-window.addEventListener('resize', initCanvas);
 runBoot();
 
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
@@ -1362,15 +1439,11 @@ function handleKey(e) {
 
 function selectAgent(id) {
   activeAgent = id;
-  document.querySelectorAll('.node-label').forEach(el =>
-    el.classList.remove('active','active-scout','active-solver','active-coach','active-cfo')
-  );
-  document.getElementById('label-'+id).classList.add(
-    id === 'ceo' ? 'active' : 'active-'+id
-  );
-  const names = {ceo:'Morgan CEO', scout:'Morgan Scout', solver:'Morgan Solver', coach:'Morgan Coach', cfo:'Morgan CFO'};
+  const names = {ceo:'Morgan CEO', scout:'Morgan Scout', solver:'Morgan Solver', coach:'Morgan Coach', cfo:'Morgan CFO', creator:'Morgan Creator'};
   document.getElementById('hdrAgent').textContent = names[id] || 'Morgan';
 }
+
+function setActiveAgent(id) { selectAgent(id); }
 
 function showWip() {
   const el = document.getElementById('wipToast');
