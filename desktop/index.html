@@ -143,19 +143,51 @@
   }
   .data-block:last-child { border-bottom: none; }
   .d-label {
-    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: rgba(0,212,255,0.55); margin-bottom: 9px; font-weight: 600;
+    font-size: 8px; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(0,212,255,0.32); margin-bottom: 9px; font-weight: 400;
+    display: flex; align-items: center; gap: 6px;
   }
-  .d-value { font-size: 13px; color: var(--cyan); letter-spacing: 1px; line-height: 1.9; }
-  .d-value span { color: rgba(0,212,255,0.55); }
+  .d-label::after { content:''; flex:1; height:1px; background:rgba(0,212,255,0.06); }
+  .d-value { font-size: 12px; color: var(--cyan); letter-spacing: 1px; line-height: 1.9; }
+  .d-value span { color: rgba(0,212,255,0.4); }
   .d-bar-wrap { margin-top: 4px; }
-  .d-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-  .d-bar-label { font-size: 12px; letter-spacing: 1px; color: rgba(0,212,255,0.45); width: 54px; }
-  .d-bar-track { flex: 1; height: 1px; background: rgba(0,212,255,0.08); position: relative; overflow: visible; }
-  .d-bar-fill { height: 1px; background: var(--cyan); box-shadow: 0 0 4px var(--cyan); transition: width 2s ease; }
-  .d-bar-val { font-size: 12px; color: var(--cyan); width: 32px; text-align: right; letter-spacing: 1px; }
-  .stream { font-size: 9px; color: rgba(0,212,255,0.25); letter-spacing: 1px; line-height: 1.6; overflow: hidden; height: 70px; word-break: break-all; }
-  .stream span { color: rgba(0,212,255,0.5); }
+  .d-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .d-bar-label { font-size: 10px; letter-spacing: 1px; color: rgba(0,212,255,0.4); width: 54px; }
+  .d-bar-track { flex: 1; height: 2px; background: rgba(0,212,255,0.07); border-radius:1px; overflow: hidden; }
+  .d-bar-fill { height: 2px; background: var(--cyan); transition: width 2s ease; border-radius:1px; }
+  .d-bar-val { font-size: 11px; color: var(--cyan); width: 32px; text-align: right; letter-spacing: 1px; }
+  .stream { font-size: 9px; color: rgba(0,212,255,0.2); letter-spacing: 1px; line-height: 1.6; overflow: hidden; height: 60px; word-break: break-all; }
+  .stream span { color: rgba(0,212,255,0.45); }
+
+  /* Agent rows */
+  .agent-row { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid rgba(0,212,255,0.05); }
+  .agent-row:last-child { border-bottom:none; }
+  .agent-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+  .agent-name { font-size:11px; color:rgba(190,220,255,0.65); flex:1; }
+  .agent-role { font-size:8px; color:rgba(100,150,200,0.28); letter-spacing:0.5px; }
+  .agent-pill { font-size:8px; padding:1px 7px; border-radius:10px; letter-spacing:0.5px; flex-shrink:0; }
+  .agent-pill.on  { background:rgba(0,229,150,0.07); color:rgba(0,229,150,0.55); border:1px solid rgba(0,229,150,0.14); }
+  .agent-pill.idle{ background:rgba(100,140,180,0.05); color:rgba(100,140,180,0.3); border:1px solid rgba(100,140,180,0.1); }
+
+  /* Trade cards */
+  .trade-card { display:grid; grid-template-columns:1fr auto; align-items:center; padding:5px 0; border-bottom:1px solid rgba(0,212,255,0.05); }
+  .trade-card:last-child { border-bottom:none; }
+  .trade-sym { font-size:11px; color:rgba(195,225,255,0.75); letter-spacing:0.3px; }
+  .trade-price { font-size:8px; color:rgba(120,170,210,0.3); margin-top:2px; letter-spacing:0.3px; }
+  .trade-pnl { font-size:11px; font-weight:500; text-align:right; }
+  .trade-pnl.pos { color:#00E596; }
+  .trade-pnl.neg { color:#FF5A5A; }
+  .trade-pnl.neu { color:rgba(0,212,255,0.4); }
+  .trade-strat { font-size:7px; color:rgba(100,150,200,0.28); text-align:right; margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+  .trade-total { display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px solid rgba(0,212,255,0.05); margin-top:2px; }
+  .trade-total-lbl { font-size:8px; color:rgba(100,150,200,0.3); letter-spacing:1.5px; text-transform:uppercase; }
+
+  /* Portfolio bars */
+  .mbar-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .mbar-id { font-size:8px; letter-spacing:1px; color:rgba(0,212,255,0.32); width:18px; }
+  .mbar-track { flex:1; height:2px; background:rgba(0,212,255,0.07); border-radius:1px; overflow:hidden; }
+  .mbar-fill { height:2px; background:rgba(0,212,255,0.45); border-radius:1px; transition:width 1s ease; }
+  .mbar-val { font-size:9px; color:rgba(130,175,215,0.45); width:58px; text-align:right; letter-spacing:0.3px; }
 
   /* ── CENTER ──────────────────────────────────────── */
   .center {
@@ -300,18 +332,20 @@
   }
   .info-panel:last-child { border-bottom: none; }
   .i-label {
-    font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
-    text-transform: uppercase; color: rgba(0,212,255,0.55); margin-bottom: 7px;
+    font-size: 8px; font-weight: 400; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(0,212,255,0.32); margin-bottom: 7px;
+    display: flex; align-items: center; gap: 6px;
   }
+  .i-label::after { content:''; flex:1; height:1px; background:rgba(0,212,255,0.06); }
   .i-value {
-    font-size: 28px; font-weight: 200; color: var(--cyan);
+    font-size: 26px; font-weight: 200; color: var(--cyan);
     letter-spacing: 1px; line-height: 1;
-    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+    text-shadow: 0 0 20px rgba(0,212,255,0.3);
   }
-  .i-sub   { font-size: 12px; color: var(--dimmer); margin-top: 3px; letter-spacing: 1px; }
-  .i-line  { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
-  .i-ll { font-size: 12px; color: rgba(0,212,255,0.5); letter-spacing: 1px; }
-  .i-lv { font-size: 13px; color: var(--cyan); letter-spacing: 1px; }
+  .i-sub   { font-size: 10px; color: var(--dimmer); margin-top: 3px; letter-spacing: 0.5px; }
+  .i-line  { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+  .i-ll { font-size: 10px; color: rgba(0,212,255,0.35); letter-spacing: 0.5px; }
+  .i-lv { font-size: 12px; color: rgba(0,212,255,0.7); letter-spacing: 1px; }
   .i-sep { height: 1px; background: var(--border); margin-top: 8px; }
   .win  { color: var(--green); text-shadow: 0 0 10px rgba(0,255,157,0.4); }
   .loss { color: var(--red);   text-shadow: 0 0 10px rgba(255,51,85,0.4); }
@@ -469,58 +503,60 @@
     </div>
     <div class="data-block">
       <div class="d-label">Agentes</div>
-      <div class="d-bar-wrap">
-        <div class="d-bar-row">
-          <div class="d-bar-label">CEO</div>
-          <div class="d-bar-track"><div class="d-bar-fill" style="width:100%;background:var(--cyan)"></div></div>
-          <div class="d-bar-val" style="color:var(--cyan)">ON</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label">CFO</div>
-          <div class="d-bar-track"><div class="d-bar-fill" id="barCfo" style="width:100%;background:#f0c040"></div></div>
-          <div class="d-bar-val" id="valCfo" style="color:#f0c040">ON</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label">Scout</div>
-          <div class="d-bar-track"><div class="d-bar-fill" style="width:100%;background:var(--amber)"></div></div>
-          <div class="d-bar-val" style="color:var(--amber)">ON</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label">Solver</div>
-          <div class="d-bar-track"><div class="d-bar-fill" style="width:30%;background:var(--violet)"></div></div>
-          <div class="d-bar-val" style="color:var(--violet)">--</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label">Coach</div>
-          <div class="d-bar-track"><div class="d-bar-fill" style="width:100%;background:var(--green)"></div></div>
-          <div class="d-bar-val" style="color:var(--green)">ON</div>
-        </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#00D4FF;box-shadow:0 0 5px rgba(0,212,255,0.35)"></div>
+        <span class="agent-name">CEO</span>
+        <span class="agent-role">orquestrador</span>
+        <span class="agent-pill on">on</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#F0C040;box-shadow:0 0 4px rgba(240,192,64,0.3)"></div>
+        <span class="agent-name">CFO</span>
+        <span class="agent-role">finanças</span>
+        <span class="agent-pill on" id="valCfo">on</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#BE9610"></div>
+        <span class="agent-name">Scout</span>
+        <span class="agent-role">inteligência</span>
+        <span class="agent-pill on">on</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#9B6DFF"></div>
+        <span class="agent-name">Solver</span>
+        <span class="agent-role">manutenção</span>
+        <span class="agent-pill idle">idle</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#00FF9D;box-shadow:0 0 4px rgba(0,255,157,0.25)"></div>
+        <span class="agent-name">Coach</span>
+        <span class="agent-role">futebol</span>
+        <span class="agent-pill on">on</span>
+      </div>
+      <div class="agent-row">
+        <div class="agent-dot" style="background:#FFAA00"></div>
+        <span class="agent-name">Creator</span>
+        <span class="agent-role">meta-tool</span>
+        <span class="agent-pill idle">idle</span>
       </div>
     </div>
     <div class="data-block" style="flex:1">
       <div class="d-label">Trading</div>
-      <div class="d-bar-wrap" id="tradingBlocks">
-        <div class="d-bar-row">
-          <div class="d-bar-label" style="width:34px">BTC</div>
-          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="btcPnl">--</div>
-          <div class="d-bar-val" id="btcPos" style="width:auto;color:rgba(0,212,255,0.4)">--</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label" style="width:34px">ETH</div>
-          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="ethPnl">--</div>
-          <div class="d-bar-val" id="ethPos" style="width:auto;color:rgba(0,212,255,0.4)">--</div>
-        </div>
-        <div class="d-bar-row">
-          <div class="d-bar-label" style="width:34px">SOL</div>
-          <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="solPnl">--</div>
-          <div class="d-bar-val" id="solStrat" style="width:auto;color:rgba(0,212,255,0.35);font-size:6px">--</div>
-        </div>
-        <div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">
-          <div class="d-bar-row">
-            <div class="d-bar-label" style="width:auto;flex:1">Total PnL</div>
-            <div style="font-size:9px;letter-spacing:1px" id="totalPnl">--</div>
-          </div>
-        </div>
+      <div class="trade-card">
+        <div><div class="trade-sym">BTC/USDT</div><div class="trade-price" id="btcPos">Grid · --</div></div>
+        <div><div class="trade-pnl neu" id="btcPnl">--</div><div class="trade-strat">active</div></div>
+      </div>
+      <div class="trade-card">
+        <div><div class="trade-sym">ETH/USDT</div><div class="trade-price" id="ethPos">Grid · --</div></div>
+        <div><div class="trade-pnl neu" id="ethPnl">--</div><div class="trade-strat">active</div></div>
+      </div>
+      <div class="trade-card">
+        <div><div class="trade-sym">SOL/USDT</div><div class="trade-price">DCA · --</div></div>
+        <div><div class="trade-pnl neu" id="solPnl">--</div><div class="trade-strat" id="solStrat">--</div></div>
+      </div>
+      <div class="trade-total">
+        <span class="trade-total-lbl">Total PnL</span>
+        <span class="trade-pnl neu" id="totalPnl">--</span>
       </div>
     </div>
   </aside>
@@ -620,30 +656,35 @@
     <div class="info-panel" style="flex:2">
       <div style="width:100%">
         <div class="i-label">Portfolio BCVertex</div>
-        <div class="i-line" style="margin-top:4px">
-          <span class="i-ll">Total</span>
-          <span class="i-lv" id="portTotal">-- USDT</span>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 10px">
+          <span style="font-size:8px;color:rgba(0,212,255,0.3);letter-spacing:1px">TOTAL</span>
+          <span style="font-size:14px;color:rgba(0,212,255,0.75);letter-spacing:1px" id="portTotal">-- USDT</span>
         </div>
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px" id="portMotors">
-          <div class="d-bar-row" style="gap:4px">
-            <div class="d-bar-label" style="width:28px;font-size:6px">M1</div>
-            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m1val">--</div>
+        <div style="display:flex;flex-direction:column;gap:7px" id="portMotors">
+          <div class="mbar-row">
+            <div class="mbar-id">M1</div>
+            <div class="mbar-track"><div class="mbar-fill" id="m1bar" style="width:0%"></div></div>
+            <div class="mbar-val" id="m1val">--</div>
           </div>
-          <div class="d-bar-row" style="gap:4px">
-            <div class="d-bar-label" style="width:28px;font-size:6px">M2</div>
-            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m2val">--</div>
+          <div class="mbar-row">
+            <div class="mbar-id">M2</div>
+            <div class="mbar-track"><div class="mbar-fill" id="m2bar" style="width:0%"></div></div>
+            <div class="mbar-val" id="m2val">--</div>
           </div>
-          <div class="d-bar-row" style="gap:4px">
-            <div class="d-bar-label" style="width:28px;font-size:6px">M3</div>
-            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m3val">--</div>
+          <div class="mbar-row">
+            <div class="mbar-id">M3</div>
+            <div class="mbar-track"><div class="mbar-fill" id="m3bar" style="width:0%"></div></div>
+            <div class="mbar-val" id="m3val">--</div>
           </div>
-          <div class="d-bar-row" style="gap:4px">
-            <div class="d-bar-label" style="width:28px;font-size:6px">M4</div>
-            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m4val">--</div>
+          <div class="mbar-row">
+            <div class="mbar-id">M4</div>
+            <div class="mbar-track"><div class="mbar-fill" id="m4bar" style="width:0%"></div></div>
+            <div class="mbar-val" id="m4val">--</div>
           </div>
-          <div class="d-bar-row" style="gap:4px">
-            <div class="d-bar-label" style="width:28px;font-size:6px">M5</div>
-            <div style="flex:1;font-size:7px;color:rgba(0,212,255,0.4);letter-spacing:1px" id="m5val">--</div>
+          <div class="mbar-row">
+            <div class="mbar-id">M5</div>
+            <div class="mbar-track"><div class="mbar-fill" id="m5bar" style="width:0%"></div></div>
+            <div class="mbar-val" id="m5val">--</div>
           </div>
         </div>
       </div>
@@ -840,7 +881,7 @@ let ceoRotY = 0;
 let ceoPts = [];
 
 function buildCeoPts() {
-  CEO_R = Math.round(110 * SCALE);
+  CEO_R = Math.round(165 * SCALE);
   ceoPts = Array.from({length: CEO_N}, () => {
     const theta = Math.random() * Math.PI * 2;
     const phi   = Math.acos(2 * Math.random() - 1);
@@ -1251,29 +1292,26 @@ async function loadTrading() {
       fetch('/api/grid/sol').then(r=>r.json()).catch(()=>null),
     ]);
 
+    const setPnl = (id, val) => {
+      const el = document.getElementById(id);
+      el.textContent = fmtPnl(val);
+      el.className = 'trade-pnl ' + (val > 0 ? 'pos' : val < 0 ? 'neg' : 'neu');
+    };
     if (btc) {
-      const pnl = btc.pnl_total ?? 0;
-      document.getElementById('btcPnl').textContent = fmtPnl(pnl);
-      document.getElementById('btcPnl').style.color = pnlColor(pnl);
-      document.getElementById('btcPos').textContent = (btc.open_positions ?? '--') + 'p';
+      setPnl('btcPnl', btc.pnl_total ?? 0);
+      document.getElementById('btcPos').textContent = 'Grid · ' + (btc.open_positions ?? '--') + 'p';
     }
     if (eth) {
-      const pnl = eth.pnl_total ?? 0;
-      document.getElementById('ethPnl').textContent = fmtPnl(pnl);
-      document.getElementById('ethPnl').style.color = pnlColor(pnl);
-      document.getElementById('ethPos').textContent = (eth.open_positions ?? '--') + 'p';
+      setPnl('ethPnl', eth.pnl_total ?? 0);
+      document.getElementById('ethPos').textContent = 'Grid · ' + (eth.open_positions ?? '--') + 'p';
     }
     if (sol) {
-      const pnl = sol.pnl_total ?? 0;
-      document.getElementById('solPnl').textContent = fmtPnl(pnl);
-      document.getElementById('solPnl').style.color = pnlColor(pnl);
+      setPnl('solPnl', sol.pnl_total ?? 0);
       document.getElementById('solStrat').textContent = (sol.estrategia ?? '--').toUpperCase();
     }
 
     const total = (btc?.pnl_total ?? 0) + (eth?.pnl_total ?? 0) + (sol?.pnl_total ?? 0);
-    const el = document.getElementById('totalPnl');
-    el.textContent = fmtPnl(total);
-    el.style.color = pnlColor(total);
+    setPnl('totalPnl', total);
   } catch(e) {}
 }
 loadTrading(); setInterval(loadTrading, 60000);
@@ -1288,12 +1326,16 @@ async function loadPortfolio() {
       document.getElementById('portTotal').textContent = '$' + Number(d.total).toFixed(0) + ' USDT';
     }
     const motors = ['m1','m2','m3','m4','m5'];
-    motors.forEach(m => {
-      const el = document.getElementById(m+'val');
-      if (!el) return;
+    const vals = motors.map(m => (typeof d[m] === 'number' ? d[m] : 0));
+    const maxVal = Math.max(...vals, 1);
+    motors.forEach((m, i) => {
+      const valEl = document.getElementById(m+'val');
+      const barEl = document.getElementById(m+'bar');
+      if (!valEl) return;
       const v = d[m];
       if (v !== undefined && v !== null) {
-        el.textContent = typeof v === 'number' ? '$' + v.toFixed(0) : v;
+        valEl.textContent = typeof v === 'number' ? '$' + v.toFixed(0) : v;
+        if (barEl) barEl.style.width = Math.round((vals[i] / maxVal) * 100) + '%';
       }
     });
   } catch(e) {}
