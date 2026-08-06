@@ -384,6 +384,13 @@ def verificar_saldo_vs_memoria() -> list:
                 )
                 alertas.append(msg)
                 _notificar_cfo("saldo_queda", msg, "critica")
+            elif total_real > total_anterior * 1.02:
+                subida = (total_real - total_anterior) / max(total_anterior, 1)
+                msg = (
+                    f"Saldo subiu ${total_real - total_anterior:.2f} "
+                    f"(+{subida*100:.1f}%) — bots a trabalhar bem"
+                )
+                _notificar_cfo("saldo_subida", msg, "baixa")
 
         saldo_file.write_text(json.dumps(snapshot, indent=2))
 
@@ -782,30 +789,31 @@ Responde APENAS com JSON válido, sem mais texto:
 
 def _run_bots_cycle():
     """Corre um ciclo de execução nos 3 bots. Sem LLM — só CCXT."""
-    # BTC grid
-    try:
-        from grid_bot import run_cycle as btc_cycle
-        r = btc_cycle()
-        if r.get("acoes"):
-            print(f"[cfo/bots] BTC: {r['acoes']}", flush=True)
-    except Exception as e:
-        print(f"[cfo/bots] BTC erro: {e}", flush=True)
-    # ETH grid
-    try:
-        from eth_grid_bot import run_cycle as eth_cycle
-        r = eth_cycle()
-        if r.get("acoes"):
-            print(f"[cfo/bots] ETH: {r['acoes']}", flush=True)
-    except Exception as e:
-        print(f"[cfo/bots] ETH erro: {e}", flush=True)
-    # SOL (dca ou grid conforme estratégia activa)
-    try:
-        from sol_bot import run_cycle as sol_cycle
-        r = sol_cycle()
-        if r.get("acoes"):
-            print(f"[cfo/bots] SOL: {r['acoes']}", flush=True)
-    except Exception as e:
-        print(f"[cfo/bots] SOL erro: {e}", flush=True)
+    for nome, importar in [
+        ("BTC", lambda: __import__("grid_bot", fromlist=["run_cycle"]).run_cycle),
+        ("ETH", lambda: __import__("eth_grid_bot", fromlist=["run_cycle"]).run_cycle),
+        ("SOL", lambda: __import__("sol_bot", fromlist=["run_cycle"]).run_cycle),
+    ]:
+        try:
+            r = importar()()
+            acoes = r.get("acoes", [])
+            if acoes:
+                print(f"[cfo/bots] {nome}: {acoes}", flush=True)
+                # Celebra trades lucrativos
+                for acao in acoes:
+                    if "VENDA" in acao and "PnL" in acao:
+                        try:
+                            pnl = float(acao.split("PnL $")[1].split()[0].replace("+",""))
+                            if pnl > 0:
+                                _notificar_cfo(
+                                    "trade_lucro",
+                                    f"{nome} fechou trade com +${pnl:.4f} USDT",
+                                    "baixa",
+                                )
+                        except Exception:
+                            pass
+        except Exception as e:
+            print(f"[cfo/bots] {nome} erro: {e}", flush=True)
 
 
 def iniciar_scheduler_cfo():
