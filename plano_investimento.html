@@ -725,6 +725,48 @@
     <div class="card-value" style="color:var(--accent)">€2.750/mês</div>
     <div class="card-sub">Motor 1: €800 · Motor 2: €1.200 · Motor 3: €300 · Motor 4: €200 · Motor 5: €250</div>
   </div>
+
+  <div class="section">
+    <h3>Rebalanceamento entre motores — regras concretas</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">À medida que o capital cresce, a eficiência fiscal manda mover capital de Motor 2/3 (dividendos, 28% sem redução) para Motor 4/5 (acumulação, até 19.6% com exclusão). Não é alocação estática — é uma migração progressiva.</p>
+    <div style="overflow-x:auto">
+    <table>
+      <tr><th>Capital total acumulado</th><th>Motor 2+3 (dividendos)</th><th>Motor 4+5 (acumulação)</th><th>Motor 1 (cripto)</th><th>Razão</th></tr>
+      <tr>
+        <td><strong>€0 – €50.000</strong><br><span style="font-size:11px;color:var(--muted)">Fase arranque</span></td>
+        <td style="color:var(--green)">60%</td>
+        <td>25%</td>
+        <td>15%</td>
+        <td style="font-size:12px;color:var(--muted)">Cashflow imediato para reinvestir — máxima velocidade de compound</td>
+      </tr>
+      <tr>
+        <td><strong>€50.000 – €150.000</strong><br><span style="font-size:11px;color:var(--muted)">Fase crescimento</span></td>
+        <td>50%</td>
+        <td>35%</td>
+        <td>15%</td>
+        <td style="font-size:12px;color:var(--muted)">Aumentar Motor 4+5 — peso fiscal dos dividendos começa a pesar</td>
+      </tr>
+      <tr>
+        <td><strong>€150.000 – €500.000</strong><br><span style="font-size:11px;color:var(--muted)">Fase escala</span></td>
+        <td>40%</td>
+        <td>45%</td>
+        <td>15%</td>
+        <td style="font-size:12px;color:var(--muted)">Motor 4+5 passa a dominante — compound bruto supera dividendo líquido</td>
+      </tr>
+      <tr style="background:rgba(62,207,142,0.06)">
+        <td><strong>€500.000+</strong><br><span style="font-size:11px;color:var(--muted)">Fase maturidade</span></td>
+        <td>30%</td>
+        <td>55%</td>
+        <td>15%</td>
+        <td style="font-size:12px;color:var(--muted)">Acumulação domina — exclusão fiscal de 8+ anos maximiza eficiência. Cripto em plataforma de segurança.</td>
+      </tr>
+    </table>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="note" style="font-size:13px"><strong>Como rebalancear:</strong> Não vender o que está a funcionar. Redirecionar os novos €/mês para o motor que precisa de crescer. Ex: ao atingir €50k, os próximos €500/mês extras vão para Motor 4+5 em vez de Motor 2+3.</div>
+      <div class="success" style="font-size:13px"><strong>Gatilho de revisão:</strong> CFO avalia alocação em cada 1º de Janeiro. Se algum motor desviou mais de 10 pontos percentuais do target, alerta o Vasco com proposta de rebalanceamento.</div>
+    </div>
+  </div>
 </div>
 
 <!-- CAPITAL -->
@@ -784,6 +826,68 @@
     </table>
     </div>
     <div class="warn">O capital mensal é o motor real — muito mais importante que o capital inicial. €500/mês extra fazem diferença de 1 ano inteiro no cruzamento.</div>
+  </div>
+
+  <div class="section">
+    <h3>Milestones de escalada — gatilhos concretos por nível</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Cada milestone activa uma acção específica. Não são alvos emocionais — são pontos de decisão operacional.</p>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:flex;gap:0;align-items:stretch">
+        <div style="width:3px;background:linear-gradient(to bottom, var(--accent), var(--green));border-radius:2px;margin-right:16px;flex-shrink:0"></div>
+        <div style="display:flex;flex-direction:column;gap:12px;flex:1;padding-bottom:8px">
+
+          <div style="background:var(--bg3);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€10.000 capital total</span>
+              <span class="pill pill-blue">Milestone 1</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Activar Motor 5 — primeiras compras QQQ €50/mês + IAU €30/mês. Confirmar que o rebalanceamento automático CSPX no Trade Republic está activo. Rever exposição a cripto — não deve exceder 15% do total.</div>
+          </div>
+
+          <div style="background:var(--bg3);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€25.000 capital total</span>
+              <span class="pill pill-blue">Milestone 2</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Aumentar Motor 5 para €150/mês (+ PHO €40/mês + COPX/URNM €35/mês). Avaliar se Motor 2 está a performar — substituir AGNC (NAV a cair) por mais ARCC ou MAIN.</div>
+          </div>
+
+          <div style="background:var(--bg3);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€50.000 capital total</span>
+              <span class="pill pill-yellow">Milestone 3 — Rebalanceamento</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Primeiro rebalanceamento de motores. Novos €/mês extras vão para Motor 4+5 (acumulação) em vez de Motor 2+3. Meta: 35% acumulação. Considerar adicionar acção individual (Nvidia ou MSFT) como satélite.</div>
+          </div>
+
+          <div style="background:var(--bg3);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€100.000 capital total</span>
+              <span class="pill pill-green">Milestone 4 — Seis dígitos</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Revisão completa do portfolio. Avaliar estrutura empresarial (se rendimentos passivos >€2.000/mês, estudar UAE Free Zone para optimização fiscal). Contactar contabilista especializado em investimentos internacionais. Segundo rebalanceamento: Motor 4+5 a 45%.</div>
+          </div>
+
+          <div style="background:var(--bg3);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€250.000 capital total</span>
+              <span class="pill pill-purple">Milestone 5 — Private Banking</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Explorar acesso a produtos institucionais (private credit, structured notes, real estate sindicado). Avaliar diversificação geográfica. IBKR Pro com acesso a mercados adicionais (ASX, TSX). Motor 4+5 a 50%+.</div>
+          </div>
+
+          <div style="background:rgba(62,207,142,0.08);border:1px solid var(--green);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:700;font-size:15px">€1.000.000+ capital total</span>
+              <span class="pill pill-green">Milestone 6 — Autonomia total</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Acção:</strong> Sistema gera ~€7.500-10.000/mês líquidos. Neste ponto o trabalho é opcional — o Moreirense é uma escolha, não uma necessidade. JP Morgan Private Bank, estrutura patrimonial formal, plano de sucessão.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:12px;font-size:13px">CFO regista o capital total a cada 1º do mês. Quando um milestone é atingido, alerta o Vasco com as acções recomendadas e aguarda aprovação antes de qualquer ajuste.</div>
   </div>
 </div>
 
@@ -1655,43 +1759,62 @@
   <div class="step">
     <div class="step-num">6</div>
     <div class="step-body">
-      <h4>Backtesting 10 anos BTC/ETH/SOL</h4>
-      <p>Instalar TA-Lib. Correr análise completa com dados históricos 2016-2026 via CCXT. Produzir relatório: retorno por estratégia por fase, configuração óptima do grid, drawdown máximo. Informação é dinheiro — este passo vale mais do que qualquer estimativa teórica.</p>
+      <h4>Backtesting 10 anos BTC/ETH/SOL <span class="pill pill-green" style="font-size:11px;vertical-align:middle">✓ Concluído</span></h4>
+      <p>TA-Lib instalado. Script <code>scripts/backtest_cripto.py</code> corre com dados reais Binance. Resultados: DCA +302-335%, Grid Bot +32-57%/ano in-range, Trailing Stop +2.497-9.502%. 4 regras CFO de detecção de fase documentadas.</p>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num">7</div>
     <div class="step-body">
-      <h4>Redesenhar CFO — motor de análise e alertas</h4>
-      <p>Motor de análise técnica com detecção automática de fase de mercado (lateralização/bear/bull). Monitorização dos produtos IBKR — preços, dividendos, NAV drift. Pipeline Scout→CFO→Vasco para altcoins. Relatório semanal completo.</p>
+      <h4>CFO — regras automáticas para ETFs e portfolio</h4>
+      <p>Para além da cripto, o CFO monitoriza os produtos IBKR e Trade Republic com as seguintes regras automáticas:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-size:13px;border-left:3px solid var(--yellow)">
+          <strong>Alerta dividendo cortado:</strong> Se qualquer produto de Motor 2/3 cortar dividendo &gt;20% sem comunicado, CFO alerta imediatamente com análise de causa e sugestão de substituição.
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-size:13px;border-left:3px solid var(--red)">
+          <strong>Alerta NAV drift:</strong> Se NAV de qualquer produto cair &gt;10% em 3 meses consecutivos, CFO alerta com comparação vs benchmark (CSPX) e recomendação de saída.
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-size:13px;border-left:3px solid var(--accent)">
+          <strong>Relatório mensal de portfolio:</strong> No 1º de cada mês — capital total por motor, dividendos recebidos, performance vs projecção, milestone atingido ou próximo.
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-size:13px;border-left:3px solid var(--green)">
+          <strong>Alerta de milestone:</strong> Quando capital total cruza €10k / €25k / €50k / €100k / €250k / €1M — CFO envia briefing com acções recomendadas e aguarda aprovação do Vasco.
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-size:13px;border-left:3px solid var(--purple)">
+          <strong>Revisão anual de alocação (1 Janeiro):</strong> CFO compara alocação actual vs targets de rebalanceamento. Se desvio &gt;10pp, propõe ajuste ao Vasco com plano concreto de redirecção dos novos €/mês.
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="step">
     <div class="step-num">8</div>
     <div class="step-body">
-      <h4>Implementar Motor 5 após estabilização</h4>
-      <p>Após 2-3 meses com os Motores 1-4 estáveis e o backtesting concluído, implementar Motor 5: QQQ (crescimento), IAU (ouro/seguro), PHO (água), COPX ou URNM (matérias-primas). €250/mês adicionais.</p>
+      <h4>Implementar Motor 5 após Milestone 1 (€10.000 total)</h4>
+      <p>Não esperar meses arbitrários. O gatilho é atingir €10.000 de capital total acumulado. Nesse momento: QQQ €50/mês + IAU €30/mês via Trade Republic. O Motor 5 completo (€250/mês) activa-se progressivamente nos Milestones 1 e 2.</p>
     </div>
   </div>
 
   <div class="section" style="margin-top:8px">
-    <h3>Ordem de trabalhos completa</h3>
+    <h3>Ordem de trabalhos — estado actual</h3>
     <div style="overflow-x:auto">
     <table>
-      <tr><th>#</th><th>Tarefa</th><th>Tipo</th><th>Estado</th></tr>
-      <tr><td>1</td><td>Abrir conta IBKR</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
-      <tr><td>2</td><td>Abrir conta Slash</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
-      <tr><td>3</td><td>Trade Republic — CSPX automático</td><td>Manual Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
-      <tr><td>4</td><td>Activar SOL/USDT bot Binance</td><td>Binance</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
-      <tr><td>5</td><td>Primeira ronda compras IBKR</td><td>Manual Vasco</td><td><span class="pill pill-blue">Após IBKR</span></td></tr>
-      <tr><td>6</td><td>Instalar TA-Lib + backtesting 10 anos</td><td>Morgan / CFO</td><td><span class="pill pill-blue">Sprint CFO</span></td></tr>
-      <tr><td>7</td><td>Redesenhar CFO — análise técnica + alertas</td><td>Morgan / CFO</td><td><span class="pill pill-blue">Sprint CFO</span></td></tr>
-      <tr><td>8</td><td>Implementar Motor 5</td><td>Manual Vasco</td><td><span class="pill pill-purple">Após 2-3 meses</span></td></tr>
-      <tr><td>9</td><td>Activar Pulser</td><td>Morgan</td><td><span class="pill pill-purple">Após sistema estável</span></td></tr>
-      <tr><td>10</td><td>JARVIS + PWA com dashboard portfolio</td><td>Morgan</td><td><span class="pill pill-purple">Após sistema estável</span></td></tr>
-      <tr><td>11</td><td>Estrutura UAE Free Zone</td><td>Advogado fiscal</td><td><span class="pill pill-muted">Longo prazo</span></td></tr>
+      <tr><th>#</th><th>Tarefa</th><th>Responsável</th><th>Estado</th></tr>
+      <tr><td>1</td><td>Abrir conta IBKR</td><td>Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>2</td><td>Abrir conta Slash</td><td>Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>3</td><td>Trade Republic — CSPX €200/mês automático</td><td>Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>4</td><td>Activar SOL/USDT bot Binance</td><td>Vasco</td><td><span class="pill pill-yellow">Urgente</span></td></tr>
+      <tr><td>5</td><td>Primeira ronda compras IBKR (Motor 2+3)</td><td>Vasco</td><td><span class="pill pill-blue">Após IBKR</span></td></tr>
+      <tr><td>6</td><td>Backtesting 10 anos BTC/ETH/SOL</td><td>Morgan</td><td><span class="pill pill-green">✓ Concluído</span></td></tr>
+      <tr><td>7</td><td>CFO — regras automáticas ETFs + milestones</td><td>Morgan</td><td><span class="pill pill-blue">Próximo sprint</span></td></tr>
+      <tr><td>8</td><td>Motor 5 — QQQ + IAU (Milestone 1)</td><td>Vasco</td><td><span class="pill pill-purple">Quando €10k</span></td></tr>
+      <tr><td>9</td><td>Motor 5 completo — PHO + COPX/URNM (Milestone 2)</td><td>Vasco</td><td><span class="pill pill-purple">Quando €25k</span></td></tr>
+      <tr><td>10</td><td>Rebalanceamento Motor 4+5 (Milestone 3)</td><td>CFO + Vasco</td><td><span class="pill pill-purple">Quando €50k</span></td></tr>
+      <tr><td>11</td><td>JARVIS + PWA com dashboard portfolio</td><td>Morgan</td><td><span class="pill pill-purple">Após sistema estável</span></td></tr>
+      <tr><td>12</td><td>Estrutura UAE Free Zone</td><td>Advogado fiscal</td><td><span class="pill pill-muted">Quando €50k+ passivo/ano</span></td></tr>
+      <tr><td>13</td><td>JP Morgan Private Bank</td><td>Vasco</td><td><span class="pill pill-muted">Quando €1M+ total</span></td></tr>
     </table>
     </div>
   </div>
