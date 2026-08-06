@@ -834,7 +834,7 @@ function parseRGB(s) { return s.split(',').map(Number); }
 function lerpRGB(a, b, k) { return a.map((v,i) => Math.round(v + (b[i]-v)*k)); }
 const CEO_RGB = [190, 150, 10];
 
-const CEO_N = 4000;
+const CEO_N = 8000;
 let CEO_R = 110;
 let ceoRotY = 0;
 let ceoPts = [];
@@ -910,16 +910,6 @@ function drawCeoSphere(breathe) {
     ctx.fillStyle = `rgba(${sc},${p.a})`;
     ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
   });
-
-  const ringR2 = CEO_R * (1.32 + breathe * 0.02);
-  ctx.beginPath();
-  ctx.arc(CX, CY, ringR2, 0, Math.PI*2);
-  ctx.strokeStyle = `rgba(${sc},${0.55 + breathe*0.1})`;
-  ctx.lineWidth = 1.8;
-  ctx.shadowColor = `rgba(${sc},0.7)`;
-  ctx.shadowBlur = 14;
-  ctx.stroke();
-  ctx.shadowBlur = 0;
 
   const centerLabel = centeredId
     ? NODES.find(n => n.id === centeredId).label.toUpperCase()
