@@ -20,7 +20,7 @@ CFO_REPORT_FILE    = MEMORY_DIR / "cfo_reports.json"
 
 DRAWDOWN_DAY_LIMITE   = 0.05   # 5% num dia — alerta imediato
 DRAWDOWN_TOTAL_LIMITE = 0.15   # 15% total — parar bots
-CAPITAL_BASE          = 100.0  # USDT de referência
+CAPITAL_BASE          = 300.0  # USDT total: BTC grid $100 + ETH grid $100 + SOL $100
 
 # Limites de defesa
 SALDO_DIVERGENCIA_MAX  = 0.05   # 5% de divergência saldo real vs memória → alerta
@@ -311,7 +311,8 @@ def _notificar_cfo(tipo: str, mensagem: str, urgencia: str = "alta"):
     try:
         ceo_events_file = MEMORY_DIR / "ceo_events.json"
         try:
-            eventos = json.loads(ceo_events_file.read_text())
+            raw = json.loads(ceo_events_file.read_text())
+            eventos = raw if isinstance(raw, list) else raw.get("eventos", [])
         except Exception:
             eventos = []
         eventos.append({
@@ -357,10 +358,23 @@ def verificar_saldo_vs_memoria() -> list:
         grid_pnl = 0.0
         try:
             grid_st = json.loads(GRID_STATE_FILE.read_text())
-            grid_pnl = grid_st.get("pnl_total", 0.0)
-            # Valor em posições abertas do grid
+            grid_pnl += grid_st.get("pnl_total", 0.0)
             for pos in grid_st.get("open_positions", {}).values():
                 grid_pnl += pos.get("size", 0) * preco
+        except Exception:
+            pass
+        try:
+            eth_st = json.loads((MEMORY_DIR / "eth_grid_state.json").read_text())
+            grid_pnl += eth_st.get("pnl_total", 0.0)
+            eth_ticker = ex.fetch_ticker("ETH/USDT")["last"]
+            for pos in eth_st.get("open_positions", {}).values():
+                grid_pnl += pos.get("size", 0) * eth_ticker
+        except Exception:
+            pass
+        try:
+            sol_st = json.loads((MEMORY_DIR / "sol_bot_state.json").read_text())
+            grid_pnl += sol_st.get("pnl_total", 0.0)
+            grid_pnl += sol_st.get("qty", 0.0) * ex.fetch_ticker("SOL/USDT")["last"]
         except Exception:
             pass
 
@@ -551,7 +565,8 @@ def parar_bot(razao: str):
     try:
         ceo_events_file = MEMORY_DIR / "ceo_events.json"
         try:
-            eventos = json.loads(ceo_events_file.read_text())
+            raw = json.loads(ceo_events_file.read_text())
+            eventos = raw if isinstance(raw, list) else raw.get("eventos", [])
         except Exception:
             eventos = []
         eventos.append({
