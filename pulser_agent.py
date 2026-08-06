@@ -405,6 +405,18 @@ def ciclo_semanal() -> str:
     return f"{resumo}\n{resultado_draft}"
 
 
+def get_resumo_financeiro() -> str:
+    """Resumo financeiro compacto para o CFO — subscribers, receita, fase."""
+    state = _load_state()
+    receita = state.get("receita_total", 0.0)
+    subscribers = state.get("subscribers", 0)
+    open_rate = state.get("open_rate", 0.0)
+    fase = state.get("fase", "setup")
+    alertas = state.get("alertas_activos", [])
+    alerta_str = f" | ⚠ {len(alertas)} alerta(s)" if alertas else ""
+    return f"Beehiiv/AI Pulse — Subscribers: {subscribers} | Open rate: {open_rate:.0%} | Receita: €{receita:.2f} | Fase: {fase}{alerta_str}"
+
+
 def iniciar_scheduler_pulser():
     """Arranca o loop autónomo semanal do Pulser em daemon thread."""
     def _loop():

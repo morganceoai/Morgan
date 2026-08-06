@@ -38,8 +38,6 @@ from conversation_store import get_context_messages, save_message as store_save
 from voice_id import enroll_voice, is_vasco, has_profile, load_profile
 from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
-from marketeer_agent import get_marketeer_reply
-from operator_agent import get_operator_reply
 from patlas_agent import get_patlas_reply
 from pulser_agent import get_pulser_reply
 from trading_bot import get_status as get_bot_status
@@ -100,7 +98,7 @@ def _get_agentes_activos() -> str:
             linhas.append(f"- {nome.upper()}: {descricao}")
         return "\n".join(linhas) if linhas else "- (nenhum agente registado)"
     except Exception:
-        return "- Scout, Coach, CFO, Creator, Solver, Operator, Marketeer (fallback estático)"
+        return "- Scout, Coach, CFO, Creator, Solver, PAtlas, Pulser (fallback estático)"
 
 
 def get_system_prompt(query: str = "") -> str:
@@ -433,8 +431,6 @@ Analisa a mensagem e responde APENAS com um destes labels (sem mais texto):
   coach      — futebol, táticas, treino, Moreirense, adversário, plantel, jogadores
   patlas     — PlannerAtlas, Etsy, planners digitais, listings, Pinterest, SEO Etsy, vendas loja
   pulser     — newsletter, AI Pulse, Beehiiv, subscribers, open rate, email marketing, crescimento newsletter
-  marketeer  — marketing genérico, outreach, leads, campanhas, copywriting, email frio
-  operator   — estado das lojas, operações diárias, receita total, directórios
   scout      — oportunidades de negócio, SaaS, rendimento passivo, startups, nicho, mercado
   ceo        — tudo o resto (conversa geral, tarefas, perguntas pessoais, status)
 Responde apenas com o label. Nenhuma outra palavra."""
@@ -446,7 +442,7 @@ def _classificar_agente(msg: str) -> str:
     m = msg.lower()
     if any(k in m for k in ["morgan ceo", "volta ao morgan", "morgan principal"]):
         return "ceo"
-    for agente in ("solver", "cfo", "coach", "patlas", "pulser", "marketeer", "operator", "scout"):
+    for agente in ("solver", "cfo", "coach", "patlas", "pulser", "scout"):
         if m.strip().startswith(agente) or f"[{agente}]" in m:
             return agente
 
@@ -458,7 +454,7 @@ def _classificar_agente(msg: str) -> str:
             messages=[{"role": "user", "content": msg[:400]}],
         )
         label = r.content[0].text.strip().lower().split()[0]
-        if label in ("solver", "cfo", "coach", "patlas", "pulser", "marketeer", "operator", "scout", "ceo"):
+        if label in ("solver", "cfo", "coach", "patlas", "pulser", "scout", "ceo"):
             return label
     except Exception:
         pass
@@ -474,10 +470,6 @@ def _classificar_agente(msg: str) -> str:
         return "patlas"
     if any(k in m for k in ["newsletter", "beehiiv", "subscribers", "ai pulse"]):
         return "pulser"
-    if any(k in m for k in ["lead", "campanha", "marketing", "outreach"]):
-        return "marketeer"
-    if any(k in m for k in ["operações", "receita total"]):
-        return "operator"
     if any(k in m for k in ["oportunidade", "rendimento passivo", "startup"]):
         return "scout"
     return "ceo"
@@ -619,22 +611,6 @@ def chat_with_morgan(user_text: str) -> str:
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
-    if agente_alvo == "marketeer":
-        try:
-            reply = "[MARKETEER] " + get_marketeer_reply(user_text)
-        except Exception as e:
-            reply = f"[MARKETEER] Erro: {e}"
-        store_save(DESKTOP_USER_ID, "assistant", reply)
-        return reply
-
-    if agente_alvo == "operator":
-        try:
-            reply = "[OPERATOR] " + get_operator_reply(user_text)
-        except Exception as e:
-            reply = f"[OPERATOR] Erro: {e}"
-        store_save(DESKTOP_USER_ID, "assistant", reply)
-        return reply
-
     # Solver — problemas técnicos, erros, bugs, CI
     if agente_alvo == "solver":
         _desktop_agent["current"] = "solver"
@@ -691,14 +667,6 @@ def chat_with_morgan(user_text: str) -> str:
             reply = "[PULSER] " + get_pulser_reply(user_text)
         except Exception as e:
             reply = f"[PULSER] Erro: {e}"
-        store_save(DESKTOP_USER_ID, "assistant", reply)
-        return reply
-
-    if agente == "marketeer":
-        try:
-            reply = "[MARKETEER] " + get_marketeer_reply(user_text)
-        except Exception as e:
-            reply = f"[MARKETEER] Erro: {e}"
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -1458,8 +1426,6 @@ async def get_agents():
         {"id": "creator",   "label": "Creator",   "role": "meta-tool",      "color": "255,170,0"},
         {"id": "patlas",    "label": "PAtlas",    "role": "PlannerAtlas",   "color": "255,140,0"},
         {"id": "pulser",    "label": "Pulser",    "role": "AI Pulse",       "color": "100,180,255"},
-        {"id": "operator",  "label": "Operator",  "role": "operações",      "color": "0,200,130"},
-        {"id": "marketeer", "label": "Marketeer", "role": "crescimento",    "color": "180,100,255"},
         {"id": "solver",    "label": "Solver",    "role": "manutenção",     "color": "155,109,255"},
     ]
     builtin_ids = {a["id"] for a in builtin}
@@ -1488,7 +1454,7 @@ async def set_agent(request: Request):
     """Define o agente ativo via canvas click."""
     body = await request.json()
     agent = body.get("agent", "ceo")
-    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator", "operator", "patlas", "pulser", "marketeer"}
+    valid = {"ceo", "coach", "cfo", "scout", "solver", "creator", "patlas", "pulser"}
     if agent in valid:
         _desktop_agent["current"] = agent
     return JSONResponse({"agent": _desktop_agent.get("current", "ceo")})
@@ -2451,14 +2417,23 @@ async def _run_daily_report():
         ops_str = "indisponível"
         oport_str = "indisponível"
 
-    # Sprint I — Operator monitoriza todos os negócios autonomamente
-    operator_str = "indisponível"
+    # PAtlas — resumo financeiro da loja Etsy
+    patlas_str = "indisponível"
     try:
-        from operator_agent import monitorizar_negocios
-        operator_str = await loop.run_in_executor(None, monitorizar_negocios)
-        operator_str = operator_str[:600]
+        from patlas_agent import get_resumo_financeiro as patlas_resumo
+        patlas_str = await loop.run_in_executor(None, patlas_resumo)
+        patlas_str = patlas_str[:400]
     except Exception as e:
-        operator_str = f"(erro: {e})"
+        patlas_str = f"(erro: {e})"
+
+    # Pulser — resumo financeiro da newsletter
+    pulser_str = "indisponível"
+    try:
+        from pulser_agent import get_resumo_financeiro as pulser_resumo
+        pulser_str = await loop.run_in_executor(None, pulser_resumo)
+        pulser_str = pulser_str[:400]
+    except Exception as e:
+        pulser_str = f"(erro: {e})"
 
     # Estado do sistema (agentes + negócios activos)
     try:
@@ -2496,8 +2471,11 @@ CONVERSAS DE HOJE ({n_trocas} trocas):
 CFO — TRADING BOT:
 {bot_str}
 
-OPERATOR — NEGÓCIOS ACTIVOS:
-{operator_str}
+PLANNERATLAS (Etsy):
+{patlas_str}
+
+THE AI PULSE (Newsletter):
+{pulser_str}
 
 SCOUT:
 Oportunidades aprovadas: {ops_str}
@@ -2510,7 +2488,7 @@ ERROS DO DIA:
 {erros_str}
 
 Instruções:
-- Secção por agente/área: CFO, Operator, Scout, sistema
+- Secção por agente/área: CFO, PAtlas, Pulser, Scout, sistema
 - O que aconteceu hoje, o que ficou por fazer, decisões tomadas
 - Alertas se houver erros, anomalias ou consumo anómalo de Claude
 - O que o Vasco deve ter em mente amanhã
@@ -2695,19 +2673,6 @@ async def _heartbeat_loop():
                         _log.info("Scout Missão D concluída")
                 except Exception as e:
                     _log.error("Scout Missão D erro: %s", e)
-
-            # Marketeer → Operator: recomendações diárias às 9h
-            chave_mkt_ops = f"mkt_ops_{agora.strftime('%Y-%m-%d')}"
-            if agora.hour == 9 and not _dedup_check(chave_mkt_ops):
-                _dedup_mark(chave_mkt_ops)
-                try:
-                    from marketeer_agent import escrever_recomendacoes_operator
-                    loop = asyncio.get_event_loop()
-                    res_mkt = await loop.run_in_executor(None, escrever_recomendacoes_operator)
-                    _log.info("Marketeer→Operator: %s", res_mkt)
-                    # Operator lê as recomendações automaticamente via _ler_recomendacoes_marketeer()
-                except Exception as e:
-                    _log.error("Marketeer→Operator erro: %s", e)
 
             # Pulser — ciclo semanal newsletter (domingo 18h)
             chave_pulser = f"pulser_{agora.strftime('%Y-%W')}"

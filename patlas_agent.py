@@ -723,6 +723,17 @@ def ciclo_diario() -> str:
     return estado_str
 
 
+def get_resumo_financeiro() -> str:
+    """Resumo financeiro compacto para o CFO — receita, vendas, estado."""
+    state = _load_state()
+    receita = state.get("receita_total", 0.0)
+    vendas = state.get("vendas_total", 0)
+    listings = state.get("listings_activos", 0)
+    alertas = state.get("alertas_activos", [])
+    alerta_str = f" | ⚠ {len(alertas)} alerta(s)" if alertas else ""
+    return f"Etsy/PlannerAtlas — Receita: €{receita:.2f} | Vendas: {vendas} | Listings: {listings}{alerta_str}"
+
+
 def iniciar_scheduler_patlas():
     """Arranca o loop autónomo diário do PAtlas em daemon thread."""
     def _loop():

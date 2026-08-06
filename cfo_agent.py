@@ -634,15 +634,51 @@ def ciclo_decisao() -> dict:
         except Exception:
             pass
 
+        # Fase de mercado enriquecida
+        fase_mercado = {}
+        try:
+            from cfo_market_phase import snapshot_fase
+            fase_mercado = snapshot_fase()
+        except Exception:
+            pass
+
+        # Portfolio M1-M5
+        portfolio = {}
+        try:
+            from cfo_portfolio import resumo_portfolio
+            portfolio = resumo_portfolio()
+        except Exception:
+            pass
+
+        # Negócios (PAtlas + Pulser)
+        negocios_str = ""
+        try:
+            from patlas_agent import get_resumo_financeiro as patlas_res
+            negocios_str += f"PAtlas: {patlas_res()}\n"
+        except Exception:
+            pass
+        try:
+            from pulser_agent import get_resumo_financeiro as pulser_res
+            negocios_str += f"Pulser: {pulser_res()}"
+        except Exception:
+            pass
+
+        fase_est = fase_mercado.get("fase_estrutural", {})
+        fase_cp = fase_mercado.get("fase_curto_prazo", {})
+        funding = fase_mercado.get("funding_rate", {})
+        dom = fase_mercado.get("dominancia_btc", {})
+        alertas_fase = fase_mercado.get("alertas", [])
+
         contexto = f"""CICLO CFO — {datetime.now().strftime('%d/%m/%Y %H:%M')}
 MODO EXECUTOR: {modo_executor.upper()} (observation=só analisar; execution=executar)
 
-MERCADO BTC/USDT:
-- Preço: ${mercado.get('preco', '?')}
-- Variação 24h: {mercado.get('variacao_24h_pct', '?')}%
-- Regime: {mercado.get('regime', '?')} (confiança {mercado.get('regime_confianca', 0)}%)
-- Estratégia recomendada: {mercado.get('estrategia_recomendada', '?')}
-- Razão: {mercado.get('regime_razao', '?')}
+FASE DE MERCADO BTC/USDT:
+- Fase estrutural (diário): {fase_est.get('fase','?').upper()} | RSI={fase_est.get('rsi14','?')} | SMA200 ${fase_est.get('sma200','?')} ({fase_est.get('distancia_sma200_pct',0):+.1f}%)
+- Tendência curto prazo (30m): {fase_cp.get('tendencia','?').upper()}
+- Funding rate: {funding.get('rate_pct','?')}% ({funding.get('sentimento','?')})
+- Dominância BTC: {dom.get('dominancia_pct','?')}% — {dom.get('interpretacao','?')}
+- Estratégia recomendada: {fase_mercado.get('estrategia_recomendada','?')} — {fase_mercado.get('estrategia_razao','?')}
+- Alertas fase: {'; '.join(alertas_fase) if alertas_fase else 'nenhum'}
 
 GRID BOT:
 - Activo: {grid_status.get('active', '?')}
@@ -652,13 +688,21 @@ GRID BOT:
 - Último preço: ${grid_status.get('last_price', '?')}
 - Ref. grid: ${grid_status.get('ref_price', '?')}
 
-RISCO:
+RISCO TRADING:
 - Nível: {risco_trading.get('nivel_risco', '?').upper()}
 - Drawdown total: {risco_trading.get('drawdown_total_pct', 0):.1f}%
 - Streak perdas: {risco_trading.get('streak_perdas', 0)}
 - Alertas: {'; '.join(risco_trading.get('alertas', [])) or 'nenhum'}
 
-IMPÉRIO:
+PORTFOLIO BCVertex (M1-M5):
+- Capital total: €{portfolio.get('capital_total_eur', 0):,.0f}
+- Milestones novos: {[m['milestone_eur'] for m in portfolio.get('milestones_novos', [])] or 'nenhum'}
+- Próximo milestone: {portfolio.get('proximo_milestone', {}).get('milestone_eur', 'N/A')} (falta €{portfolio.get('proximo_milestone', {}).get('falta_eur', 'N/A')})
+
+NEGÓCIOS:
+{negocios_str or 'indisponível'}
+
+IMPÉRIO (contas Binance):
 - Capital total alocado: ${imperio.get('capital_total_alocado', 0):.2f}
 - PnL total império: ${imperio.get('pnl_total_imperio', 0):.4f}
 - Contas activas: {imperio.get('contas_activas', 0)}/{imperio.get('total_contas', 0)}"""
@@ -733,6 +777,7 @@ def iniciar_scheduler_cfo():
     """
     def _loop():
         time.sleep(60)  # 1min startup delay
+        ciclo_count = 0
         while True:
             try:
                 circuit_breaker()
@@ -746,6 +791,25 @@ def iniciar_scheduler_cfo():
                 ciclo_decisao()
             except Exception as e:
                 print(f"[cfo] ciclo_decisao erro: {e}", flush=True)
+
+            # ETF + portfolio — a cada 4 ciclos (2h)
+            ciclo_count += 1
+            if ciclo_count % 4 == 0:
+                try:
+                    from cfo_etf import run_verificacoes_etf
+                    alertas_etf = run_verificacoes_etf()
+                    for a in alertas_etf:
+                        _notificar_cfo("etf_alerta", a, "media")
+                except Exception as e:
+                    print(f"[cfo] etf check erro: {e}", flush=True)
+                try:
+                    from cfo_portfolio import verificar_milestones
+                    milestones = verificar_milestones()
+                    for m in milestones:
+                        _notificar_cfo("milestone", f"Portfolio atingiu €{m['milestone_eur']:,}! Acções: {', '.join(m['acoes'][:2])}", "critica")
+                except Exception as e:
+                    print(f"[cfo] milestone check erro: {e}", flush=True)
+
             time.sleep(30 * 60)
 
     t = threading.Thread(target=_loop, daemon=True, name="cfo-scheduler")
@@ -935,10 +999,13 @@ RISCO: {r['nivel_risco'].upper()}
 1. Supervisionar trading bot BTC/USDT — capital $100 USDT
 2. Monitorizar PnL, drawdown, profit factor, streak, inactividade
 3. Alertar CEO quando qualquer threshold for atingido
-4. Relatórios financeiros diários (7h) e completos (22h)
+4. Relatórios financeiros diários (7h via cfo_reporting.briefing_matinal) e completos (22h via cfo_reporting.relatorio_22h)
 5. Avaliar viabilidade financeira de novos negócios antes de aprovação
-6. Quando império crescer: receitas dos sub-Morgans, balanços, impostos
-7. REITs e fundos PT/ES/IE como rendimento passivo (usa analisar_reits() para detalhes)
+6. Monitorizar portfolio M1-M5 via cfo_portfolio — capital por motor, milestones, projecções
+7. Monitorizar ETFs via cfo_etf — dividend cut, NAV drift, revisão anual
+8. Analisar fase de mercado via cfo_market_phase — SMA200, RSI, funding rate, dominância BTC
+9. Receber resumos financeiros do PAtlas (Etsy) e Pulser (newsletter) — não gerir esses negócios
+10. Scorecard mensal via cfo_reporting.scorecard_mensal — dia 1 de cada mês
 
 ## THRESHOLDS DE ALERTA
 | Métrica | Amarelo | Vermelho |
