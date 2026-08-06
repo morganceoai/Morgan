@@ -338,57 +338,54 @@ def _get_exchange():
 
 def verificar_saldo_vs_memoria() -> list:
     """
-    Defesa 1: compara saldo real Binance com o esperado pelos estados em memória.
-    Divergência >5% → alerta (indica bug silencioso ou ordem não registada).
+    Defesa 1: monitoriza o saldo total real da conta em tempo real.
+    Compara com o último snapshot guardado — alerta se cair >5% entre ciclos.
+    Não usa CAPITAL_BASE fixo: usa o saldo real como referência.
     """
     alertas = []
+    saldo_file = MEMORY_DIR / "cfo_saldo_snapshot.json"
     try:
         ex = _get_exchange()
         balance = ex.fetch_balance()
         usdt_real = float(balance.get("USDT", {}).get("total", 0))
         btc_real  = float(balance.get("BTC",  {}).get("total", 0))
-        ticker    = ex.fetch_ticker("BTC/USDT")
-        preco     = ticker["last"]
-        total_real = usdt_real + btc_real * preco
+        eth_real  = float(balance.get("ETH",  {}).get("total", 0))
+        sol_real  = float(balance.get("SOL",  {}).get("total", 0))
 
-        # Capital esperado: base - perdas registadas
-        st = _load_trading_state()
-        pnl_super = st.get("pnl_total", 0.0)
+        preco_btc = ex.fetch_ticker("BTC/USDT")["last"]
+        preco_eth = ex.fetch_ticker("ETH/USDT")["last"]
+        preco_sol = ex.fetch_ticker("SOL/USDT")["last"]
 
-        grid_pnl = 0.0
-        try:
-            grid_st = json.loads(GRID_STATE_FILE.read_text())
-            grid_pnl += grid_st.get("pnl_total", 0.0)
-            for pos in grid_st.get("open_positions", {}).values():
-                grid_pnl += pos.get("size", 0) * preco
-        except Exception:
-            pass
-        try:
-            eth_st = json.loads((MEMORY_DIR / "eth_grid_state.json").read_text())
-            grid_pnl += eth_st.get("pnl_total", 0.0)
-            eth_ticker = ex.fetch_ticker("ETH/USDT")["last"]
-            for pos in eth_st.get("open_positions", {}).values():
-                grid_pnl += pos.get("size", 0) * eth_ticker
-        except Exception:
-            pass
-        try:
-            sol_st = json.loads((MEMORY_DIR / "sol_bot_state.json").read_text())
-            grid_pnl += sol_st.get("pnl_total", 0.0)
-            grid_pnl += sol_st.get("qty", 0.0) * ex.fetch_ticker("SOL/USDT")["last"]
-        except Exception:
-            pass
+        total_real = (
+            usdt_real
+            + btc_real * preco_btc
+            + eth_real * preco_eth
+            + sol_real * preco_sol
+        )
 
-        capital_esperado = CAPITAL_BASE + pnl_super + grid_pnl
-        divergencia = abs(total_real - capital_esperado) / max(capital_esperado, 1)
+        # Guarda snapshot actual
+        snapshot = {
+            "ts": datetime.now().isoformat(),
+            "total_usdt": round(total_real, 4),
+            "usdt": usdt_real, "btc": btc_real,
+            "eth": eth_real, "sol": sol_real,
+            "preco_btc": preco_btc, "preco_eth": preco_eth, "preco_sol": preco_sol,
+        }
 
-        if divergencia > SALDO_DIVERGENCIA_MAX:
-            msg = (
-                f"SALDO DIVERGENTE: real=${total_real:.2f} "
-                f"vs esperado=${capital_esperado:.2f} "
-                f"(divergência {divergencia*100:.1f}%)"
-            )
-            alertas.append(msg)
-            _notificar_cfo("saldo_divergente", msg, "critica")
+        # Compara com snapshot anterior
+        if saldo_file.exists():
+            anterior = json.loads(saldo_file.read_text())
+            total_anterior = anterior.get("total_usdt", total_real)
+            queda = (total_anterior - total_real) / max(total_anterior, 1)
+            if queda > SALDO_DIVERGENCIA_MAX:
+                msg = (
+                    f"SALDO CAIU: ${total_anterior:.2f} → ${total_real:.2f} "
+                    f"(-{queda*100:.1f}% desde último check) — verificar ordens"
+                )
+                alertas.append(msg)
+                _notificar_cfo("saldo_queda", msg, "critica")
+
+        saldo_file.write_text(json.dumps(snapshot, indent=2))
 
     except Exception as e:
         alertas.append(f"SALDO: erro a verificar ({e})")
