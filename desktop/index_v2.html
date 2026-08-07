@@ -842,13 +842,13 @@ class ParticleSphere {
 // ─── NODES ────────────────────────────────────────────────────────────────────
 
 const NODES = [
-  { id:'scout',   label:'Scout',   role:'inteligência',  color:'255,90,50',   ring:1000, angle:-0.52 },
-  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 990, angle: 0.58 },
-  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'240,192,64',  ring: 980, angle:-2.55 },
-  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring:1060, angle: 2.65 },
-  { id:'creator', label:'Creator', role:'meta-tool',     color:'0,160,255',   ring:1050, angle: 1.62 },
-  { id:'patlas',  label:'PAtlas',  role:'etsy operator', color:'255,60,140',  ring:1010, angle:-1.80 },
-  { id:'pulser',  label:'Pulser',  role:'publisher',     color:'0,210,190',   ring: 970, angle: 3.80 },
+  { id:'scout',   label:'Scout',   role:'inteligência',  color:'255,90,50',   ring: 980, angle:-0.52 },
+  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring:1040, angle: 0.58 },
+  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'240,192,64',  ring: 960, angle:-2.55 },
+  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring:1070, angle: 2.30 },
+  { id:'creator', label:'Creator', role:'meta-tool',     color:'0,160,255',   ring:1010, angle: 1.10 },
+  { id:'patlas',  label:'PAtlas',  role:'etsy operator', color:'255,60,140',  ring: 990, angle:-1.55 },
+  { id:'pulser',  label:'Pulser',  role:'publisher',     color:'0,210,190',   ring:1050, angle: 5.05 },
 ];
 
 // ─── CANVAS STATE ─────────────────────────────────────────────────────────────
@@ -897,8 +897,8 @@ const lineTails = NODES.map(() => ({
   waveFreq: 0.18 + Math.random() * 0.12,
 }));
 
-const AGENT_R_BASE = 32; // raio base das mini-esferas (px a SCALE=1)
-const AGENT_N      = 250; // partículas por agente
+const AGENT_R_BASE = 9;  // raio base das mini-esferas (px a SCALE=1) — planetas longínquos
+const AGENT_N      = 100; // partículas por agente
 let agentSpheres = {};
 let agentRotY    = {};
 
@@ -1117,7 +1117,7 @@ function drawAgentSpheres(breathe) {
     const pts = agentSpheres[n.id];
     if (!pts || !pts.length) return;
     const R = pts[0].R;
-    agentRotY[n.id] += 0.0012;
+    agentRotY[n.id] += 0.003;
     const cosR = Math.cos(agentRotY[n.id]);
     const sinR = Math.sin(agentRotY[n.id]);
 
