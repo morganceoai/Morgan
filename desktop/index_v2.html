@@ -842,11 +842,13 @@ class ParticleSphere {
 // ─── NODES ────────────────────────────────────────────────────────────────────
 
 const NODES = [
-  { id:'scout',   label:'Scout',   role:'inteligência',  color:'255,90,50',   ring:1000, angle:-0.52, size:7 },
-  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 990, angle: 0.58, size:7 },
-  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'240,192,64',  ring: 980, angle:-2.55, size:7 },
-  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring:1060, angle: 2.65, size:7 },
-  { id:'creator', label:'Creator', role:'meta-tool',     color:'0,160,255',   ring:1050, angle: 1.62, size:7 },
+  { id:'scout',   label:'Scout',   role:'inteligência',  color:'255,90,50',   ring:1000, angle:-0.52 },
+  { id:'coach',   label:'Coach',   role:'análise tática',color:'0,255,157',   ring: 990, angle: 0.58 },
+  { id:'cfo',     label:'CFO',     role:'financeiro',    color:'240,192,64',  ring: 980, angle:-2.55 },
+  { id:'solver',  label:'Solver',  role:'manutenção',    color:'155,109,255', ring:1060, angle: 2.65 },
+  { id:'creator', label:'Creator', role:'meta-tool',     color:'0,160,255',   ring:1050, angle: 1.62 },
+  { id:'patlas',  label:'PAtlas',  role:'etsy operator', color:'255,60,140',  ring:1010, angle:-1.80 },
+  { id:'pulser',  label:'Pulser',  role:'publisher',     color:'0,210,190',   ring: 970, angle: 3.80 },
 ];
 
 // ─── CANVAS STATE ─────────────────────────────────────────────────────────────
@@ -895,6 +897,32 @@ const lineTails = NODES.map(() => ({
   waveFreq: 0.18 + Math.random() * 0.12,
 }));
 
+const AGENT_R_BASE = 32; // raio base das mini-esferas (px a SCALE=1)
+const AGENT_N      = 250; // partículas por agente
+let agentSpheres = {};
+let agentRotY    = {};
+
+function buildAgentSpheres() {
+  agentSpheres = {};
+  NODES.forEach(n => {
+    const R = Math.round(AGENT_R_BASE * SCALE);
+    agentSpheres[n.id] = Array.from({length: AGENT_N}, () => {
+      const theta = Math.acos(2*Math.random()-1);
+      const phi   = Math.random()*Math.PI*2;
+      const r     = R * Math.pow(Math.random(), 0.2);
+      return {
+        ox: r*Math.sin(theta)*Math.cos(phi),
+        oy: r*Math.sin(theta)*Math.sin(phi),
+        oz: r*Math.cos(theta),
+        sz: Math.random()*1.1 + 0.3,
+        ba: Math.random()*0.7 + 0.3,
+        R,
+      };
+    });
+    if (agentRotY[n.id] === undefined) agentRotY[n.id] = Math.random()*Math.PI*2;
+  });
+}
+
 function initCanvas() {
   W = cv.width  = centerEl.offsetWidth;
   H = cv.height = centerEl.offsetHeight;
@@ -902,6 +930,7 @@ function initCanvas() {
   CY = H * 0.50;
   SCALE = Math.min(W, H) / 1400;
   buildCeoPts();
+  buildAgentSpheres();
   buildStars();
 }
 window.addEventListener('resize', initCanvas);
@@ -1080,15 +1109,55 @@ function drawSingleNode(p, r, color, label, role, isVasco, isCeoProxy) {
   }
 }
 
-function drawNodes() {
+function drawAgentSpheres(breathe) {
+  const fov = 900;
   NODES.forEach(n => {
     if (centeredId && n.id === centeredId) return;
-    drawSingleNode(nodePos(n), n.size, n.color, n.label, n.role, !!n.isVasco, false);
+    const pos = nodePos(n);
+    const pts = agentSpheres[n.id];
+    if (!pts || !pts.length) return;
+    const R = pts[0].R;
+    agentRotY[n.id] += 0.0012;
+    const cosR = Math.cos(agentRotY[n.id]);
+    const sinR = Math.sin(agentRotY[n.id]);
+
+    const proj = pts.map(p => {
+      const x = p.ox*cosR + p.oz*sinR;
+      const z = -p.ox*sinR + p.oz*cosR;
+      const s = fov / (fov + z + R);
+      const d3 = Math.sqrt(p.ox*p.ox + p.oy*p.oy + p.oz*p.oz) / R;
+      const cb = Math.pow(Math.max(0, 1 - d3), 1.5);
+      return {
+        px: pos.x + x*s, py: pos.y + p.oy*s, z,
+        sz: Math.max(0.2, p.sz*s*(1+cb*0.8)),
+        a:  Math.min(0.95, p.ba*(0.28+cb*0.75)*s),
+      };
+    }).sort((a,b) => a.z - b.z);
+
+    // halo suave
+    const halo = ctx.createRadialGradient(pos.x, pos.y, R*0.5, pos.x, pos.y, R*1.8);
+    halo.addColorStop(0, `rgba(${n.color},${0.08+breathe*0.03})`);
+    halo.addColorStop(1, `rgba(${n.color},0)`);
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(pos.x, pos.y, R*1.8, 0, Math.PI*2); ctx.fill();
+
+    proj.forEach(p => {
+      ctx.fillStyle = `rgba(${n.color},${p.a})`;
+      ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
+    });
+
+    // label
+    const lx = pos.x + (pos.x > CX ? 1 : -1) * (R + 10);
+    ctx.textAlign = pos.x > CX ? 'left' : 'right';
+    ctx.font = "8px 'SF Mono', monospace";
+    ctx.fillStyle = `rgba(${n.color},0.55)`;
+    ctx.fillText(n.label.toUpperCase(), lx, pos.y + 3);
+    if (n.role) {
+      ctx.font = "7px 'SF Mono', monospace";
+      ctx.fillStyle = `rgba(${n.color},0.25)`;
+      ctx.fillText(n.role, lx, pos.y + 13);
+    }
   });
-  if (centeredId) {
-    const an = NODES.find(n => n.id === centeredId);
-    drawSingleNode(nodePos(an), 7, CEO_RGB.join(','), 'CEO', 'morgan', false, true);
-  }
 }
 
 let stars = [];
@@ -1124,9 +1193,8 @@ function draw() {
   ctx.fillStyle = ag;
   ctx.beginPath(); ctx.arc(CX, CY, CEO_R*2.5, 0, Math.PI*2); ctx.fill();
 
-  drawConnections();
   drawCeoSphere(breathe);
-  drawNodes();
+  drawAgentSpheres(breathe);
 
   requestAnimationFrame(draw);
 }
