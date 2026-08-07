@@ -1025,13 +1025,6 @@ function drawConnections() {
     ctx.beginPath(); ctx.arc(hx, hy, n.size >= 11 ? 14 : 8, 0, Math.PI*2); ctx.fill();
   });
 
-  const vp = nodePos(NODES.find(n => n.isVasco));
-  ctx.beginPath();
-  ctx.moveTo(CX, CY - CEO_R);
-  ctx.lineTo(vp.x, vp.y);
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 0.5;
-  ctx.stroke();
 }
 
 // ─── DRAW NODES ──────────────────────────────────────────────────────────────
