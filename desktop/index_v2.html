@@ -941,8 +941,15 @@ function drawCeoSphere(breathe) {
     };
   }).sort((a,b) => a.z - b.z);
 
+  // Halo exterior — dá presença à esfera
+  const haloG = ctx.createRadialGradient(CX, CY, CEO_R * 0.6, CX, CY, CEO_R * 1.6);
+  haloG.addColorStop(0, `rgba(${sc},${0.10 + breathe*0.04})`);
+  haloG.addColorStop(1, `rgba(${sc},0)`);
+  ctx.fillStyle = haloG;
+  ctx.beginPath(); ctx.arc(CX, CY, CEO_R * 1.6, 0, Math.PI*2); ctx.fill();
+
   proj.forEach(p => {
-    ctx.fillStyle = `rgba(${sc},${p.a})`;
+    ctx.fillStyle = `rgba(${sc},${Math.min(0.98, p.a * 1.6)})`;
     ctx.beginPath(); ctx.arc(p.px, p.py, p.sz, 0, Math.PI*2); ctx.fill();
   });
 
@@ -950,12 +957,18 @@ function drawCeoSphere(breathe) {
     ? NODES.find(n => n.id === centeredId).label.toUpperCase()
     : 'MORGAN CEO';
   ctx.textAlign = 'center';
-  ctx.font = "9px 'SF Mono', monospace";
-  ctx.fillStyle = `rgba(${sc},${0.35 + breathe*0.05})`;
-  ctx.fillText(centerLabel, CX, CY + CEO_R + 20);
-  ctx.font = "7px 'SF Mono', monospace";
-  ctx.fillStyle = `rgba(${sc},0.18)`;
-  ctx.fillText(centeredId ? NODES.find(n=>n.id===centeredId).role : 'braço direito', CX, CY + CEO_R + 32);
+  ctx.shadowColor = `rgba(${sc},0.7)`;
+  ctx.shadowBlur = 12;
+  ctx.font = "bold 11px 'SF Mono', monospace";
+  ctx.fillStyle = `rgba(${sc},${0.75 + breathe*0.1})`;
+  ctx.fillText(centerLabel, CX, CY + CEO_R + 24);
+  ctx.shadowBlur = 0;
+  if (centeredId) {
+    const an = NODES.find(n => n.id === centeredId);
+    ctx.font = "7px 'SF Mono', monospace";
+    ctx.fillStyle = `rgba(${sc},0.32)`;
+    ctx.fillText(an.role, CX, CY + CEO_R + 38);
+  }
 }
 
 // ─── DRAW CONNECTIONS ─────────────────────────────────────────────────────────
@@ -1041,10 +1054,10 @@ function drawSingleNode(p, r, color, label, role, isVasco, isCeoProxy) {
 
   ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2);
   if (isCeoProxy) ctx.setLineDash([3, 3]);
-  ctx.strokeStyle = `rgba(${color},${isCeoProxy ? 0.38 : 0.95})`;
-  ctx.lineWidth = r >= 11 ? 3 : 1.8;
-  ctx.shadowColor = `rgba(${color},0.8)`;
-  ctx.shadowBlur = isCeoProxy ? 0 : (r >= 11 ? 18 : 8);
+  ctx.strokeStyle = `rgba(${color},${isCeoProxy ? 0.38 : 0.50})`;
+  ctx.lineWidth = r >= 11 ? 2 : 1.2;
+  ctx.shadowColor = `rgba(${color},0.4)`;
+  ctx.shadowBlur = isCeoProxy ? 0 : (r >= 11 ? 8 : 4);
   ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.setLineDash([]);
