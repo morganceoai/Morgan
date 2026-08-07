@@ -919,7 +919,11 @@ function buildAgentSpheres() {
         R,
       };
     });
-    if (agentRotY[n.id] === undefined) agentRotY[n.id] = Math.random()*Math.PI*2;
+    if (agentRotY[n.id] === undefined) {
+      agentRotY[n.id] = Math.random()*Math.PI*2;
+      agentRotY[n.id + '_pulse'] = Math.random()*Math.PI*2;
+      agentRotY[n.id + '_pspeed'] = 0.008 + Math.random()*0.018;
+    }
   });
 }
 
@@ -1118,6 +1122,8 @@ function drawAgentSpheres(breathe) {
     if (!pts || !pts.length) return;
     const R = pts[0].R;
     agentRotY[n.id] += 0.003;
+    agentRotY[n.id + '_pulse'] += agentRotY[n.id + '_pspeed'];
+    const pulse = 0.35 + 0.65 * Math.pow(Math.max(0, Math.sin(agentRotY[n.id + '_pulse'])), 1.4);
     const cosR = Math.cos(agentRotY[n.id]);
     const sinR = Math.sin(agentRotY[n.id]);
 
@@ -1130,13 +1136,13 @@ function drawAgentSpheres(breathe) {
       return {
         px: pos.x + x*s, py: pos.y + p.oy*s, z,
         sz: Math.max(0.15, p.sz * s),
-        a:  Math.min(0.85, p.ba * (0.4 + cb*0.5) * s),
+        a:  Math.min(0.95, p.ba * (0.4 + cb*0.5) * s * pulse),
       };
     }).sort((a,b) => a.z - b.z);
 
     // halo suave
     const halo = ctx.createRadialGradient(pos.x, pos.y, R*0.5, pos.x, pos.y, R*1.8);
-    halo.addColorStop(0, `rgba(${n.color},${0.08+breathe*0.03})`);
+    halo.addColorStop(0, `rgba(${n.color},${(0.06+breathe*0.02)*pulse})`);
     halo.addColorStop(1, `rgba(${n.color},0)`);
     ctx.fillStyle = halo;
     ctx.beginPath(); ctx.arc(pos.x, pos.y, R*1.8, 0, Math.PI*2); ctx.fill();
