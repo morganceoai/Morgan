@@ -908,9 +908,12 @@ function initCanvas() {
 window.addEventListener('resize', initCanvas);
 
 function nodePos(n) {
+  // Elipse adaptativa: usa a dimensão real do canvas em cada eixo
+  // ring/1100 normaliza para 0-1; 0.44 = margem de segurança de 6% de cada lado
+  const t = n.ring / 1100;
   return {
-    x: CX + n.ring * SCALE * Math.cos(n.angle),
-    y: CY + n.ring * SCALE * Math.sin(n.angle),
+    x: CX + W * 0.44 * t * Math.cos(n.angle),
+    y: CY + H * 0.44 * t * Math.sin(n.angle),
   };
 }
 
