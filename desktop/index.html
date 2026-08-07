@@ -897,8 +897,8 @@ const lineTails = NODES.map(() => ({
   waveFreq: 0.18 + Math.random() * 0.12,
 }));
 
-const AGENT_R_BASE = 9;  // raio base das mini-esferas (px a SCALE=1) — planetas longínquos
-const AGENT_N      = 100; // partículas por agente
+const AGENT_R_BASE = 11; // raio base das mini-esferas (px a SCALE=1) — planetas longínquos
+const AGENT_N      = 70;  // partículas por agente
 let agentSpheres = {};
 let agentRotY    = {};
 
@@ -914,8 +914,8 @@ function buildAgentSpheres() {
         ox: r*Math.sin(theta)*Math.cos(phi),
         oy: r*Math.sin(theta)*Math.sin(phi),
         oz: r*Math.cos(theta),
-        sz: Math.random()*1.1 + 0.3,
-        ba: Math.random()*0.7 + 0.3,
+        sz: Math.random()*0.4 + 0.15,
+        ba: Math.random()*0.5 + 0.2,
         R,
       };
     });
@@ -1129,8 +1129,8 @@ function drawAgentSpheres(breathe) {
       const cb = Math.pow(Math.max(0, 1 - d3), 1.5);
       return {
         px: pos.x + x*s, py: pos.y + p.oy*s, z,
-        sz: Math.max(0.2, p.sz*s*(1+cb*0.8)),
-        a:  Math.min(0.95, p.ba*(0.28+cb*0.75)*s),
+        sz: Math.max(0.15, p.sz * s),
+        a:  Math.min(0.85, p.ba * (0.4 + cb*0.5) * s),
       };
     }).sort((a,b) => a.z - b.z);
 
