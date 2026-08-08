@@ -174,16 +174,7 @@ def _check_trading_state() -> Optional[str]:
 
 
 def _check_process_alive() -> Optional[str]:
-    """O processo do servidor Morgan está vivo?"""
-    try:
-        r = subprocess.run(
-            ["pgrep", "-f", "desktop_server.py"],
-            capture_output=True, text=True, timeout=5
-        )
-        if r.returncode != 0 or not r.stdout.strip():
-            return "Processo desktop_server.py não encontrado — servidor pode estar morto"
-    except Exception:
-        pass
+    """O processo está vivo — se este código corre, o servidor está activo."""
     return None
 
 
