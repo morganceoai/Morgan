@@ -568,6 +568,121 @@ Escreve TUDO em {m['lingua']}."""
     return "\n---".join(resultados)
 
 
+MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/mml5ugu7c1dygppxx1o4ydzwqibshufg"
+
+# Mapeamento produto → board_id Pinterest (board IDs da conta @PlannerAtlas)
+PINTEREST_BOARDS = {
+    "weekly_planner":  {"en": "weekly-planner", "de": "wochenplaner", "es": "planificador-semanal", "pt": "planificador-semanal-pt"},
+    "monthly_planner": {"en": "monthly-planner", "de": "monatsplaner", "es": "planificador-mensual", "pt": "planificador-mensal"},
+    "daily_planner":   {"en": "daily-planner",   "de": "tagesplaner",  "es": "planificador-diario",  "pt": "planificador-diario-pt"},
+    "meal_planner":    {"en": "meal-planner",     "de": "mahlzeitenplaner", "es": "planificador-comidas", "pt": "planificador-refeicoes"},
+    "habit_tracker":   {"en": "habit-tracker",    "de": "gewohnheitstracker", "es": "rastreador-habitos", "pt": "rastreador-habitos-pt"},
+    "budget_tracker":  {"en": "budget-tracker",   "de": "budgetplaner", "es": "control-gastos",    "pt": "controlo-orcamento"},
+}
+
+ETSY_LISTING_URLS = {
+    "weekly_planner":  "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=weekly",
+    "monthly_planner": "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=monthly",
+    "daily_planner":   "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=daily",
+    "meal_planner":    "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=meal",
+    "habit_tracker":   "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=habit",
+    "budget_tracker":  "https://www.etsy.com/shop/PlannerAtlas?ref=seller-platform-mcnav&search_query=budget",
+}
+
+PREVIEW_IMAGES = {
+    "weekly_planner":  "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_stationery.jpg",
+    "monthly_planner": "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_marble2.jpg",
+    "daily_planner":   "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_stationery.jpg",
+    "meal_planner":    "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_food.jpg",
+    "habit_tracker":   "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_marble2.jpg",
+    "budget_tracker":  "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_budget.jpg",
+}
+
+
+def publicar_pin_pinterest(produto: str, idioma: str = "en") -> dict:
+    """Publica um pin no Pinterest via Make webhook. Retorna resultado."""
+    import requests
+
+    board = PINTEREST_BOARDS.get(produto, {}).get(idioma, "planneratlas")
+    link = ETSY_LISTING_URLS.get(produto, "https://www.etsy.com/shop/PlannerAtlas")
+    image_url = PREVIEW_IMAGES.get(produto, PREVIEW_IMAGES["weekly_planner"])
+
+    # Gera título e descrição com Claude
+    idiomas_map = {"en": "English", "de": "German", "es": "Spanish", "pt": "Portuguese (European)"}
+    lingua = idiomas_map.get(idioma, "English")
+    produto_nome = produto.replace("_", " ").title()
+
+    try:
+        r = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            messages=[{"role": "user", "content": f"Write a Pinterest pin title (max 80 chars) and description (max 150 chars + 5 hashtags) for a digital {produto_nome} PDF download on Etsy. Language: {lingua}. Format: TITLE: ...\nDESCRIPTION: ..."}]
+        )
+        texto = r.content[0].text if r.content else ""
+        linhas = texto.strip().split("\n")
+        titulo = next((l.replace("TITLE:", "").strip() for l in linhas if l.startswith("TITLE:")), produto_nome)
+        descricao = next((l.replace("DESCRIPTION:", "").strip() for l in linhas if l.startswith("DESCRIPTION:")), "")
+    except Exception:
+        titulo = f"Digital {produto_nome} | Instant Download"
+        descricao = f"Printable {produto_nome} PDF. Instant download on Etsy. #planner #digital #printable"
+
+    payload = {
+        "board_id": board,
+        "title": titulo[:100],
+        "description": descricao[:800],
+        "link": link,
+        "image_url": image_url,
+    }
+
+    try:
+        resp = requests.post(MAKE_WEBHOOK_URL, json=payload, timeout=15)
+        sucesso = resp.status_code == 200
+    except Exception as e:
+        return {"ok": False, "erro": str(e)}
+
+    registar_evento("patlas", "pin_publicado",
+                    f"Pin publicado: {produto} ({idioma}) — {'✅' if sucesso else '❌'}",
+                    dados={"produto": produto, "idioma": idioma, "titulo": titulo})
+
+    return {"ok": sucesso, "produto": produto, "idioma": idioma, "titulo": titulo}
+
+
+def publicar_pins_diarios() -> str:
+    """Publica 3-5 pins por dia em rotação pelos produtos e idiomas."""
+    import random
+    produtos = list(PINTEREST_BOARDS.keys())
+    idiomas = ["en", "de", "es", "pt"]
+
+    state = _load_state()
+    historico = state.get("pins_publicados_hoje", [])
+    hoje = date.today().isoformat()
+
+    # Reset diário
+    if state.get("pins_data") != hoje:
+        state["pins_publicados_hoje"] = []
+        state["pins_data"] = hoje
+        historico = []
+
+    if len(historico) >= 5:
+        return f"Já publicados {len(historico)} pins hoje."
+
+    # Escolher produto e idioma que ainda não foram publicados hoje
+    combinacoes = [(p, i) for p in produtos for i in idiomas if f"{p}_{i}" not in historico]
+    if not combinacoes:
+        return "Todas as combinações já publicadas hoje."
+
+    seleccao = random.sample(combinacoes, min(3, len(combinacoes)))
+    resultados = []
+    for produto, idioma in seleccao:
+        res = publicar_pin_pinterest(produto, idioma)
+        historico.append(f"{produto}_{idioma}")
+        resultados.append(f"{'✅' if res['ok'] else '❌'} {produto} ({idioma})")
+
+    state["pins_publicados_hoje"] = historico
+    _save_state(state)
+    return "Pins publicados hoje:\n" + "\n".join(resultados)
+
+
 def analisar_top_performers(semanas: int = 4) -> str:
     """Loop fechado: analisa 20% de pins com mais engagement e sugere variações."""
     state = _load_state()
@@ -721,6 +836,13 @@ def ciclo_diario() -> str:
             gerar_plano_semana()
         except Exception:
             pass
+
+    # Publicar pins diários no Pinterest via Make
+    try:
+        pins_resultado = publicar_pins_diarios()
+        estado_str += f"\n\n📌 Pinterest: {pins_resultado}"
+    except Exception as e:
+        pass
 
     try:
         state = _load_state()
