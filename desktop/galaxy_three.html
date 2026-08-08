@@ -367,6 +367,8 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
         <span style="font-size:9px;color:rgba(0,212,255,0.4)">Aprovadas</span>
         <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="scoutAprovadas">--</span>
       </div>
+      <!-- Relatórios Scout -->
+      <div id="scoutReports" style="margin-top:8px"></div>
     </div>
 
     <!-- Portfolio BCVertex -->
@@ -987,6 +989,84 @@ async function fetchLogs() {
 }
 fetchLogs();
 setInterval(fetchLogs, 30000);
+
+// ── Scout Reports ─────────────────────────────────────────────────────────
+let _scoutOpen = {}; // categoria → bool expandida
+
+async function fetchScoutReports() {
+  try {
+    const r = await fetch('/api/scout/reports');
+    if (!r.ok) return;
+    const data = await r.json();
+    renderScoutReports(data);
+  } catch {}
+}
+
+function renderScoutReports(reports) {
+  const el = document.getElementById('scoutReports');
+  if (!el) return;
+  if (!reports || !reports.length) {
+    el.innerHTML = '<div style="font-size:8px;color:rgba(0,212,255,0.3);padding:4px 0">Sem relatórios</div>';
+    return;
+  }
+
+  // Agrupar por categoria
+  const cats = {};
+  for (const r of reports) {
+    if (!cats[r.categoria]) cats[r.categoria] = [];
+    cats[r.categoria].push(r);
+  }
+
+  let html = '<div style="border-top:1px solid rgba(0,212,255,0.15);margin-top:6px;padding-top:6px">';
+
+  for (const [cat, items] of Object.entries(cats)) {
+    const key = cat.replace(/\s/g,'_');
+    const open = _scoutOpen[key] !== false; // aberto por defeito
+    const arrow = open ? '▾' : '▸';
+    html += `
+      <div style="margin-bottom:4px">
+        <div onclick="window._toggleScoutCat('${key}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:3px 0">
+          <span style="font-size:8px;letter-spacing:1.5px;color:rgba(0,212,255,0.5);text-transform:uppercase">${cat}</span>
+          <span id="sarr_${key}" style="font-size:10px;color:rgba(0,212,255,0.4)">${arrow}</span>
+        </div>
+        <div id="scat_${key}" style="display:${open?'block':'none'}">`;
+
+    for (const rep of items) {
+      html += `
+          <div style="border-left:2px solid rgba(0,212,255,0.2);padding:4px 0 4px 8px;margin-bottom:4px">
+            <div onclick="window._toggleScoutItem('${rep.id}')" style="cursor:pointer;font-size:8.5px;color:rgba(0,212,255,0.75);line-height:1.4;margin-bottom:3px">${rep.titulo}</div>
+            <div style="font-size:7.5px;color:rgba(0,212,255,0.3);margin-bottom:4px">${rep.data} · ${rep.tamanho_kb} KB</div>
+            <div id="sdet_${rep.id}" style="display:none">
+              <a href="${rep.pdf_url}" target="_blank" onclick="event.stopPropagation()"
+                 style="display:inline-block;font-size:7.5px;letter-spacing:1px;color:#0a0a0a;background:rgba(0,212,255,0.8);padding:3px 10px;border-radius:2px;text-decoration:none;text-transform:uppercase;cursor:pointer">
+                ↗ Abrir PDF
+              </a>
+            </div>
+          </div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+window._toggleScoutCat = function(key) {
+  _scoutOpen[key] = !(_scoutOpen[key] !== false);
+  const block = document.getElementById('scat_' + key);
+  const arrow = document.getElementById('sarr_' + key);
+  if (block) block.style.display = _scoutOpen[key] ? 'block' : 'none';
+  if (arrow) arrow.textContent = _scoutOpen[key] ? '▾' : '▸';
+};
+
+window._toggleScoutItem = function(id) {
+  const det = document.getElementById('sdet_' + id);
+  if (det) det.style.display = det.style.display === 'none' ? 'block' : 'none';
+};
+
+fetchScoutReports();
+setInterval(fetchScoutReports, 120000);
 </script>
 </body>
 </html>

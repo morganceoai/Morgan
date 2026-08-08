@@ -69,3 +69,4 @@ exa-py>=1.0.0
 firecrawl-py>=1.0.0
 zep-cloud>=2.0.0
 fastembed>=0.3.0
+reportlab

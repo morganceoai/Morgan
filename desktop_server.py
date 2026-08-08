@@ -731,6 +731,25 @@ async def serve_interface_three():
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
+# ── Scout PDFs ───────────────────────────────────────────────────────────────
+from scout_pdf import listar_relatorios, SCOUT_PDF_DIR
+
+@app.get("/api/scout/reports")
+async def scout_reports():
+    try:
+        return listar_relatorios()
+    except Exception as e:
+        return []
+
+@app.get("/api/scout/pdf/{stem}")
+async def scout_pdf(stem: str):
+    pdf = SCOUT_PDF_DIR / f"{stem}.pdf"
+    if not pdf.exists():
+        from fastapi import HTTPException
+        raise HTTPException(404, "PDF não encontrado")
+    return FileResponse(str(pdf), media_type="application/pdf",
+                        headers={"Content-Disposition": f'inline; filename="{stem}.pdf"'})
+
 from fastapi.responses import RedirectResponse
 
 # /pwa/* redireciona para /app/* (URL nova sem cache no browser)
