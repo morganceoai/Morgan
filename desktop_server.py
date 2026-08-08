@@ -731,15 +731,65 @@ async def serve_interface_three():
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
-# ── Scout PDFs ───────────────────────────────────────────────────────────────
-from scout_pdf import listar_relatorios, SCOUT_PDF_DIR
+# ── Scout PDFs & Oportunidades ───────────────────────────────────────────────
+from scout_pdf import listar_relatorios, SCOUT_PDF_DIR, gerar_pdf, SCOUT_REPORTS_DIR
+import re as _re_scout
 
 @app.get("/api/scout/reports")
 async def scout_reports():
     try:
         return listar_relatorios()
-    except Exception as e:
+    except Exception:
         return []
+
+@app.get("/api/scout/oportunidades")
+async def scout_oportunidades():
+    try:
+        scout_data = load_scout()
+        ops = scout_data.get("oportunidades", {})
+        aprovadas_raw = scout_data.get("aprovadas", [])
+        aprovadas_nomes = {
+            (a if isinstance(a, str) else a.get("nome", "")) for a in aprovadas_raw
+        }
+
+        def _score(info: dict) -> int:
+            for nota in info.get("notas", []):
+                m = _re_scout.search(r"(\d+)\s+fonte", nota)
+                if m:
+                    return min(92, int(m.group(1)) * 20 + 20)
+            return 60 + info.get("vezes_visto", 1) * 5
+
+        # PDF mais recente da missão_a (onde estão as oportunidades)
+        pdf_missao_a = None
+        for f in sorted(SCOUT_REPORTS_DIR.iterdir(), reverse=True):
+            if f.stem.startswith("missao_a") and f.suffix in (".txt", ".md"):
+                pdf_candidate = SCOUT_PDF_DIR / f"{f.stem}.pdf"
+                if not pdf_candidate.exists():
+                    try:
+                        gerar_pdf(f, pdf_candidate)
+                    except Exception:
+                        pass
+                if pdf_candidate.exists():
+                    pdf_missao_a = f"/api/scout/pdf/{f.stem}"
+                    break
+
+        todas = []
+        for nome, info in ops.items():
+            todas.append({
+                "nome": nome,
+                "score": _score(info),
+                "aprovada": nome in aprovadas_nomes,
+                "vezes_visto": info.get("vezes_visto", 1),
+                "pdf_url": pdf_missao_a,
+            })
+        todas.sort(key=lambda x: -x["score"])
+
+        return {
+            "todas": todas,
+            "aprovadas": [o for o in todas if o["aprovada"]],
+        }
+    except Exception as e:
+        return {"todas": [], "aprovadas": []}
 
 @app.get("/api/scout/pdf/{stem}")
 async def scout_pdf(stem: str):

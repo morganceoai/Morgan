@@ -359,16 +359,24 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
     <!-- Scout -->
     <div class="info-panel">
       <div class="i-label">Scout</div>
-      <div style="display:flex;justify-content:space-between;padding:3px 0">
-        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Oportunidades</span>
-        <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="scoutTotal">--</span>
+      <!-- Oportunidades row -->
+      <div onclick="window._toggleScoutList('todas')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(0,212,255,0.08)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.5)">Oportunidades</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:rgba(0,212,255,0.8)" id="scoutTotal">--</span>
+          <span id="sArr_todas" style="font-size:9px;color:rgba(0,212,255,0.35)">▸</span>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:3px 0">
-        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Aprovadas</span>
-        <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="scoutAprovadas">--</span>
+      <div id="sList_todas" style="display:none;max-height:140px;overflow-y:auto;margin:4px 0 2px"></div>
+      <!-- Aprovadas row -->
+      <div onclick="window._toggleScoutList('aprovadas')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+        <span style="font-size:9px;color:rgba(0,212,255,0.5)">Aprovadas</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:rgba(0,255,136,0.8)" id="scoutAprovadas">--</span>
+          <span id="sArr_aprovadas" style="font-size:9px;color:rgba(0,212,255,0.35)">▸</span>
+        </div>
       </div>
-      <!-- Relatórios Scout -->
-      <div id="scoutReports" style="margin-top:8px"></div>
+      <div id="sList_aprovadas" style="display:none;max-height:140px;overflow-y:auto;margin:4px 0 2px"></div>
     </div>
 
     <!-- Portfolio BCVertex -->
@@ -990,83 +998,65 @@ async function fetchLogs() {
 fetchLogs();
 setInterval(fetchLogs, 30000);
 
-// ── Scout Reports ─────────────────────────────────────────────────────────
-let _scoutOpen = {}; // categoria → bool expandida
+// ── Scout Oportunidades ───────────────────────────────────────────────────
+let _scoutData = { todas: [], aprovadas: [] };
+let _scoutListOpen = { todas: false, aprovadas: false };
 
-async function fetchScoutReports() {
+async function fetchScoutOps() {
   try {
-    const r = await fetch('/api/scout/reports');
+    const r = await fetch('/api/scout/oportunidades');
     if (!r.ok) return;
-    const data = await r.json();
-    renderScoutReports(data);
+    _scoutData = await r.json();
+    // Actualizar contadores se widgets ainda não carregou
+    const tot = document.getElementById('scoutTotal');
+    const apv = document.getElementById('scoutAprovadas');
+    if (tot && _scoutData.todas.length) tot.textContent = _scoutData.todas.length;
+    if (apv && _scoutData.aprovadas.length) apv.textContent = _scoutData.aprovadas.length;
+    // Re-renderizar listas abertas
+    if (_scoutListOpen.todas)     _renderScoutList('todas');
+    if (_scoutListOpen.aprovadas) _renderScoutList('aprovadas');
   } catch {}
 }
 
-function renderScoutReports(reports) {
-  const el = document.getElementById('scoutReports');
+function _renderScoutList(key) {
+  const el = document.getElementById('sList_' + key);
   if (!el) return;
-  if (!reports || !reports.length) {
-    el.innerHTML = '<div style="font-size:8px;color:rgba(0,212,255,0.3);padding:4px 0">Sem relatórios</div>';
+  const items = _scoutData[key] || [];
+  if (!items.length) {
+    el.innerHTML = '<div style="font-size:8px;color:rgba(0,212,255,0.3);padding:6px 0 2px">Sem dados ainda</div>';
     return;
   }
-
-  // Agrupar por categoria
-  const cats = {};
-  for (const r of reports) {
-    if (!cats[r.categoria]) cats[r.categoria] = [];
-    cats[r.categoria].push(r);
-  }
-
-  let html = '<div style="border-top:1px solid rgba(0,212,255,0.15);margin-top:6px;padding-top:6px">';
-
-  for (const [cat, items] of Object.entries(cats)) {
-    const key = cat.replace(/\s/g,'_');
-    const open = _scoutOpen[key] !== false; // aberto por defeito
-    const arrow = open ? '▾' : '▸';
-    html += `
-      <div style="margin-bottom:4px">
-        <div onclick="window._toggleScoutCat('${key}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:3px 0">
-          <span style="font-size:8px;letter-spacing:1.5px;color:rgba(0,212,255,0.5);text-transform:uppercase">${cat}</span>
-          <span id="sarr_${key}" style="font-size:10px;color:rgba(0,212,255,0.4)">${arrow}</span>
-        </div>
-        <div id="scat_${key}" style="display:${open?'block':'none'}">`;
-
-    for (const rep of items) {
-      html += `
-          <div style="border-left:2px solid rgba(0,212,255,0.2);padding:4px 0 4px 8px;margin-bottom:4px">
-            <div onclick="window._toggleScoutItem('${rep.id}')" style="cursor:pointer;font-size:8.5px;color:rgba(0,212,255,0.75);line-height:1.4;margin-bottom:3px">${rep.titulo}</div>
-            <div style="font-size:7.5px;color:rgba(0,212,255,0.3);margin-bottom:4px">${rep.data} · ${rep.tamanho_kb} KB</div>
-            <div id="sdet_${rep.id}" style="display:none">
-              <a href="${rep.pdf_url}" target="_blank" onclick="event.stopPropagation()"
-                 style="display:inline-block;font-size:7.5px;letter-spacing:1px;color:#0a0a0a;background:rgba(0,212,255,0.8);padding:3px 10px;border-radius:2px;text-decoration:none;text-transform:uppercase;cursor:pointer">
-                ↗ Abrir PDF
-              </a>
-            </div>
-          </div>`;
-    }
-
-    html += `</div></div>`;
-  }
-
-  html += '</div>';
-  el.innerHTML = html;
+  const isAprov = key === 'aprovadas';
+  el.innerHTML = items.map((op, i) => {
+    const cor = isAprov ? 'rgba(0,255,136,0.75)' : 'rgba(0,212,255,0.72)';
+    const borda = isAprov ? 'rgba(0,255,136,0.2)' : 'rgba(0,212,255,0.18)';
+    const pdfBtn = op.pdf_url
+      ? `<a href="${op.pdf_url}" target="_blank"
+           style="display:inline-block;margin-top:4px;font-size:7px;letter-spacing:1px;
+                  color:#050505;background:rgba(0,212,255,0.82);padding:2px 9px;
+                  border-radius:2px;text-decoration:none;text-transform:uppercase">
+           ↗ Abrir PDF
+         </a>`
+      : '';
+    return `<div style="border-left:2px solid ${borda};padding:4px 0 4px 8px;margin-bottom:5px">
+      <div style="font-size:8.5px;color:${cor};line-height:1.4">${op.nome}</div>
+      <div style="font-size:7px;color:rgba(0,212,255,0.3);margin-top:1px">Score ${op.score} · visto ${op.vezes_visto}×</div>
+      ${pdfBtn}
+    </div>`;
+  }).join('');
 }
 
-window._toggleScoutCat = function(key) {
-  _scoutOpen[key] = !(_scoutOpen[key] !== false);
-  const block = document.getElementById('scat_' + key);
-  const arrow = document.getElementById('sarr_' + key);
-  if (block) block.style.display = _scoutOpen[key] ? 'block' : 'none';
-  if (arrow) arrow.textContent = _scoutOpen[key] ? '▾' : '▸';
+window._toggleScoutList = function(key) {
+  _scoutListOpen[key] = !_scoutListOpen[key];
+  const open = _scoutListOpen[key];
+  const block = document.getElementById('sList_' + key);
+  const arrow = document.getElementById('sArr_' + key);
+  if (block) { block.style.display = open ? 'block' : 'none'; if (open) _renderScoutList(key); }
+  if (arrow) arrow.textContent = open ? '▾' : '▸';
 };
 
-window._toggleScoutItem = function(id) {
-  const det = document.getElementById('sdet_' + id);
-  if (det) det.style.display = det.style.display === 'none' ? 'block' : 'none';
-};
-
-fetchScoutReports();
-setInterval(fetchScoutReports, 120000);
+fetchScoutOps();
+setInterval(fetchScoutOps, 120000);
 </script>
 </body>
 </html>
