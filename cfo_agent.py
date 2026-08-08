@@ -780,6 +780,19 @@ Responde APENAS com JSON válido, sem mais texto:
             flush=True
         )
 
+        # Regista apenas quando há mudança — não regista "manter" rotineiro
+        acao = decisao.get("acao", "manter")
+        if acao != "manter" or alertas_fase or risco_trading.get("alertas"):
+            try:
+                from episodic_memory import registar_evento
+                registar_evento(
+                    "cfo", "decisao_ciclo",
+                    f"Acção: {acao} | Confiança: {decisao.get('confianca')}% | {decisao.get('razao','')[:200]}",
+                    {"autonomo": decisao.get("autonomo"), "resultado": resultado.get("status"), "alertas": alertas_fase},
+                )
+            except Exception:
+                pass
+
         return {**decisao, "resultado_execucao": resultado}
 
     except Exception as e:
@@ -799,6 +812,15 @@ def _run_bots_cycle():
             acoes = r.get("acoes", [])
             if acoes:
                 print(f"[cfo/bots] {nome}: {acoes}", flush=True)
+                try:
+                    from episodic_memory import registar_evento
+                    registar_evento(
+                        "cfo", f"trade_{nome.lower()}",
+                        f"{nome}: {'; '.join(acoes)}",
+                        {"pnl_total": r.get("pnl_total", 0), "price": r.get("price")},
+                    )
+                except Exception:
+                    pass
                 # Celebra trades lucrativos
                 for acao in acoes:
                     if "VENDA" in acao and "PnL" in acao:

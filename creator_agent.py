@@ -1064,6 +1064,15 @@ def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
 
     if health_ok:
         resultados["health"] = "ok"
+        try:
+            from episodic_memory import registar_evento
+            registar_evento(
+                "creator", "deploy_agente",
+                f"Agente '{nome}' deployado com sucesso no Mac Mini.",
+                {"commit": mensagem_commit, "resultado": resultados},
+            )
+        except Exception:
+            pass
         return resultados
 
     # 4. Rollback automático — servidor não respondeu
@@ -1087,6 +1096,15 @@ def deploy_agente(nome: str, mensagem_commit: str = "") -> dict:
         if ficheiro_path.exists():
             ficheiro_path.unlink()
         resultados["rollback"] = f"revertido para {prev_commit[:8]}"
+        try:
+            from episodic_memory import registar_evento
+            registar_evento(
+                "creator", "deploy_rollback",
+                f"Deploy do agente '{nome}' falhou — rollback para {prev_commit[:8]}.",
+                {"commit": mensagem_commit},
+            )
+        except Exception:
+            pass
     except Exception as e:
         resultados["rollback_erro"] = str(e)
 

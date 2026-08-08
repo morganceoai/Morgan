@@ -352,6 +352,15 @@ Termina com: ALERTA PRINCIPAL: [o aspeto mais importante a considerar]"""
         "resumo": reply[:300],
     })
     _save_coach_log(log)
+    try:
+        from episodic_memory import registar_evento
+        registar_evento(
+            "coach", "analise_adversario",
+            f"Análise: {clube} ({competicao or 'Liga Portugal'}). {reply[:300]}",
+            {"clube": clube, "competicao": competicao},
+        )
+    except Exception:
+        pass
     return reply
 
 
@@ -396,6 +405,15 @@ Conclusão com 1 ação prioritária para a próxima semana."""
         "resumo": reply[:300],
     })
     _save_coach_log(log)
+    try:
+        from episodic_memory import registar_evento
+        registar_evento(
+            "coach", "relatorio_pos_jogo",
+            f"Moreirense vs {adversario} — Resultado: {resultado}. {reply[:300]}",
+            {"adversario": adversario, "resultado": resultado},
+        )
+    except Exception:
+        pass
     return reply
 
 

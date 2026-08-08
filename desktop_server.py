@@ -555,6 +555,7 @@ def chat_with_morgan(user_text: str) -> str:
             diario_log("CEO", "Decisão", f"Vasco aprovou oportunidade: '{nome_op}'\n{reply[:500]}", titulo=f"Aprovação: {nome_op}")
         except Exception:
             pass
+        registar_evento("ceo", "oportunidade_aprovada", f"Vasco aprovou: '{nome_op}'. {reply[:300]}", {"oportunidade": nome_op})
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 
@@ -565,6 +566,7 @@ def chat_with_morgan(user_text: str) -> str:
             reply = rejeitar_oportunidade(nome_op)
         except Exception:
             reply = f"Oportunidade '{nome_op}' marcada como rejeitada."
+        registar_evento("ceo", "oportunidade_rejeitada", f"Vasco rejeitou: '{nome_op}'.", {"oportunidade": nome_op})
         store_save(DESKTOP_USER_ID, "assistant", reply)
         return reply
 

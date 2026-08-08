@@ -356,6 +356,18 @@ def _aplicar_quality_gate(oportunidade_raw: str) -> tuple[str, int]:
     except Exception:
         pass
 
+    # Regista decisões relevantes — aprovadas e investigação
+    if confianca >= 70:
+        try:
+            from episodic_memory import registar_evento
+            registar_evento(
+                "scout", f"oportunidade_{decisao.lower()}",
+                f"{nome} — Confiança: {confianca}% | {resultado[:250]}",
+                {"confianca": confianca, "decisao": decisao},
+            )
+        except Exception:
+            pass
+
     return resultado, confianca
 
 
