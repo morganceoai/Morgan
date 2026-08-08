@@ -1,37 +1,38 @@
 """
-Morgan Episodic Memory — registo de eventos com deduplicação (hash) + armazenamento
-semântico em Qdrant. Permite recuperação cronológica e semântica de contexto entre sessões.
+Morgan — Memória Episódica Central
+Camada episódica das 4 camadas de memória do sistema.
 
-Camada 1 (JSON local): deduplicação por hash para briefings eficientes.
-Camada 2 (Qdrant + OpenAI embeddings): pesquisa semântica cross-sessão.
+Regista TODAS as acções relevantes de TODOS os agentes num único log append-only
+(knowledge_base.jsonl) + busca semântica via Qdrant.
 
-Interface pública (retrocompatível):
-  registar_evento(agente, tema, conteudo)  → bool (True se novidade)
-  get_eventos_recentes(agente, tema, limite)
-  pesquisar_memoria(query, agente, top_k)   ← novo
-  get_contexto_agente(agente, query, limite) ← novo
+Interface pública:
+  registar_evento(agente, tema, conteudo, dados=None) → bool
+  get_eventos_recentes(agente=None, tema=None, limite=20) → list[dict]
+  pesquisar_memoria(query, agente=None, top_k=10) → list[dict]
+  get_contexto_agente(agente, query, limite=5) → str
+  consultar_base(query, agente=None, limite=20) → str   ← para o CEO
 """
 import os
 import uuid
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 MEMORY_DIR = Path(__file__).parent / "memory"
-EPISODIC_FILE = MEMORY_DIR / "episodic_memory.json"
-MAX_EVENTOS = 1000
+KB_FILE = MEMORY_DIR / "knowledge_base.jsonl"   # append-only — não corrompe
 QDRANT_COLLECTION = "episodic_memory"
 
-# Clientes lazy
 _qdrant_client = None
 _openai_client = None
 
+
+# ── Clientes lazy ─────────────────────────────────────────────────────────────
 
 def _qdrant():
     global _qdrant_client
@@ -44,7 +45,6 @@ def _qdrant():
         if not url:
             return None
         c = QdrantClient(url=url, api_key=key or None, timeout=10)
-        # Criar colecção se não existir
         from qdrant_client.models import VectorParams, Distance
         cols = [col.name for col in c.get_collections().collections]
         if QDRANT_COLLECTION not in cols:
@@ -53,9 +53,9 @@ def _qdrant():
                 vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
             )
         _qdrant_client = c
-        return _qdrant_client
+        return c
     except Exception as e:
-        logger.debug("Qdrant episodic indisponível: %s", e)
+        logger.debug("Qdrant indisponível: %s", e)
         return None
 
 
@@ -86,13 +86,21 @@ def _embed(texto: str) -> list[float] | None:
         return None
 
 
+# ── Escrita ───────────────────────────────────────────────────────────────────
+
+def _append_kb(evento: dict):
+    """Append ao knowledge_base.jsonl — nunca corrompe ficheiros existentes."""
+    MEMORY_DIR.mkdir(exist_ok=True)
+    with open(KB_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(evento, ensure_ascii=False) + "\n")
+
+
 def _qdrant_upsert(evento: dict):
-    """Guarda evento no Qdrant com embedding. Falha silenciosamente."""
     try:
         c = _qdrant()
         if not c:
             return
-        texto = f"{evento['agente']} {evento['tema']}: {evento['conteudo']}"
+        texto = f"[{evento['agente']}] {evento['tema']}: {evento['conteudo']}"
         vec = _embed(texto)
         if not vec:
             return
@@ -102,182 +110,265 @@ def _qdrant_upsert(evento: dict):
             points=[PointStruct(id=str(uuid.uuid4()), vector=vec, payload=evento)],
         )
     except Exception as e:
-        logger.debug("Qdrant upsert episódico falhou: %s", e)
+        logger.debug("Qdrant upsert falhou: %s", e)
 
 
-def _load() -> dict:
-    try:
-        return json.loads(EPISODIC_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return {"eventos": [], "ultimo_hash": {}}
-
-
-def _save(data: dict):
-    MEMORY_DIR.mkdir(exist_ok=True)
-    EPISODIC_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def _hash(conteudo: str) -> str:
-    return hashlib.sha256(conteudo.strip().encode()).hexdigest()[:16]
-
-
-def registar_evento(agente: str, tema: str, conteudo: str) -> bool:
+def registar_evento(agente: str, tema: str, conteudo: str, dados: dict | None = None) -> bool:
     """
     Regista um evento episódico.
-    Devolve True se é novidade (hash mudou), False se repetição.
-    Guarda em JSON local (sempre) + Qdrant com embedding (assíncrono, best-effort).
+    Escreve em knowledge_base.jsonl (local, sempre funciona) + Qdrant (best-effort).
+    Devolve True se registado com sucesso.
     """
     if not conteudo or not conteudo.strip():
         return False
-
-    chave = f"{agente}:{tema}"
-    h = _hash(conteudo)
-    data = _load()
-
-    ultimo = data["ultimo_hash"].get(chave)
-    is_novidade = ultimo != h
 
     evento = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "agente": agente,
         "tema": tema,
-        "conteudo": conteudo[:500],
-        "hash": h,
+        "conteudo": conteudo[:600],
     }
+    if dados:
+        evento["dados"] = dados
 
-    # Sempre guardar no JSON (deduplicação para briefings)
-    if is_novidade:
-        data["eventos"].append(evento)
-        data["eventos"] = data["eventos"][-MAX_EVENTOS:]
-        data["ultimo_hash"][chave] = h
-        _save(data)
+    try:
+        _append_kb(evento)
+    except Exception as e:
+        logger.error("Falha ao escrever knowledge_base.jsonl: %s", e)
+        return False
 
-    # Guardar no Qdrant em background (não bloqueia — falha silenciosamente)
+    # Qdrant em background — não bloqueia
     try:
         import threading
         threading.Thread(target=_qdrant_upsert, args=(evento,), daemon=True).start()
     except Exception:
         pass
 
-    return is_novidade
+    return True
 
 
-def tem_novidade(agente: str, tema: str, conteudo: str) -> bool:
-    """Verifica se há novidade sem registar. Útil para decisões de routing."""
-    if not conteudo or not conteudo.strip():
-        return False
-    chave = f"{agente}:{tema}"
-    h = _hash(conteudo)
-    data = _load()
-    return data["ultimo_hash"].get(chave) != h
+# ── Leitura local ─────────────────────────────────────────────────────────────
 
-
-def get_ultimo_evento(agente: str, tema: str) -> dict | None:
-    """Devolve o último evento registado para este agente/tema."""
-    chave = f"{agente}:{tema}"
-    data = _load()
-    # Percorrer de trás para a frente
-    for ev in reversed(data["eventos"]):
-        if f"{ev['agente']}:{ev['tema']}" == chave:
-            return ev
-    return None
+def _carregar_kb(limite: int = 1000) -> list[dict]:
+    """Lê as últimas N linhas do knowledge_base.jsonl."""
+    if not KB_FILE.exists():
+        return []
+    try:
+        lines = KB_FILE.read_text(encoding="utf-8").strip().split("\n")
+        eventos = []
+        for l in lines:
+            l = l.strip()
+            if l:
+                try:
+                    eventos.append(json.loads(l))
+                except Exception:
+                    pass
+        return eventos[-limite:]
+    except Exception:
+        return []
 
 
 def get_eventos_recentes(agente: str | None = None, tema: str | None = None, limite: int = 20) -> list[dict]:
-    """Lista eventos recentes, filtrando opcionalmente por agente e/ou tema."""
-    data = _load()
-    eventos = reversed(data["eventos"])
-    resultado = []
-    for ev in eventos:
-        if agente and ev.get("agente") != agente:
-            continue
-        if tema and ev.get("tema") != tema:
-            continue
-        resultado.append(ev)
-        if len(resultado) >= limite:
-            break
-    return resultado
-
-
-def pesquisar_memoria(query: str, agente: str | None = None, top_k: int = 5) -> list[dict]:
-    """
-    Pesquisa semântica no histórico episódico via Qdrant.
-    Fallback: keyword match simples no JSON local.
-    """
-    c = _qdrant()
-    if c:
-        try:
-            vec = _embed(query)
-            if vec:
-                from qdrant_client.models import Filter, FieldCondition, MatchValue
-                search_filter = None
-                if agente:
-                    search_filter = Filter(
-                        must=[FieldCondition(key="agente", match=MatchValue(value=agente))]
-                    )
-                resultados = c.search(
-                    collection_name=QDRANT_COLLECTION,
-                    query_vector=vec,
-                    query_filter=search_filter,
-                    limit=top_k,
-                    score_threshold=0.65,
-                    with_payload=True,
-                )
-                return [r.payload for r in resultados if r.payload]
-        except Exception as e:
-            logger.debug("Pesquisa semântica falhou: %s", e)
-
-    # Fallback: keyword match no JSON
-    data = _load()
-    eventos = data.get("eventos", [])
+    """Devolve os eventos mais recentes, opcionalmente filtrados por agente ou tema."""
+    todos = _carregar_kb(limite * 10)
     if agente:
-        eventos = [e for e in eventos if e.get("agente") == agente]
-    termos = set(query.lower().split())
-    scored = [(sum(1 for t in termos if t in e.get("conteudo", "").lower()), e) for e in eventos]
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [e for s, e in scored[:top_k] if s > 0]
+        todos = [e for e in todos if e.get("agente") == agente]
+    if tema:
+        todos = [e for e in todos if e.get("tema") == tema]
+    return todos[-limite:]
+
+
+# ── Leitura semântica (Qdrant) ─────────────────────────────────────────────────
+
+def pesquisar_memoria(query: str, agente: str | None = None, top_k: int = 10) -> list[dict]:
+    """Busca semântica no Qdrant. Fallback para leitura local se Qdrant indisponível."""
+    c = _qdrant()
+    if not c:
+        return get_eventos_recentes(agente=agente, limite=top_k)
+
+    vec = _embed(query)
+    if not vec:
+        return get_eventos_recentes(agente=agente, limite=top_k)
+
+    try:
+        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        filtro = None
+        if agente:
+            filtro = Filter(must=[FieldCondition(key="agente", match=MatchValue(value=agente))])
+
+        results = c.search(
+            collection_name=QDRANT_COLLECTION,
+            query_vector=vec,
+            limit=top_k,
+            query_filter=filtro,
+            with_payload=True,
+        )
+        return [r.payload for r in results]
+    except Exception as e:
+        logger.debug("Qdrant search falhou: %s", e)
+        return get_eventos_recentes(agente=agente, limite=top_k)
 
 
 def get_contexto_agente(agente: str, query: str = "", limite: int = 5) -> str:
-    """
-    Combina memória recente (JSON) + semântica (Qdrant) num bloco de texto
-    pronto a injectar no system prompt de qualquer agente.
-    """
-    recentes = get_eventos_recentes(agente=agente, limite=limite)
-    semanticos = pesquisar_memoria(query, agente=agente, top_k=3) if query else []
+    """Devolve contexto relevante para um agente, formatado para injectar no system prompt."""
+    if query:
+        eventos = pesquisar_memoria(query, agente=agente, top_k=limite)
+    else:
+        eventos = get_eventos_recentes(agente=agente, limite=limite)
 
-    vistos: set[str] = set()
-    linhas: list[str] = []
-
-    for ev in semanticos:
-        chave = ev.get("ts", "")[:19] + ev.get("conteudo", "")[:30]
-        if chave not in vistos:
-            vistos.add(chave)
-            ts = ev.get("ts", "")[:10]
-            linhas.append(f"[{ts}|relevante] {ev.get('conteudo', '')[:150]}")
-
-    for ev in reversed(recentes):
-        chave = ev.get("ts", "")[:19] + ev.get("conteudo", "")[:30]
-        if chave not in vistos:
-            vistos.add(chave)
-            ts = ev.get("ts", "")[:10]
-            linhas.append(f"[{ts}] {ev.get('conteudo', '')[:150]}")
-
-    return "\n".join(linhas) if linhas else ""
-
-
-def get_resumo_delta(temas: list[tuple[str, str, str]]) -> str:
-    """
-    Dado uma lista de (agente, tema, conteudo), filtra apenas as novidades.
-    Devolve string de resumo para incluir no briefing CEO.
-
-    temas: list of (agente, tema, conteudo)
-    """
-    novidades = []
-    for agente, tema, conteudo in temas:
-        if registar_evento(agente, tema, conteudo):
-            novidades.append(conteudo)
-
-    if not novidades:
+    if not eventos:
         return ""
-    return "\n".join(novidades)
+
+    linhas = []
+    for e in eventos:
+        ts = e.get("ts", "")[:10]
+        tema = e.get("tema", "")
+        conteudo = e.get("conteudo", "")[:200]
+        linhas.append(f"[{ts}] {tema}: {conteudo}")
+
+    return "Memória recente:\n" + "\n".join(linhas)
+
+
+# ── Consulta CEO (linguagem natural) ─────────────────────────────────────────
+
+def consultar_base(query: str, agente: str | None = None, limite: int = 20) -> str:
+    """
+    Ferramenta do CEO para consultar a base de conhecimento em linguagem natural.
+    Usa Qdrant se disponível, senão filtra localmente.
+    """
+    eventos = pesquisar_memoria(query, agente=agente, top_k=limite)
+
+    if not eventos:
+        return "Sem eventos relevantes encontrados."
+
+    linhas = [f"Base de conhecimento — '{query}':"]
+    for e in eventos:
+        ts = e.get("ts", "")[:16].replace("T", " ")
+        ag = e.get("agente", "?")
+        tema = e.get("tema", "?")
+        conteudo = e.get("conteudo", "")[:250]
+        linhas.append(f"\n[{ts}] [{ag}|{tema}]\n{conteudo}")
+
+    return "\n".join(linhas)
+
+
+# ── Migração de dados históricos ─────────────────────────────────────────────
+
+def migrar_historico() -> dict:
+    """
+    Migra dados históricos de todos os ficheiros existentes para knowledge_base.jsonl.
+    Idempotente — verifica se KB já tem dados antes de migrar.
+    """
+    existentes = _carregar_kb()
+    if len(existentes) > 50:
+        return {"status": "já migrado", "total": len(existentes)}
+
+    migrados = 0
+
+    # 1. Qdrant episodic_memory — já é a fonte mais rica
+    try:
+        c = _qdrant()
+        if c:
+            results = c.scroll(QDRANT_COLLECTION, limit=500, with_payload=True)
+            pts = results[0]
+            while results[1]:
+                results = c.scroll(QDRANT_COLLECTION, limit=500, with_payload=True, offset=results[1])
+                pts += results[0]
+            for r in pts:
+                p = r.payload
+                if p.get("tema") == "claude_guard_alerta":
+                    continue  # ruído
+                _append_kb({
+                    "ts": p.get("ts", datetime.now(timezone.utc).isoformat()),
+                    "agente": p.get("agente", "sistema"),
+                    "tema": p.get("tema", "evento"),
+                    "conteudo": str(p.get("conteudo", ""))[:600],
+                    "origem": "qdrant_migrado",
+                })
+                migrados += 1
+    except Exception as e:
+        logger.warning("Migração Qdrant falhou: %s", e)
+
+    # 2. solver_fixes.json
+    solver_file = MEMORY_DIR / "solver_fixes.json"
+    if solver_file.exists():
+        try:
+            data = json.loads(solver_file.read_text())
+            fixes = data.get("fixes", data) if isinstance(data, dict) else data
+            for fix in fixes:
+                _append_kb({
+                    "ts": fix.get("data", datetime.now(timezone.utc).isoformat()),
+                    "agente": "solver",
+                    "tema": "fix_registado",
+                    "conteudo": f"Problema: {fix.get('problema','')} | Fix: {fix.get('fix','')}",
+                    "dados": {"diagnostico": fix.get("diagnostico",""), "confianca": fix.get("confianca",0)},
+                    "origem": "solver_fixes_migrado",
+                })
+                migrados += 1
+        except Exception as e:
+            logger.warning("Migração solver_fixes falhou: %s", e)
+
+    # 3. cfo_decision_log.jsonl — só as decisões não-triviais
+    cfo_log = MEMORY_DIR / "cfo_decision_log.jsonl"
+    if cfo_log.exists():
+        try:
+            lines = cfo_log.read_text().strip().split("\n")
+            for l in lines[-10:]:  # só as 10 mais recentes — as antigas são repetição
+                try:
+                    entry = json.loads(l)
+                    d = entry.get("decisao", {})
+                    _append_kb({
+                        "ts": entry.get("ts", datetime.now(timezone.utc).isoformat()),
+                        "agente": "cfo",
+                        "tema": "decisao_trading",
+                        "conteudo": f"Acção: {d.get('acao','')} | Confiança: {d.get('confianca',0)}% | {d.get('razao','')[:200]}",
+                        "origem": "cfo_log_migrado",
+                    })
+                    migrados += 1
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.warning("Migração CFO log falhou: %s", e)
+
+    # 4. estado_imperio.md — contexto histórico do projecto
+    estado = MEMORY_DIR / "estado_imperio.md"
+    if estado.exists():
+        try:
+            conteudo = estado.read_text()[:800]
+            _append_kb({
+                "ts": "2026-07-07T00:00:00+00:00",
+                "agente": "ceo",
+                "tema": "estado_imperio",
+                "conteudo": conteudo,
+                "origem": "estado_imperio_migrado",
+            })
+            migrados += 1
+        except Exception:
+            pass
+
+    # 5. scout_memoria.json — oportunidades históricas
+    scout_mem = MEMORY_DIR / "scout_memoria.json"
+    if scout_mem.exists():
+        try:
+            data = json.loads(scout_mem.read_text())
+            ops = data.get("oportunidades", {})
+            for nome, info in list(ops.items())[:20]:
+                _append_kb({
+                    "ts": "2026-07-01T00:00:00+00:00",
+                    "agente": "scout",
+                    "tema": "oportunidade_historica",
+                    "conteudo": f"{nome} — visto {info.get('vezes_visto',1)}x desde {info.get('primeira_vez','')}",
+                    "origem": "scout_memoria_migrado",
+                })
+                migrados += 1
+        except Exception as e:
+            logger.warning("Migração scout_memoria falhou: %s", e)
+
+    return {"status": "migrado", "total_migrados": migrados}
+
+
+# ── Compatibilidade retroactiva ───────────────────────────────────────────────
+# Aliases para código que ainda usa a assinatura antiga
+
+def get_eventos(agente: str | None = None, tema: str | None = None, limite: int = 20) -> list[dict]:
+    return get_eventos_recentes(agente=agente, tema=tema, limite=limite)

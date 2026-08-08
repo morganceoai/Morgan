@@ -1,6 +1,6 @@
 import os
 import requests
-from memory_store import save_fact, remove_fact, list_memory
+from memory_store import save_fact, remove_fact, list_memory, consultar_base
 
 try:
     from tavily import TavilyClient as _TavilyClient
@@ -1784,6 +1784,19 @@ TOOLS = [
         }
     },
     {
+        "name": "consultar_base_conhecimento",
+        "description": "Consulta a base de conhecimento central do Morgan em linguagem natural. Acede ao historial de TODOS os agentes — o que o Scout detectou, o que o Solver corrigiu, o que o Creator construiu, decisões do CFO, briefings do Coach. Usa sempre que precisas de contexto histórico ou queres saber o que aconteceu no sistema.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Pergunta em linguagem natural. Ex: 'o que o creator construiu esta semana', 'problemas corrigidos pelo solver', 'oportunidades detectadas pelo scout'"},
+                "agente": {"type": "string", "description": "Filtrar por agente específico: ceo, scout, cfo, coach, solver, creator (opcional)"},
+                "limite": {"type": "integer", "description": "Número máximo de resultados. Default: 15"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
         "name": "consultar_historico_imperio",
         "description": "Consulta o histórico de ações passadas do império BCVertex. Usa quando precisas de contexto histórico — decisões antigas, semanas anteriores do Scout, arquitectura explicada. Não carregado por defeito — só consulta quando relevante.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -2031,6 +2044,7 @@ TOOL_FUNCTIONS = {
         "'launchctl kickstart -k gui/$(id -u)/com.bcvertex.morgan'"
     ),
     "pesquisar_mercado": pesquisar_mercado,
+    "consultar_base_conhecimento": lambda query, agente=None, limite=15: consultar_base(query, agente=agente, limite=limite),
     "consultar_historico_imperio": consultar_historico_imperio,
     "atualizar_estado_imperio": atualizar_estado_imperio,
     "listar_google_drive": listar_google_drive,
