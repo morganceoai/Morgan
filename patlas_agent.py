@@ -603,7 +603,7 @@ def publicar_pin_pinterest(produto: str, idioma: str = "en") -> dict:
     """Publica um pin no Pinterest via Make webhook. Retorna resultado."""
     import requests
 
-    board = PINTEREST_BOARDS.get(produto, {}).get(idioma, "planneratlas")
+    board = "PlannerAtlas/" + PINTEREST_BOARDS.get(produto, {}).get(idioma, "planneratlas")
     link = ETSY_LISTING_URLS.get(produto, "https://www.etsy.com/shop/PlannerAtlas")
     image_url = PREVIEW_IMAGES.get(produto, PREVIEW_IMAGES["weekly_planner"])
 
