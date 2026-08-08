@@ -671,7 +671,10 @@ def chat_with_morgan(user_text: str) -> str:
         return reply
 
     # CEO (default)
-    reply = _chat_ceo(user_text)
+    try:
+        reply = _chat_ceo(user_text)
+    except Exception as e:
+        reply = f"Estou com dificuldades técnicas agora ({type(e).__name__}). Tenta novamente em breve."
     store_save(DESKTOP_USER_ID, "assistant", reply)
     return reply
 
@@ -713,13 +716,18 @@ async def serve_interface(request: Request):
         return RedirectResponse(url="/app/", status_code=302)
     desktop_file = DESKTOP_DIR / "index_v2.html"
     if desktop_file.exists():
-        return FileResponse(desktop_file)
+        return FileResponse(desktop_file, headers=_NO_CACHE)
     return RedirectResponse(url="/app/", status_code=302)
 
 @app.get("/v2")
 @app.get("/v2/")
 async def serve_interface_v2():
-    return FileResponse(DESKTOP_DIR / "index_v2.html")
+    return FileResponse(DESKTOP_DIR / "index_v2.html", headers=_NO_CACHE)
+
+@app.get("/three")
+@app.get("/three/")
+async def serve_interface_three():
+    return FileResponse(DESKTOP_DIR / "galaxy_three.html", headers=_NO_CACHE)
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
@@ -1398,6 +1406,82 @@ async def bot_status():
         return JSONResponse(status)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/metrics")
+async def get_metrics():
+    """CPU / MEM / NET reais do Mac Mini via psutil."""
+    try:
+        import psutil, time
+        cpu = psutil.cpu_percent(interval=0.2)
+        mem = psutil.virtual_memory().percent
+        net1 = psutil.net_io_counters()
+        time.sleep(0.5)
+        net2 = psutil.net_io_counters()
+        bytes_per_sec = (net2.bytes_sent + net2.bytes_recv - net1.bytes_sent - net1.bytes_recv) / 0.5
+        net_pct = min(99, round(bytes_per_sec / 1_000_000 * 10, 1))  # escala: 10 MB/s = 100%
+        return JSONResponse({"cpu": round(cpu, 1), "mem": round(mem, 1), "net": net_pct})
+    except Exception as e:
+        return JSONResponse({"cpu": 0, "mem": 0, "net": 0, "error": str(e)})
+
+
+@app.get("/api/logs")
+async def get_logs(n: int = 30):
+    """Últimas N entradas do incident_log.jsonl — formato compacto para JARVIS."""
+    log_file = Path(__file__).parent / "memory" / "incident_log.jsonl"
+    if not log_file.exists():
+        return JSONResponse({"entries": []})
+    try:
+        lines = [l for l in log_file.read_text(encoding="utf-8").splitlines() if l.strip()]
+        entries = []
+        for l in lines[-n:]:
+            try:
+                d = json.loads(l)
+                entries.append({
+                    "ts":  d.get("ts", "")[:19].replace("T", " "),
+                    "ag":  d.get("agente", "?"),
+                    "msg": d.get("descricao", "")[:120],
+                    "sev": d.get("severidade", "baixa"),
+                })
+            except Exception:
+                pass
+        return JSONResponse({"entries": entries})
+    except Exception as e:
+        return JSONResponse({"entries": [], "error": str(e)})
+
+
+@app.get("/api/portfolio")
+async def get_portfolio():
+    """Saldo + preços do cfo_saldo_snapshot + grid states."""
+    mem = Path(__file__).parent / "memory"
+    result: dict = {}
+    try:
+        snap = json.loads((mem / "cfo_saldo_snapshot.json").read_text())
+        result.update({
+            "total_usdt": snap.get("total_usdt", 0),
+            "usdt":       snap.get("usdt", 0),
+            "btc":        snap.get("btc", 0),
+            "eth":        snap.get("eth", 0),
+            "sol":        snap.get("sol", 0),
+            "preco_btc":  snap.get("preco_btc", 0),
+            "preco_eth":  snap.get("preco_eth", 0),
+            "preco_sol":  snap.get("preco_sol", 0),
+            "ts":         snap.get("ts", ""),
+        })
+    except Exception:
+        pass
+    try:
+        grid = json.loads((mem / "grid_state.json").read_text())
+        result["btc_grid_pnl"]   = grid.get("pnl_total", 0)
+        result["btc_last_price"] = grid.get("last_price", 0)
+    except Exception:
+        pass
+    try:
+        eg = json.loads((mem / "eth_grid_state.json").read_text())
+        result["eth_grid_pnl"] = eg.get("pnl_total", 0)
+    except Exception:
+        pass
+    return JSONResponse(result)
 
 
 @app.get("/api/activity")

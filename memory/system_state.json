@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-08-08T12:15:08.632580",
+  "negocios": {
+    "patlas": {
+      "visitas_semana": 0,
+      "vendas_semana": 0,
+      "receita_semana": 0.0,
+      "listings_ativos": 0,
+      "ultima_acao": "",
+      "estado": "activo"
+    },
+    "trading": {
+      "saldo_usdt": 0.0,
+      "posicao": "",
+      "pnl_hoje": 0.0,
+      "pnl_total": 0.0,
+      "ultima_ordem": "",
+      "estado": "activo"
+    },
+    "newsletter": {
+      "subscribers": 0,
+      "emails_enviados": 0,
+      "ultimo_envio": "",
+      "estado": "setup"
+    }
+  },
+  "oportunidades": {
+    "em_pipeline": [
+      "Relatórios táticos automáticos em PT/ES (pivô futebol)",
+      "Directório de terapeutas global",
+      "Directório de tutores global",
+      "Templates planners digitais — mercados não-ingleses",
+      "Templates Notion — mercados não-ingleses",
+      "Micro-SaaS vertical de nicho",
+      "Compra de blog/site com receita existente"
+    ],
+    "aprovadas": [
+      "Directório de terapeutas global",
+      "Templates planners digitais — mercados não-ingleses",
+      "Directório de tutores global",
+      "Templates Notion — mercados não-ingleses"
+    ],
+    "rejeitadas": []
+  },
+  "sistema": {
+    "agentes_com_erros": [],
+    "ultimo_erro": "",
+    "ultimo_erro_ts": "",
+    "saude": "ok",
+    "uptime_desde": ""
+  },
+  "moreirense": {
+    "proximo_jogo": "",
+    "adversario": "",
+    "posicao_liga": "",
+    "ultima_actualizacao": ""
+  },
+  "claude_usage": {
+    "hoje_usd": 0,
+    "mes_usd": 0.0,
+    "agente_top": ""
+  }
+}

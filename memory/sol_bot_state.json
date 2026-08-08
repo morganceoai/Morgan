@@ -1,0 +1,17 @@
+{
+  "estrategia": "dca",
+  "active": true,
+  "cash": 100.0,
+  "qty": 0.0,
+  "ref_price": 72.88,
+  "grid_ref": null,
+  "level_size": null,
+  "capital_per_level": null,
+  "open_positions": {},
+  "trades": [],
+  "pnl_total": 0.0,
+  "pnl_today": 0.0,
+  "last_check": "2026-08-08T11:10:15.865231+00:00",
+  "last_price": 75.17,
+  "created_at": ""
+}
