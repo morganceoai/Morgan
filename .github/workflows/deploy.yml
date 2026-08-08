@@ -76,8 +76,11 @@ jobs:
           script: |
             set -e
             cd /Users/bcvertex/Morgan
-            git checkout -- morgan_server.log || true
+            git fetch origin main
+            git checkout -- morgan_server.log 2>/dev/null || true
+            git stash --include-untracked 2>/dev/null || true
             git pull origin main
+            git stash drop 2>/dev/null || true
             source venv/bin/activate
             pip install -r requirements.txt -q
             launchctl kickstart -k gui/$(id -u)/com.bcvertex.morgan
