@@ -572,12 +572,12 @@ MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/mml5ugu7c1dygppxx1o4ydzwqibshufg"
 
 # Mapeamento produto → board_id Pinterest (board IDs da conta @PlannerAtlas)
 PINTEREST_BOARDS = {
-    "weekly_planner":  {"en": "weekly-planner-printable",  "de": "wochenplaner-druckbar",          "es": "planificador-semanal-imprimible",       "pt": "planeador-semanal-imprimível"},
-    "monthly_planner": {"en": "monthly-planner-printable", "de": "monatsplanner-druckbar",          "es": "planificador-mensual-imprimible",       "pt": "planeador-mensal-imprimível"},
-    "daily_planner":   {"en": "daily-planner-printable",   "de": "tagesplaner-druckbar",            "es": "planificador-diario-imprimible",        "pt": "planeador-diário-imprimível"},
-    "meal_planner":    {"en": "meal-planner-printable",    "de": "mahlzeitenplaner-druckbar",       "es": "planificador-de-comidas-imprimible",    "pt": "planeador-de-refeições-imprimível"},
-    "habit_tracker":   {"en": "habit-tracker-printable",   "de": "gewohnheits-tracker-druckbar",    "es": "rastreador-de-habitos-imprimible",      "pt": "rastreador-de-habitos-imprimivel"},
-    "budget_tracker":  {"en": "budget-planner-pdf",        "de": "budgetplaner-druckbar",           "es": "planificador-de-presupuesto-imprimible","pt": "planeador-de-orçamento-imprimível"},
+    "weekly_planner":  {"en": "1112952195355456475", "de": "1112952195355460499", "es": "1112952195355460414", "pt": "1112952195355460545"},
+    "monthly_planner": {"en": "1112952195355456816", "de": "1112952195355460520", "es": "1112952195355460419", "pt": "1112952195355460546"},
+    "daily_planner":   {"en": "1112952195355456827", "de": "1112952195355460500", "es": "1112952195355460422", "pt": "1112952195355460547"},
+    "meal_planner":    {"en": "1112952195355456853", "de": "1112952195355460505", "es": "1112952195355460428", "pt": "1112952195355460553"},
+    "habit_tracker":   {"en": "1112952195355456833", "de": "1112952195355460503", "es": "1112952195355460424", "pt": "1112952195355460550"},
+    "budget_tracker":  {"en": "1112952195355456843", "de": "1112952195355460504", "es": "1112952195355460427", "pt": "1112952195355460552"},
 }
 
 ETSY_LISTING_URLS = {
@@ -603,7 +603,7 @@ def publicar_pin_pinterest(produto: str, idioma: str = "en") -> dict:
     """Publica um pin no Pinterest via Make webhook. Retorna resultado."""
     import requests
 
-    board = "PlannerAtlas/" + PINTEREST_BOARDS.get(produto, {}).get(idioma, "planneratlas")
+    board = PINTEREST_BOARDS.get(produto, {}).get(idioma, "1112952195355456475")
     link = ETSY_LISTING_URLS.get(produto, "https://www.etsy.com/shop/PlannerAtlas")
     image_url = PREVIEW_IMAGES.get(produto, PREVIEW_IMAGES["weekly_planner"])
 
