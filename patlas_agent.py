@@ -616,12 +616,19 @@ def publicar_pin_pinterest(produto: str, idioma: str = "en") -> dict:
         r = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=200,
-            messages=[{"role": "user", "content": f"Write a Pinterest pin title (max 80 chars) and description (max 150 chars + 5 hashtags) for a digital {produto_nome} PDF download on Etsy. Language: {lingua}. Format: TITLE: ...\nDESCRIPTION: ..."}]
+            messages=[{"role": "user", "content": f"Write a Pinterest pin title (max 80 chars) and description (max 150 chars + 5 hashtags) for a digital {produto_nome} PDF download on Etsy. Language: {lingua}. Reply with exactly two lines:\nTITLE: your title here\nDESCRIPTION: your description here"}]
         )
         texto = r.content[0].text if r.content else ""
-        linhas = texto.strip().split("\n")
-        titulo = next((l.replace("TITLE:", "").strip() for l in linhas if l.startswith("TITLE:")), produto_nome)
-        descricao = next((l.replace("DESCRIPTION:", "").strip() for l in linhas if l.startswith("DESCRIPTION:")), "")
+        titulo = produto_nome
+        descricao = ""
+        for linha in texto.strip().split("\n"):
+            linha = linha.strip().lstrip("*#- ")
+            if linha.upper().startswith("TITLE:"):
+                titulo = linha.split(":", 1)[1].strip().strip("*").strip()
+            elif linha.upper().startswith("DESCRIPTION:"):
+                descricao = linha.split(":", 1)[1].strip().strip("*").strip()
+        if not titulo:
+            titulo = f"Digital {produto_nome} | Instant Download"
     except Exception:
         titulo = f"Digital {produto_nome} | Instant Download"
         descricao = f"Printable {produto_nome} PDF. Instant download on Etsy. #planner #digital #printable"
