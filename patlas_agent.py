@@ -572,12 +572,12 @@ MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/mml5ugu7c1dygppxx1o4ydzwqibshufg"
 
 # Mapeamento produto → board_id Pinterest (board IDs da conta @PlannerAtlas)
 PINTEREST_BOARDS = {
-    "weekly_planner":  {"en": "weekly-planner", "de": "wochenplaner", "es": "planificador-semanal", "pt": "planificador-semanal-pt"},
-    "monthly_planner": {"en": "monthly-planner", "de": "monatsplaner", "es": "planificador-mensual", "pt": "planificador-mensal"},
-    "daily_planner":   {"en": "daily-planner",   "de": "tagesplaner",  "es": "planificador-diario",  "pt": "planificador-diario-pt"},
-    "meal_planner":    {"en": "meal-planner",     "de": "mahlzeitenplaner", "es": "planificador-comidas", "pt": "planificador-refeicoes"},
-    "habit_tracker":   {"en": "habit-tracker",    "de": "gewohnheitstracker", "es": "rastreador-habitos", "pt": "rastreador-habitos-pt"},
-    "budget_tracker":  {"en": "budget-tracker",   "de": "budgetplaner", "es": "control-gastos",    "pt": "controlo-orcamento"},
+    "weekly_planner":  {"en": "weekly-planner-printable", "de": "wochenplaner-druckbar", "es": "planificador-semanal-imprimible", "pt": "planejador-semanal-para-imprimir"},
+    "monthly_planner": {"en": "monthly-planner-printable", "de": "monatsplaner-druckbar", "es": "planificador-mensual-imprimible", "pt": "planejador-mensal-para-imprimir"},
+    "daily_planner":   {"en": "daily-planner-printable",  "de": "tagesplaner-druckbar",  "es": "planificador-diario-imprimible",  "pt": "planejador-diario-para-imprimir"},
+    "meal_planner":    {"en": "meal-planner-printable",   "de": "mahlzeitenplaner-druckbar", "es": "planificador-comidas-imprimible", "pt": "planejador-refeicoes-para-imprimir"},
+    "habit_tracker":   {"en": "habit-tracker-printable",  "de": "gewohnheits-tracker-druckbar", "es": "rastreador-habitos-imprimible", "pt": "rastreador-habitos-para-imprimir"},
+    "budget_tracker":  {"en": "budget-planner-pdf",       "de": "budgetplaner-druckbar", "es": "planificador-presupuesto-imprimible", "pt": "planejador-orcamento-para-imprimir"},
 }
 
 ETSY_LISTING_URLS = {
@@ -590,12 +590,12 @@ ETSY_LISTING_URLS = {
 }
 
 PREVIEW_IMAGES = {
-    "weekly_planner":  "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_stationery.jpg",
-    "monthly_planner": "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_marble2.jpg",
-    "daily_planner":   "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_stationery.jpg",
-    "meal_planner":    "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_food.jpg",
-    "habit_tracker":   "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_marble2.jpg",
-    "budget_tracker":  "https://raw.githubusercontent.com/morganceoai/Morgan/main/businesses/planners/_assets/backgrounds/bg_budget.jpg",
+    "weekly_planner":  "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_3edb628a-b412-494a-b1df-7c8217e5da3b.png",
+    "monthly_planner": "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_d77c3b5a-50fa-4766-8217-adbafba15c1a.png",
+    "daily_planner":   "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_067de21e-5bbf-4212-be30-ce48e1a4acf1.png",
+    "meal_planner":    "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_c643d363-40e5-47ee-a059-d1a418bfd14d.png",
+    "habit_tracker":   "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_6dd8f68e-2930-4d31-9521-101c4df4d2b4.png",
+    "budget_tracker":  "https://d8j0ntlcm91z4.cloudfront.net/user_3Gth9k6jhmzNUof4cZtSy4XAW7p/hf_20260808_215232_576e3128-3443-4d36-aa52-ac252b20c71a.png",
 }
 
 
