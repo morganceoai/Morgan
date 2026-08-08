@@ -127,6 +127,9 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
 .log-scroll { overflow-y:auto; max-height:100px; user-select:text; cursor:text; }
 .log-scroll::-webkit-scrollbar { width:2px; }
 .log-scroll::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.1); }
+#sList_todas::-webkit-scrollbar, #sList_aprovadas::-webkit-scrollbar { width:2px; }
+#sList_todas::-webkit-scrollbar-thumb, #sList_aprovadas::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.35); border-radius:1px; }
+#sList_todas::-webkit-scrollbar-track, #sList_aprovadas::-webkit-scrollbar-track { background:rgba(0,212,255,0.05); }
 .log-line { font-size:7.5px; color:rgba(0,212,255,0.3); line-height:1.55; padding:1px 0; font-family:'SF Mono',monospace; white-space:pre-wrap; word-break:break-all; }
 .log-line.err { color:rgba(255,90,90,0.55); }
 /* Portfolio rows */
