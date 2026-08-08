@@ -572,12 +572,12 @@ MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/mml5ugu7c1dygppxx1o4ydzwqibshufg"
 
 # Mapeamento produto → board_id Pinterest (board IDs da conta @PlannerAtlas)
 PINTEREST_BOARDS = {
-    "weekly_planner":  {"en": "weekly-planner-printable", "de": "wochenplaner-druckbar", "es": "planificador-semanal-imprimible", "pt": "planejador-semanal-para-imprimir"},
-    "monthly_planner": {"en": "monthly-planner-printable", "de": "monatsplaner-druckbar", "es": "planificador-mensual-imprimible", "pt": "planejador-mensal-para-imprimir"},
-    "daily_planner":   {"en": "daily-planner-printable",  "de": "tagesplaner-druckbar",  "es": "planificador-diario-imprimible",  "pt": "planejador-diario-para-imprimir"},
-    "meal_planner":    {"en": "meal-planner-printable",   "de": "mahlzeitenplaner-druckbar", "es": "planificador-comidas-imprimible", "pt": "planejador-refeicoes-para-imprimir"},
-    "habit_tracker":   {"en": "habit-tracker-printable",  "de": "gewohnheits-tracker-druckbar", "es": "rastreador-habitos-imprimible", "pt": "rastreador-habitos-para-imprimir"},
-    "budget_tracker":  {"en": "budget-planner-pdf",       "de": "budgetplaner-druckbar", "es": "planificador-presupuesto-imprimible", "pt": "planejador-orcamento-para-imprimir"},
+    "weekly_planner":  {"en": "weekly-planner-printable",  "de": "wochenplaner-druckbar",          "es": "planificador-semanal-imprimible",       "pt": "planeador-semanal-imprimível"},
+    "monthly_planner": {"en": "monthly-planner-printable", "de": "monatsplanner-druckbar",          "es": "planificador-mensual-imprimible",       "pt": "planeador-mensal-imprimível"},
+    "daily_planner":   {"en": "daily-planner-printable",   "de": "tagesplaner-druckbar",            "es": "planificador-diario-imprimible",        "pt": "planeador-diário-imprimível"},
+    "meal_planner":    {"en": "meal-planner-printable",    "de": "mahlzeitenplaner-druckbar",       "es": "planificador-de-comidas-imprimible",    "pt": "planeador-de-refeições-imprimível"},
+    "habit_tracker":   {"en": "habit-tracker-printable",   "de": "gewohnheits-tracker-druckbar",    "es": "rastreador-de-habitos-imprimible",      "pt": "rastreador-de-habitos-imprimivel"},
+    "budget_tracker":  {"en": "budget-planner-pdf",        "de": "budgetplaner-druckbar",           "es": "planificador-de-presupuesto-imprimible","pt": "planeador-de-orçamento-imprimível"},
 }
 
 ETSY_LISTING_URLS = {
