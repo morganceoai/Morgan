@@ -23,6 +23,8 @@ PATLAS_STATE_FILE = MEMORY_DIR / "patlas_state.json"
 from claude_guard import GuardedClient
 client = GuardedClient("patlas")
 
+from episodic_memory import registar_evento
+
 # ── Thresholds ────────────────────────────────────────────────────────────────
 ALERTA_SEM_VENDAS_DIAS = 14
 ALERTA_CTR_MIN = 0.005
@@ -719,6 +721,16 @@ def ciclo_diario() -> str:
             gerar_plano_semana()
         except Exception:
             pass
+
+    try:
+        state = _load_state()
+        registar_evento("patlas", "ciclo_diario",
+                        f"Fase: {state['fase']} | Listings: {state['listings_activos']} | "
+                        f"Vendas: {state['vendas_total']} | Receita: €{state['receita_total']:.2f} | "
+                        f"Alertas: {len(alertas)}",
+                        dados={"alertas": alertas[:3]} if alertas else None)
+    except Exception:
+        pass
 
     return estado_str
 

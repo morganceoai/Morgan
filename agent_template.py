@@ -25,7 +25,9 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 MEMORY_DIR = Path(__file__).parent / "memory"
-EPISODIC_FILE = MEMORY_DIR / "episodic_memory.json"
+
+# Importações obrigatórias de memória — presentes em todos os agentes
+from episodic_memory import registar_evento, registar_acao, get_contexto_agente  # noqa: F401
 
 
 # ── Bootstrap — primeira tarefa de qualquer novo agente ──────────────────────
@@ -46,11 +48,11 @@ def agent_bootstrap(nome_agente: str, verbose: bool = False) -> str:
     """
     from episodic_memory import registar_evento, get_eventos_recentes
 
-    # Verificar se já foi feito o bootstrap
-    bootstrap_key = f"{nome_agente}:bootstrap_completo"
+    # Verificar se já foi feito o bootstrap (baseado em knowledge_base.jsonl)
     try:
-        data = json.loads(EPISODIC_FILE.read_text(encoding="utf-8"))
-        if bootstrap_key in data.get("ultimo_hash", {}):
+        from episodic_memory import get_eventos_recentes
+        ev_boot = get_eventos_recentes(agente=nome_agente, tema="bootstrap_completo", limite=1)
+        if ev_boot:
             if verbose:
                 logger.info("[%s] bootstrap já realizado anteriormente", nome_agente)
             return "bootstrap_ja_feito"

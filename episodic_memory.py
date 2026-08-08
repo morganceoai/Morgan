@@ -367,8 +367,42 @@ def migrar_historico() -> dict:
     return {"status": "migrado", "total_migrados": migrados}
 
 
+# ── Decorator para funções de agentes ────────────────────────────────────────
+
+def registar_acao(agente: str, tema: str, extrair_resumo=None):
+    """
+    Decorator que regista automaticamente o resultado de uma função na base de conhecimento.
+    Só regista se o resultado não for None, não for erro, e não for "sem novidade".
+
+    Uso:
+        @registar_acao("cfo", "nova_funcao")
+        def nova_funcao(...) -> str:
+            ...
+    """
+    import functools
+
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            resultado = fn(*args, **kwargs)
+            try:
+                # Não regista None, erros vazios, ou resultados triviais
+                if resultado is None:
+                    return resultado
+                resumo = extrair_resumo(resultado) if extrair_resumo else str(resultado)[:400]
+                # Filtra resultados sem valor
+                sem_valor = ("sem dados", "indisponível", "sem novidade", "nenhum", "ok")
+                if resumo.strip().lower() in sem_valor or len(resumo.strip()) < 10:
+                    return resultado
+                registar_evento(agente, tema, resumo)
+            except Exception:
+                pass
+            return resultado
+        return wrapper
+    return decorator
+
+
 # ── Compatibilidade retroactiva ───────────────────────────────────────────────
-# Aliases para código que ainda usa a assinatura antiga
 
 def get_eventos(agente: str | None = None, tema: str | None = None, limite: int = 20) -> list[dict]:
     return get_eventos_recentes(agente=agente, tema=tema, limite=limite)

@@ -23,6 +23,8 @@ PULSER_STATE_FILE = MEMORY_DIR / "pulser_state.json"
 from claude_guard import GuardedClient
 client = GuardedClient("pulser")
 
+from episodic_memory import registar_evento
+
 # ── Thresholds ────────────────────────────────────────────────────────────────
 ALERTA_SEM_DRAFT_DIAS = 14
 ALERTA_OPEN_RATE_MIN = 0.30
@@ -399,6 +401,16 @@ def ciclo_semanal() -> str:
             "ultimo_draft": state.get("ultimo_draft_criado", ""),
             "alertas": alertas,
         })
+    except Exception:
+        pass
+
+    try:
+        state = _load_state()
+        registar_evento("pulser", "ciclo_semanal",
+                        f"Fase: {state['fase']} | Subs: {state['subscribers']} | "
+                        f"Emails: {state['emails_enviados']} | Open rate: {state.get('open_rate', 0):.0%} | "
+                        f"Alertas: {len(alertas)}",
+                        dados={"alertas": alertas[:3]} if alertas else None)
     except Exception:
         pass
 

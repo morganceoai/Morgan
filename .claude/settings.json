@@ -1,13 +1,35 @@
 {
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd ~/Morgan && source venv/bin/activate && python scripts/log_claude_action.py 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd ~/Morgan && source venv/bin/activate && python scripts/log_claude_action.py 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "cd ~/Morgan && source venv/bin/activate && python scripts/notion_session_end.py 2>/dev/null || true",
+            "command": "cd ~/Morgan && source venv/bin/activate && python scripts/log_claude_action.py 2>/dev/null || true && python scripts/notion_session_end.py 2>/dev/null || true",
             "timeout": 15,
-            "statusMessage": "A registar sessão no Diário Morgan..."
+            "statusMessage": "A registar sessão no Morgan..."
           }
         ]
       }
