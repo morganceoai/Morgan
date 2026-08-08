@@ -2764,25 +2764,41 @@ def _handle_trading_result(result: dict, label: str):
 
 
 async def _run_trading_cycle():
-    """Bots geridos pelo CFO scheduler (5min). Aqui só corre o Supertrend legado."""
+    """Bots de trading autónomos — correm a cada 5min sem LLM."""
     loop = asyncio.get_event_loop()
 
-    # Supertrend BTC/USDT (legado — mantido para referência)
+    # BTC Grid Bot
     try:
-        from trading_bot import run_cycle
-        result = await loop.run_in_executor(None, run_cycle)
-        _handle_trading_result(result, "Supertrend BTC")
-        if isinstance(result, dict):
-            escrever_negocio("trading", {
-                "posicao": result.get("posicao", ""),
-                "pnl_hoje": result.get("pnl_hoje", 0.0),
-                "saldo_usdt": result.get("saldo", 0.0),
-                "ultima_ordem": result.get("ultima_ordem", ""),
-            })
-            limpar_erro("trading_bot")
+        from grid_bot import run_cycle as btc_cycle
+        result = await loop.run_in_executor(None, btc_cycle)
+        if isinstance(result, dict) and result.get("acoes"):
+            print(f"[grid_btc] {result['acoes']}", flush=True)
+        limpar_erro("grid_btc")
     except Exception as e:
-        print(f"[trading_bot] erro: {e}", flush=True)
-        registar_erro("trading_bot", str(e))
+        print(f"[grid_btc] erro: {e}", flush=True)
+        registar_erro("grid_btc", str(e))
+
+    # ETH Grid Bot
+    try:
+        from eth_grid_bot import run_cycle as eth_cycle
+        result = await loop.run_in_executor(None, eth_cycle)
+        if isinstance(result, dict) and result.get("acoes"):
+            print(f"[grid_eth] {result['acoes']}", flush=True)
+        limpar_erro("grid_eth")
+    except Exception as e:
+        print(f"[grid_eth] erro: {e}", flush=True)
+        registar_erro("grid_eth", str(e))
+
+    # SOL Bot (DCA)
+    try:
+        from sol_bot import run_cycle as sol_cycle
+        result = await loop.run_in_executor(None, sol_cycle)
+        if isinstance(result, dict) and result.get("acoes"):
+            print(f"[sol_bot] {result['acoes']}", flush=True)
+        limpar_erro("sol_bot")
+    except Exception as e:
+        print(f"[sol_bot] erro: {e}", flush=True)
+        registar_erro("sol_bot", str(e))
 
 
 async def _heartbeat_loop():
