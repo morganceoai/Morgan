@@ -1060,6 +1060,70 @@ def scout_job_boards(nicho: str) -> str:
     return f"**Job Boards — sinal de mercado: {nicho}**\n\n" + "\n\n---\n\n".join(resultados[:8])
 
 
+# ── Gestão de Contas BCVertex ────────────────────────────────────────────────
+
+import json as _json_accounts
+from pathlib import Path as _Path
+_ACCOUNTS_FILE = _Path(__file__).parent / "memory" / "accounts.json"
+
+def _load_accounts() -> dict:
+    with open(_ACCOUNTS_FILE, "r", encoding="utf-8") as f:
+        return _json_accounts.load(f)
+
+def _save_accounts(data: dict):
+    import datetime
+    data["ultima_actualizacao"] = datetime.date.today().isoformat()
+    with open(_ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+        _json_accounts.dump(data, f, ensure_ascii=False, indent=2)
+
+def _listar_contas(estado: str = None) -> str:
+    data = _load_accounts()
+    contas = data["contas"]
+    if estado:
+        contas = [c for c in contas if c["estado"] == estado]
+    linhas = [f"**Contas BCVertex** (actualizado: {data['ultima_actualizacao']})\n"]
+    grupos = {}
+    for c in contas:
+        grupos.setdefault(c["estado"], []).append(c)
+    ordem = ["ativo", "em_transicao", "pendente", "esgotado", "cancelado", "removido"]
+    for est in ordem:
+        if est not in grupos:
+            continue
+        label = {"ativo": "✅ Activas", "em_transicao": "🔄 Em transição", "pendente": "⏳ Pendentes",
+                 "esgotado": "⚠️ Esgotadas", "cancelado": "❌ Canceladas", "removido": "🗑️ Removidas"}.get(est, est)
+        linhas.append(f"\n**{label}:**")
+        for c in grupos[est]:
+            custo = f" — ~€{c['custo_estimado_mes']}/mês" if c.get("custo_estimado_mes") else ""
+            linhas.append(f"  • {c['nome']} ({c['plano'] or '—'}){custo}")
+            if c.get("notas"):
+                linhas.append(f"    _{c['notas']}_")
+    return "\n".join(linhas)
+
+def _actualizar_conta(nome: str, **campos) -> str:
+    data = _load_accounts()
+    for c in data["contas"]:
+        if c["nome"].lower() == nome.lower():
+            c.update(campos)
+            _save_accounts(data)
+            return f"Conta '{nome}' actualizada: {campos}"
+    return f"Conta '{nome}' não encontrada. Usa adicionar_conta para criar."
+
+def _adicionar_conta(nome: str, categoria: str, estado: str, plano: str,
+                     tipo_custo: str, uso: str, email: str = None,
+                     custo_estimado_mes=None, env_keys=None, notas: str = "") -> str:
+    data = _load_accounts()
+    nomes = [c["nome"].lower() for c in data["contas"]]
+    if nome.lower() in nomes:
+        return f"Conta '{nome}' já existe. Usa actualizar_conta para modificar."
+    data["contas"].append({
+        "nome": nome, "categoria": categoria, "estado": estado, "plano": plano,
+        "tipo_custo": tipo_custo, "custo_estimado_mes": custo_estimado_mes,
+        "email": email, "env_keys": env_keys or [], "uso": uso, "notas": notas
+    })
+    _save_accounts(data)
+    return f"Conta '{nome}' adicionada."
+
+
 # ── Ferramentas do Solver ────────────────────────────────────────────────────
 
 import subprocess
@@ -1998,6 +2062,51 @@ TOOLS = [
             },
             "required": ["nicho"]
         }
+    },
+    {
+        "name": "listar_contas",
+        "description": "Lista todas as contas e serviços do ecossistema BCVertex (activas, pagas, gratuitas, canceladas). Usa quando o Vasco perguntar sobre contas, serviços, custos de infra ou estado de subscrições.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "estado": {"type": "string", "description": "Filtrar por estado: 'ativo', 'em_transicao', 'pendente', 'esgotado', 'cancelado', 'removido'. Omitir para ver todas."}
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "actualizar_conta",
+        "description": "Actualiza os dados de uma conta existente (ex: mudar plano, estado, custo, notas). Usar sempre que o Vasco fizer upgrade, downgrade, cancelar ou alterar uma conta.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome exacto da conta (ex: 'Higgsfield', 'ElevenLabs')"},
+                "estado": {"type": "string", "description": "Novo estado: ativo, em_transicao, pendente, esgotado, cancelado, removido"},
+                "plano": {"type": "string", "description": "Nome do plano (ex: 'Ultra', 'Pro', 'Free', 'pay-per-use')"},
+                "custo_estimado_mes": {"type": "number", "description": "Custo mensal estimado em euros"},
+                "notas": {"type": "string", "description": "Observações relevantes"}
+            },
+            "required": ["nome"]
+        }
+    },
+    {
+        "name": "adicionar_conta",
+        "description": "Regista uma nova conta ou serviço no ecossistema BCVertex. Usar quando o Vasco criar uma conta nova.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string", "description": "Nome do serviço"},
+                "categoria": {"type": "string", "description": "Categoria (ex: LLM, Design, Marketing, Trading, Email)"},
+                "estado": {"type": "string", "description": "Estado inicial: ativo, pendente, em_transicao"},
+                "plano": {"type": "string", "description": "Plano subscrito"},
+                "tipo_custo": {"type": "string", "description": "gratuito, variavel, fixo_mensal, fixo_anual, fees_por_trade, fees_por_venda"},
+                "uso": {"type": "string", "description": "Para que é usado no ecossistema"},
+                "email": {"type": "string", "description": "Email associado à conta"},
+                "custo_estimado_mes": {"type": "number", "description": "Custo mensal estimado em euros"},
+                "notas": {"type": "string", "description": "Observações"}
+            },
+            "required": ["nome", "categoria", "estado", "plano", "tipo_custo", "uso"]
+        }
     }
 ]
 
@@ -2083,4 +2192,7 @@ TOOL_FUNCTIONS = {
     "scout_pesquisa_multilang": scout_pesquisa_multilang,
     "scout_g2_capterra": scout_g2_capterra,
     "scout_job_boards": scout_job_boards,
+    "listar_contas": lambda estado=None: _listar_contas(estado),
+    "actualizar_conta": lambda nome, **campos: _actualizar_conta(nome, **campos),
+    "adicionar_conta": lambda **dados: _adicionar_conta(**dados),
 }

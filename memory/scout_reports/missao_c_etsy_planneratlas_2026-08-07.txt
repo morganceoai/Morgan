@@ -1,0 +1,46 @@
+Tenho dados suficientes. Aqui está a análise de saúde.
+
+---
+
+# 🩺 Análise de Saúde — PlannerAtlas Etsy
+
+**Dados críticos:** 61 listings activos · **0 vendas em 30 dias** · **€0 receita**
+
+---
+
+### 1. O negócio ainda faz sentido? **CONDICIONAL — a arder**
+O mercado **existe e vende** (planners = 29% da receita de produtos digitais no Etsy; top listings a 312 vendas/mês). Mas o teu negócio está a **0 vendas com 61 listings**, o que não é problema de mercado — é problema de **visibilidade e diferenciação**. Estás nos termos genéricos ("digital planner" = 700k+ listings) onde uma loja sem histórico é invisível. O negócio faz sentido *só se* mudares radicalmente de estratégia. Manter 61 listings genéricos com €0 é queimar tempo.
+
+### 2. Mercados a expandir (com dados)
+- **DE (alemão)** — menor saturação em PDF/GoodNotes, procura a subir ("digital planner deutsch": e-ink, AI templates, sync). Concentra esforço aqui.
+- **Nichos profissionais/B2B** — terapeutas, professores, homeschool, ADHD, diabéticos. Compradores pagam €15-25 e valorizam função, não estética. <5.000 concorrentes vs. 500k.
+- **Formatos novos** — Notion templates, PDFs interativos preenchíveis. Os vendedores estabelecidos ainda não migraram.
+
+### 3. Mercados a abandonar ou reduzir
+- **PT** — mercado minúsculo, procura Etsy quase nula em português. Reduz drasticamente.
+- **Linha low-cost genérica (24 listings)** — está a competir por preço com IA a €3.99. Margem morta após taxas. **Descontinuar.**
+- **"All-in-one planner" genérico EN** — commoditizado. Não consegues furar a page 1 dominada por lojas com 5.000+ reviews.
+
+### 4. Alterações a produto/preço/posicionamento
+- **Nichar HARD:** de "weekly planner" → "budget planner para casais" ou "ADHD daily planner". Especificidade = conversão + preço.
+- **Preço:** abandona o €7.99 genérico. Nicho profissional aguenta €15-19.
+- **Fotos/mockups:** o fator #1 hoje é "parar o scroll" (Instagram/Pinterest). Mockups fracos = 0 cliques mesmo com bom SEO.
+- **Consolidar:** 61 listings dispersos → ~15 listings nichados e fortes.
+
+### 5. Ameaças detectadas
+- **Inundação de IA** — concorrentes geram planners em minutos a €3.99; comprimem preço no low-cost.
+- **Algoritmo Etsy** — retooling para LLM/personalização; GMS da Etsy caiu 5.4% YoY. Descoberta orgânica imprevisível.
+- **Sazonalidade** — pico "etsy digital planner" em Agosto (back-to-school). Estás fora de janela.
+- **Falta de histórico** — 0 vendas = 0 quality score = enterrado. Ciclo vicioso.
+
+### 6. Próximas 3 acções (por impacto)
+1. **Matar o low-cost genérico** (24 listings) e escolher **2-3 nichos profissionais DE/EN** validados com <10k concorrentes (usar Etsy autocomplete + contagem de resultados).
+2. **Refazer mockups** dos 3-5 melhores listings estilo Pinterest — atacar o problema de CTR/conversão que gera os €0.
+3. **Tráfego externo:** Pinterest + 1 pin/dia por nicho, para injectar cliques e destravar o quality score (Etsy premeia sinais off-site).
+
+### 7. Score de Saúde: **2/10**
+Mercado válido, execução falhada. €0 com 61 listings é sinal vermelho. Não está morto — está mal posicionado. Reset de estratégia ou encerramento em 60 dias se não houver primeira venda.
+
+---
+
+**Veredicto Scout:** Não invistas mais em volume de listings genéricos. Nicha, refaz mockups, mete Pinterest. Se em 60 dias contin

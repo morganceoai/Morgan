@@ -1,0 +1,38 @@
+Tenho dados sólidos. Vou preparar a análise de saúde final.
+
+---
+
+# 🩺 Análise de Saúde — The AI Pulse (Beehiiv)
+**Nicho:** Newsletter faceless EN | AI tools & productivity | Founders US/UK/CA | Cadência semanal
+
+---
+
+## 1. O negócio ainda faz sentido?
+**Condicional — SIM, mas só com pivot de posicionamento.** O mercado cresce (US$1,97B em 2025, CAGR 28,2%) e a monetização é real: subscrições pagas na Beehiiv passaram de US$8M→US$19M num ano. **MAS:** lançaram-se +3.000 newsletters de IA em 2 anos e só ~5 passaram os 100k subs. A maioria do wave de 2023 **estagnou, pivotou ou fechou**. O nicho genérico "AI tools & productivity" está explicitamente saturado ("Saturated for some categories — AI productivity tools", Dupple 2026). Um faceless semanal genérico não sobrevive contra The Rundown (2M), Superhuman (1,5M), TLDR AI (1,25M). O sentido só existe se for **ultra-nichado**.
+
+## 2. Mercados a expandir (com dados de procura)
+- **B2B SaaS / Finance verticals dentro de IA:** CPMs de $80–$180 direto (vs $100–$150 tech genérico). "AI for CFOs", "AI for agencies", "AI for solo lawyers" — decision-makers pagam prémio.
+- **Founders/startups nicho:** procura emergente alta ($40–$80 CPM), YC + accelerators compram ativamente.
+- **US permanece o mercado nº1** (75% dos subs top-tier são US; Superhuman 75% US). Manter foco US/UK, reforçar US.
+
+## 3. Mercados a abandonar ou reduzir
+- **"AI productivity" genérico:** categoria saturada, CPMs a comprimir, impossível diferenciar.
+- **Audiência consumer/lifestyle:** CPM $15–$40, baixa conversão. Evitar diluir para "AI para toda a gente".
+- **Developers/engenheiros:** já dominado por AlphaSignal (170k) e TheSequence — não vale entrar.
+
+## 4. Alterações a produto / preço / posicionamento
+- **Re-nichar já:** de "AI tools & productivity" → "AI para [vertical B2B específico]". Extra Points fatura $200k/ano com nicho minúsculo. Qualidade > tamanho.
+- **Cadência:** semanal retém melhor (open rate), mas cresce mais devagar. Considerar **2x/semana** para inventário de ads.
+- **Monetização diversificada:** não depender só de sponsorships. Adicionar tier pago ($5–$150/ano) ou produto (mini-curso/database). Survivors têm ≥1 canal além de ads.
+- **Preço ads:** com nicho B2B a 10k opens → cobrar $400–$800/placement (CPM efetivo $50–$80), não flat baixo.
+
+## 5. Ameaças detectadas
+- **Saturação extrema** do nicho genérico (ameaça nº1).
+- **Faceless = fraco moat.** Os vencedores têm marca pessoal (Cheung, Kahn) ou autoridade (Ng). Faceless dificulta trust → afeta CTR e CPM.
+- **Apple MPP** inflaciona open rates 30–50% → medir por CTR/UTMs, não opens.
+- **Consolidação:** HubSpot/TechnologyAdvice a comprar players — competição com recursos de media companies.
+
+## 6. Próximas 3 ações (por impacto)
+1. **RE-NICHAR para um vertical B2B com dinheiro** (ex: "AI for marketing agencies" ou "AI for finance pros"). Ação de maior alavancagem — resolve saturação + sobe CPM 2–3x.
+2. **Adicionar 2ª fonte de receita** além de sponsorships (tier premium ou lead magnet monetizável). Sobrevivência exige-o.
+3. **Construir sistema de trust apesar do faceless:** welcome sequence de origem, POV editorial forte (estilo Implicator crítico, não cheerleader) + re-engagement automation (limpar inativos aos
