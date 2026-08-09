@@ -728,7 +728,7 @@ async def serve_interface(request: Request):
     is_mobile = any(k in ua for k in ["iphone", "android", "mobile", "ipad"])
     if is_mobile:
         return RedirectResponse(url="/app/", status_code=302)
-    desktop_file = DESKTOP_DIR / "galaxy_three.html"
+    desktop_file = DESKTOP_DIR / "jarvis_v3.html"
     if desktop_file.exists():
         return FileResponse(desktop_file, headers=_NO_CACHE)
     return RedirectResponse(url="/app/", status_code=302)
