@@ -303,6 +303,104 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
 
   <!-- RIGHT COLUMN -->
   <aside class="right-col">
+    <!-- Tab Bar -->
+    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0">
+      <button onclick="setTab('sistema')" id="tab-sistema"
+        style="flex:1;padding:8px 0;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;background:none;border:none;cursor:pointer;border-bottom:2px solid rgba(0,212,255,0.8);color:rgba(0,212,255,0.9)">
+        Sistema
+      </button>
+      <button onclick="setTab('consumos')" id="tab-consumos"
+        style="flex:1;padding:8px 0;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;color:rgba(0,212,255,0.35)">
+        Consumos
+      </button>
+    </div>
+    <!-- Painel Consumos -->
+    <div id="panel-consumos" style="display:none;flex-direction:column;overflow-y:auto">
+
+      <div class="info-panel">
+        <div class="i-label" style="margin-bottom:6px">Anthropic (Claude)</div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Custo hoje</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.8);font-variant-numeric:tabular-nums" id="uAntHoje">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Tokens hoje</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.65);font-variant-numeric:tabular-nums" id="uAntTok">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Custo este mês</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.65);font-variant-numeric:tabular-nums" id="uAntMes">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Budget diário</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.35)" id="uAntBudget">-- / $5.00</span>
+        </div>
+        <div id="uAntAgentes" style="margin-top:6px;border-top:1px solid rgba(0,212,255,0.06);padding-top:5px;font-size:8px;color:rgba(0,212,255,0.4);line-height:2"></div>
+      </div>
+
+      <div class="info-panel">
+        <div class="i-label" style="margin-bottom:6px">Higgsfield</div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Créditos restantes</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.8);font-variant-numeric:tabular-nums" id="uHfCred">--</span>
+        </div>
+        <div style="margin:6px 0 4px">
+          <div style="height:3px;background:rgba(0,212,255,0.08);border-radius:2px">
+            <div id="uHfBar" style="height:3px;background:rgba(0,212,255,0.5);border-radius:2px;width:0%;transition:width .5s"></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Plano</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.55)" id="uHfPlano">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Próxima renovação</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.55)" id="uHfRen">--</span>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="i-label" style="margin-bottom:6px">ElevenLabs</div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Chars usados / limite</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.8);font-variant-numeric:tabular-nums" id="uElChars">--</span>
+        </div>
+        <div style="margin:6px 0 4px">
+          <div style="height:3px;background:rgba(0,212,255,0.08);border-radius:2px">
+            <div id="uElBar" style="height:3px;background:rgba(0,212,255,0.5);border-radius:2px;width:0%;transition:width .5s"></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Plano</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.55)" id="uElPlano">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Próxima fatura</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.55)" id="uElFatura">--</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Renovação</span>
+          <span style="font-size:9px;color:rgba(0,212,255,0.55)" id="uElRen">--</span>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="i-label" style="margin-bottom:6px">Pesquisa Web</div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Perplexity hoje / mês</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.8);font-variant-numeric:tabular-nums" id="uPerp">-- / --</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0">
+          <span style="font-size:9px;color:rgba(0,212,255,0.4)">Exa hoje / mês</span>
+          <span style="font-size:10px;color:rgba(0,212,255,0.65);font-variant-numeric:tabular-nums" id="uExa">-- / --</span>
+        </div>
+      </div>
+
+      <div style="font-size:7px;color:rgba(0,212,255,0.18);text-align:right;padding:6px 14px" id="uTs">—</div>
+    </div>
+
+    <!-- Painel Sistema -->
+    <div id="panel-sistema" style="display:flex;flex-direction:column">
 
     <!-- Clima + Posição -->
     <div class="info-panel" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -408,6 +506,7 @@ body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:
       <div style="font-size:7px;color:rgba(0,212,255,0.18);margin-top:5px;text-align:right" id="portTs">—</div>
     </div>
 
+    </div><!-- /panel-sistema -->
   </aside>
 
   <!-- FOOTER -->
@@ -987,6 +1086,89 @@ async function fetchLogs() {
 }
 fetchLogs();
 setInterval(fetchLogs, 30000);
+
+// ── Tabs Sistema / Consumos ───────────────────────────────────────────────────
+function setTab(tab) {
+  const isSistema = tab === 'sistema';
+  document.getElementById('panel-sistema').style.display = isSistema ? 'flex' : 'none';
+  document.getElementById('panel-consumos').style.display = isSistema ? 'none' : 'flex';
+  const tSis = document.getElementById('tab-sistema');
+  const tCon = document.getElementById('tab-consumos');
+  tSis.style.borderBottomColor = isSistema ? 'rgba(0,212,255,0.8)' : 'transparent';
+  tSis.style.color = isSistema ? 'rgba(0,212,255,0.9)' : 'rgba(0,212,255,0.35)';
+  tCon.style.borderBottomColor = isSistema ? 'transparent' : 'rgba(0,212,255,0.8)';
+  tCon.style.color = isSistema ? 'rgba(0,212,255,0.35)' : 'rgba(0,212,255,0.9)';
+  if (!isSistema) fetchUsage();
+}
+
+// ── Consumos em tempo real (/api/usage) ───────────────────────────────────────
+async function fetchUsage() {
+  try {
+    const r = await fetch('http://localhost:8765/api/usage');
+    if (!r.ok) return;
+    const d = await r.json();
+
+    // Anthropic
+    const ant = d.anthropic || {};
+    const hoje = ant.hoje || {};
+    const mes  = ant.mes  || {};
+    const budget = ant.budget_total_dia_usd || 5;
+    document.getElementById('uAntHoje').textContent   = hoje.custo_usd != null ? `$${hoje.custo_usd.toFixed(4)}` : '--';
+    document.getElementById('uAntTok').textContent    = hoje.tokens != null ? hoje.tokens.toLocaleString() + ' tok' : '--';
+    document.getElementById('uAntMes').textContent    = mes.custo_usd  != null ? `$${mes.custo_usd.toFixed(2)}` : '--';
+    document.getElementById('uAntBudget').textContent = hoje.custo_usd != null
+      ? `$${hoje.custo_usd.toFixed(4)} / $${budget.toFixed(2)}`
+      : `-- / $${budget.toFixed(2)}`;
+
+    const agentes = ant.agentes_hoje || {};
+    const agEl = document.getElementById('uAntAgentes');
+    agEl.innerHTML = Object.entries(agentes)
+      .sort((a,b) => b[1].usd - a[1].usd)
+      .map(([ag, info]) =>
+        `<span style="color:rgba(0,212,255,0.55)">${ag}</span>` +
+        `<span style="float:right;color:rgba(0,212,255,0.35)">${info.chamadas}x · $${info.usd.toFixed(4)}</span><br>`
+      ).join('') || '<span style="color:rgba(0,212,255,0.2)">sem chamadas hoje</span>';
+
+    // Higgsfield
+    const hf = d.higgsfield || {};
+    const hfCred = hf.creditos_restantes;
+    const hfCiclo = hf.creditos_ciclo || 3000;
+    document.getElementById('uHfCred').textContent = hfCred != null
+      ? `${hfCred.toLocaleString()} / ${hfCiclo.toLocaleString()}`
+      : '--';
+    document.getElementById('uHfBar').style.width = hfCred != null
+      ? `${Math.round(hfCred / hfCiclo * 100)}%` : '0%';
+    document.getElementById('uHfPlano').textContent  = hf.plano || '--';
+    document.getElementById('uHfRen').textContent    = hf.proxima_renovacao || '--';
+
+    // ElevenLabs
+    const el = d.elevenlabs || {};
+    document.getElementById('uElChars').textContent  = el.chars_usados != null
+      ? `${el.chars_usados.toLocaleString()} / ${(el.chars_limite||0).toLocaleString()}`
+      : '--';
+    document.getElementById('uElBar').style.width    = el.chars_pct != null ? `${el.chars_pct}%` : '0%';
+    document.getElementById('uElPlano').textContent  = el.plano || '--';
+    document.getElementById('uElFatura').textContent = el.proxima_fatura_usd != null ? `$${el.proxima_fatura_usd}` : '--';
+    document.getElementById('uElRen').textContent    = el.proxima_renovacao || '--';
+
+    // Pesquisa
+    const perp = d.perplexity || {};
+    const exa  = d.exa || {};
+    document.getElementById('uPerp').textContent = `${perp.requests_hoje ?? 0} / ${perp.requests_mes ?? 0}`;
+    document.getElementById('uExa').textContent  = `${exa.requests_hoje ?? 0} / ${exa.requests_mes ?? 0}`;
+
+    // Timestamp
+    if (d.atualizado_em) {
+      document.getElementById('uTs').textContent = 'actualizado ' + d.atualizado_em.replace('T',' ').replace('Z','') + ' UTC';
+    }
+  } catch(e) {
+    console.warn('fetchUsage:', e);
+  }
+}
+
+setInterval(() => {
+  if (document.getElementById('panel-consumos').style.display !== 'none') fetchUsage();
+}, 30000);
 </script>
 </body>
 </html>

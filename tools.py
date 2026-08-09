@@ -24,6 +24,11 @@ def _pesquisar_exa(query: str, num_results: int = 5) -> list[dict]:
     if not EXA_API_KEY:
         return []
     try:
+        from usage_tracker import registar_request
+        registar_request("exa")
+    except Exception:
+        pass
+    try:
         from exa_py import Exa
         exa = Exa(api_key=EXA_API_KEY)
         results = exa.search(query, num_results=num_results)
@@ -85,6 +90,11 @@ def _perplexity(query: str, modelo: str, max_tokens: int = 1500) -> str:
     """Chamada base à API Perplexity Sonar."""
     if not PERPLEXITY_API_KEY:
         return ""
+    try:
+        from usage_tracker import registar_request
+        registar_request("perplexity")
+    except Exception:
+        pass
     try:
         r = requests.post(
             "https://api.perplexity.ai/chat/completions",

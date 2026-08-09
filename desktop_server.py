@@ -302,6 +302,18 @@ async def api_runtime_state():
         return JSONResponse({"erro": str(e)}, status_code=500)
 
 
+@app.get("/api/usage")
+async def api_usage():
+    """Consumos em tempo real de todos os serviços — Anthropic, Higgsfield, ElevenLabs, Perplexity, Exa."""
+    try:
+        from usage_tracker import get_all_usage
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, get_all_usage)
+        return JSONResponse(data)
+    except Exception as e:
+        return JSONResponse({"erro": str(e)}, status_code=500)
+
+
 @app.get("/api/claude-usage")
 async def api_claude_usage():
     """Consumo Claude hoje — tokens, custo por agente, circuit breakers."""
