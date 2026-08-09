@@ -2887,7 +2887,7 @@ async def _heartbeat_loop():
                 except Exception as e:
                     _log.error("Pulser erro: %s", e)
 
-            # PAtlas — ciclo diário Etsy (diário às 10h)
+            # PAtlas — ciclo diário Etsy (10h)
             chave_patlas = f"patlas_{agora.strftime('%Y-%m-%d')}"
             if agora.hour == 10 and not _dedup_check(chave_patlas):
                 _dedup_mark(chave_patlas)
@@ -2898,6 +2898,23 @@ async def _heartbeat_loop():
                     _log.info("PAtlas ciclo diário: %s", res_patlas[:100])
                 except Exception as e:
                     _log.error("PAtlas erro: %s", e)
+
+            # Pinterest pins por mercado — horários optimizados por timezone
+            # PT: 19h (hora PT — início de noite Portugal)
+            # DE+ES: 20h (= 21h CET — pós-jantar Alemanha/Espanha)
+            # EN: 21h (= 20h UK / 16h EST — cobertura UK+US)
+            loop = asyncio.get_event_loop()
+            from patlas_agent import publicar_pins_idioma
+            for _hora, _idiomas in [(19, ["pt"]), (20, ["de", "es"]), (21, ["en"])]:
+                for _idioma in _idiomas:
+                    _chave = f"pins_{_idioma}_{agora.strftime('%Y-%m-%d')}"
+                    if agora.hour == _hora and not _dedup_check(_chave):
+                        _dedup_mark(_chave)
+                        try:
+                            _res = await loop.run_in_executor(None, publicar_pins_idioma, _idioma, 2)
+                            _log.info("Pinterest %s: %s", _idioma.upper(), _res[:80])
+                        except Exception as e:
+                            _log.error("Pinterest %s erro: %s", _idioma, e)
 
             # CEO contínuo — processar eventos críticos a cada minuto
             try:

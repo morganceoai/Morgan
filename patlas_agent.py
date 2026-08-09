@@ -654,40 +654,41 @@ def publicar_pin_pinterest(produto: str, idioma: str = "en") -> dict:
     return {"ok": sucesso, "produto": produto, "idioma": idioma, "titulo": titulo}
 
 
-def publicar_pins_diarios() -> str:
-    """Publica 3-5 pins por dia em rotação pelos produtos e idiomas."""
+def publicar_pins_idioma(idioma: str, n: int = 2) -> str:
+    """Publica N pins para um idioma específico em rotação pelos produtos."""
     import random
     produtos = list(PINTEREST_BOARDS.keys())
-    idiomas = ["en", "de", "es", "pt"]
 
     state = _load_state()
     historico = state.get("pins_publicados_hoje", [])
     hoje = date.today().isoformat()
 
-    # Reset diário
     if state.get("pins_data") != hoje:
         state["pins_publicados_hoje"] = []
         state["pins_data"] = hoje
         historico = []
 
-    if len(historico) >= 5:
-        return f"Já publicados {len(historico)} pins hoje."
-
-    # Escolher produto e idioma que ainda não foram publicados hoje
-    combinacoes = [(p, i) for p in produtos for i in idiomas if f"{p}_{i}" not in historico]
+    combinacoes = [p for p in produtos if f"{p}_{idioma}" not in historico]
     if not combinacoes:
-        return "Todas as combinações já publicadas hoje."
+        # Todas publicadas hoje neste idioma — reset só para este idioma
+        historico = [h for h in historico if not h.endswith(f"_{idioma}")]
+        combinacoes = produtos[:]
 
-    seleccao = random.sample(combinacoes, min(3, len(combinacoes)))
+    seleccao = random.sample(combinacoes, min(n, len(combinacoes)))
     resultados = []
-    for produto, idioma in seleccao:
+    for produto in seleccao:
         res = publicar_pin_pinterest(produto, idioma)
         historico.append(f"{produto}_{idioma}")
         resultados.append(f"{'✅' if res['ok'] else '❌'} {produto} ({idioma})")
 
     state["pins_publicados_hoje"] = historico
     _save_state(state)
-    return "Pins publicados hoje:\n" + "\n".join(resultados)
+    return f"Pins {idioma.upper()}:\n" + "\n".join(resultados)
+
+
+def publicar_pins_diarios() -> str:
+    """Wrapper de compatibilidade — publica pins EN (chamado pelo ciclo legacy)."""
+    return publicar_pins_idioma("en", n=2)
 
 
 def analisar_top_performers(semanas: int = 4) -> str:
