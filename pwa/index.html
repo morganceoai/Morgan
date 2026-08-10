@@ -61,8 +61,8 @@ body::after {
   position:absolute; pointer-events:none; z-index:6; font-size:7px; letter-spacing:1.5px;
   color:rgba(0,212,255,0.3); text-transform:uppercase; font-family:'SF Mono',monospace;
 }
-.hud-tag-tl { top:18px; left:56px; }
-.hud-tag-tr { top:18px; right:56px; text-align:right; }
+.hud-tag-tl { top:calc(var(--safe-t) + 38px); left:56px; }
+.hud-tag-tr { top:calc(var(--safe-t) + 38px); right:56px; text-align:right; }
 .hud-tag-bl { bottom:84px; left:56px; }
 
 /* ── HEADER ── */
@@ -750,7 +750,7 @@ scene.add(sysGroup);
 let ellipseY = 0.44;
 function applySysLayout() {
   const portrait = W < H;
-  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 / 300) : 1;
+  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 * 0.88 / 300) : 1;
   sysGroup.scale.setScalar(scale);
   ellipseY = portrait ? 0.75 * (H / W) : 0.44;
   const standalone = window.navigator.standalone;
@@ -761,8 +761,8 @@ const ringScale = 1; // agents use full ring values; sysGroup.scale handles fitt
 
 const ceoGroup = new THREE.Group();
 sysGroup.add(ceoGroup);
-const ceoPts  = particleSphere(0x00d4ff, 3500, 62, 1.0, 0.58, 0.25);
-const ceoPts2 = particleSphere(0x00ffff, 1200, 74, 0.7, 0.30, 0.46);
+const ceoPts  = particleSphere(0x00d4ff, 3500, 93, 1.0, 0.58, 0.25);
+const ceoPts2 = particleSphere(0x00ffff, 1200, 111, 0.7, 0.30, 0.46);
 ceoGroup.add(ceoPts); ceoGroup.add(ceoPts2);
 scene.add(new THREE.PointLight(0xffdd88, 4, 500));
 
