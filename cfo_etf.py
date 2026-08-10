@@ -20,7 +20,7 @@ _ETF_STATE_FILE = _BASE / "memory" / "cfo_etf_state.json"
 
 # ETFs monitorizados com metadados
 ETF_UNIVERSE = {
-    "CSPX": {
+    "CSPX.L": {
         "nome": "iShares Core S&P 500 UCITS ETF",
         "motor": "M4",
         "tipo": "acumulacao",
@@ -60,7 +60,7 @@ ETF_UNIVERSE = {
         "nome": "iShares MSCI World Quality Dividend ESG",
         "motor": "M2",
         "tipo": "distribuicao",
-        "benchmark_ticker": "^MSCI",
+        "benchmark_ticker": "URTH",
         "distribui_dividendos": True,
         "ter_pct": 0.38,
         "notas": "Dividendos — atenção à fiscalidade PT (28% sem exclusão)",
