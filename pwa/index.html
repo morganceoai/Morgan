@@ -750,11 +750,11 @@ scene.add(sysGroup);
 // Also shift scene UP to visually centre in the area below the header.
 function applySysLayout() {
   const portrait = W < H;
-  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 * 0.82 / 300) : 1;
+  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 * 0.90 / 300) : 1;
   sysGroup.scale.setScalar(scale);
-  // raise scene to compensate for header eating into usable area
-  // push scene up: compensate for header + bottom bar asymmetry
-  sysGroup.position.y = portrait ? 6 : 0;
+  // standalone = PWA em home screen (sem chrome Safari em baixo)
+  const standalone = window.navigator.standalone;
+  sysGroup.position.y = portrait ? (standalone ? 6 : 38) : 0;
 }
 applySysLayout();
 const ringScale = 1; // agents use full ring values; sysGroup.scale handles fitting
