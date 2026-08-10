@@ -56,14 +56,14 @@ body::after {
 .corner { position:absolute; pointer-events:none; z-index:5; }
 .corner-tl { top:14px; left:14px; }
 .corner-tr { top:14px; right:14px; transform:scaleX(-1); }
-.corner-bl { bottom:80px; left:14px; transform:scaleY(-1); }
+.corner-bl { bottom:calc(var(--safe-b) + 58px); left:14px; transform:scaleY(-1); }
 .hud-tag {
   position:absolute; pointer-events:none; z-index:6; font-size:7px; letter-spacing:1.5px;
   color:rgba(0,212,255,0.3); text-transform:uppercase; font-family:'SF Mono',monospace;
 }
 .hud-tag-tl { top:calc(var(--safe-t) + 38px); left:56px; }
 .hud-tag-tr { top:calc(var(--safe-t) + 38px); right:56px; text-align:right; }
-.hud-tag-bl { bottom:84px; left:56px; }
+.hud-tag-bl { bottom:calc(var(--safe-b) + 62px); left:56px; }
 
 /* ── HEADER ── */
 .header {
@@ -950,7 +950,7 @@ function animate() {
 
   const ceoWp = ceoGroup.getWorldPosition(new THREE.Vector3());
   const ceoSpCenter = project(ceoWp);
-  const ceoLabelPxOff = (ceoGroup.scale.x * 130 + 18) * sysGroup.scale.x;
+  const ceoLabelPxOff = (ceoGroup.scale.x * 180 + 18) * sysGroup.scale.x;
   ceoLblEl.style.left    = ceoSpCenter.x+'px';
   ceoLblEl.style.top     = (ceoSpCenter.y + ceoLabelPxOff)+'px';
   ceoLblEl.style.opacity = centeredId ? '0.7' : '0.6';
