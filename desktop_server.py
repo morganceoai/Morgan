@@ -952,7 +952,7 @@ async def chat_stream(request: Request):
 
     async def generate():
         full_reply = ""
-        with claude.messages.stream(
+        with claude._client.messages.stream(
             model="claude-sonnet-4-6",
             max_tokens=512,
             system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}],
