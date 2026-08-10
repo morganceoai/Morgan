@@ -40,7 +40,6 @@ from coach_agent import get_coach_reply
 from cfo_agent import get_cfo_reply
 from patlas_agent import get_patlas_reply
 from pulser_agent import get_pulser_reply
-from trading_bot import get_status as get_bot_status
 from push_service import save_subscription, send_push, VAPID_PUBLIC_KEY
 from episodic_memory import registar_evento, get_contexto_agente
 from config_service import is_pausado, pausar, retomar, hora_silencio, modelo as cfg_modelo, confianca_limiar
@@ -1481,15 +1480,6 @@ async def ws_transcribe(websocket: WebSocket):
         except Exception:
             pass
 
-@app.get("/api/bot")
-async def bot_status():
-    """Estado atual do trading bot (sem fazer ciclo)."""
-    try:
-        status = get_bot_status()
-        return JSONResponse(status)
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
-
 
 @app.get("/api/metrics")
 async def get_metrics():
@@ -2141,15 +2131,6 @@ async def sol_trocar_estrategia(request: Request):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
-@app.get("/api/bot/multi")
-async def bot_multi_status():
-    """Estado do trading bot em modo multi-par."""
-    try:
-        from trading_bot import get_multi_status
-        return JSONResponse(get_multi_status())
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
-
 
 @app.get("/api/portfolio")
 async def get_portfolio():
@@ -2289,9 +2270,11 @@ def _should_run_scout() -> bool:
 
 
 async def _run_briefing(hora: int):
-    """Briefing matinal às 7h — CEO orquestra, Coach fornece secção de futebol, CFO o trading."""
+    """Briefing matinal às 7h — CEO orquestra, todos os agentes contribuem com dados de ficheiro (sem custo).
+    Só Coach chama Claude se houver jogo/novidade real. Creator: tarefa futura."""
     loop = asyncio.get_event_loop()
     agora = _agora_lisboa()
+    hoje = agora.strftime("%Y-%m-%d")
 
     # Meteo
     meteo = ""
@@ -2302,72 +2285,128 @@ async def _run_briefing(hora: int):
     except Exception:
         pass
 
-    # CFO — trading (não pertence ao Coach)
-    bot_str = ""
+    # ── CFO — lê ficheiros de estado, sem chamada Claude ──────────────────────
+    cfo_bloco = "CFO: dados indisponíveis."
     try:
-        from trading_bot import get_status as _bot_status
-        b = _bot_status()
-        bot_str = (
-            f"{'ATIVO' if b.get('active') else 'PARADO'} | "
-            f"PnL hoje: {b.get('pnl_today', 0):+.2f} USDT | "
-            f"PnL total: {b.get('pnl_total', 0):+.2f} USDT"
-        )
+        import json as _j
+        _pf = Path(__file__).parent / "memory" / "cfo_phase_cache.json"
+        fase_str = ""
+        bot_str = "Bots activos: Grid BTC | Grid ETH | SOL"
+        if _pf.exists():
+            _pd = _j.loads(_pf.read_text())
+            fase_str = f" | Fase: {_pd.get('estrategia_recomendada', '')} ({_pd.get('confianca_pct', 0)}%)"
+        cfo_bloco = bot_str + fase_str
     except Exception:
-        pass
+        cfo_bloco = bot_str
 
-    # Coach — secção de futebol (próximo jogo, Moreirense, Liga Portugal)
-    coach_str = ""
-    try:
-        from coach_agent import get_coach_reply
-        coach_str = await loop.run_in_executor(
-            None,
-            lambda: get_coach_reply("Resume em 2 linhas: próximo jogo do Moreirense e posição na tabela. Só futebol, sem mais nada.")
-        )
-        coach_str = coach_str.replace("[COACH]", "").strip()
-    except Exception:
-        pass
-
-    # Scout
+    # ── Scout — lê ficheiro, sem chamada Claude ────────────────────────────────
     scout_data = load_scout()
     aprovadas_raw = scout_data.get("aprovadas", [])
     aprovadas = [a if isinstance(a, str) else a.get("nome", str(a)) for a in aprovadas_raw]
     oport_top = list(scout_data.get("oportunidades", {}).keys())[:1]
-
-    # Delta reporting — memória episódica + Zep temporal
-    from episodic_memory import registar_evento
-    coach_novidade = registar_evento("coach", "moreirense_briefing", coach_str) if coach_str else False
-    bot_novidade = registar_evento("cfo", "trading_briefing", bot_str) if bot_str else False
     scout_texto = oport_top[0] if oport_top else ""
-    scout_novidade = registar_evento("scout", "oportunidade_top", scout_texto) if scout_texto else False
+    scout_bloco = f"Oportunidade prioritária: {scout_texto}" if scout_texto else "Sem oportunidades novas."
+    if aprovadas:
+        scout_bloco += f" | Aprovadas em curso: {', '.join(aprovadas[:2])}"
 
-    # Zep: regista o briefing completo com timestamp real para consulta temporal futura
+    # ── Coach — só chama Claude se houver jogo nos próximos 3 dias ────────────
+    coach_bloco = ""
     try:
-        from zep_service import registar_evento as zep_reg
-        ts_label = datetime.now().strftime("%d/%m/%Y %H:%M")
-        zep_reg("ceo", "briefing_manha", f"Briefing {ts_label} | Coach: {coach_str[:200]} | CFO: {bot_str[:100]} | Scout: {scout_texto[:100]}")
-        if coach_str:
-            zep_reg("coach", "moreirense_briefing", coach_str[:300])
-        if bot_str:
-            zep_reg("cfo", "trading_briefing", bot_str[:200])
+        import json as _j
+        _cf = Path(__file__).parent / "memory" / "health_baseline.json"
+        proximo_jogo = ""
+        if _cf.exists():
+            _cd = _j.loads(_cf.read_text())
+            proximo_jogo = _cd.get("proximo_jogo", "")
+        from datetime import date as _date, timedelta as _td
+        _jogo_data = None
+        if proximo_jogo:
+            try:
+                _jogo_data = _date.fromisoformat(proximo_jogo[:10])
+            except Exception:
+                pass
+        _em_breve = _jogo_data and (_jogo_data - _date.today()).days <= 3
+        if _em_breve:
+            from coach_agent import get_coach_reply
+            coach_str = await loop.run_in_executor(
+                None,
+                lambda: get_coach_reply("Resume em 2 linhas: próximo jogo do Moreirense e posição na tabela. Só futebol.")
+            )
+            coach_bloco = coach_str.replace("[COACH]", "").strip()
+        else:
+            # Sem chamada Claude — usa dado do ficheiro
+            coach_bloco = f"Próximo jogo: {proximo_jogo}" if proximo_jogo else "Sem jogo próximo."
+    except Exception:
+        coach_bloco = "Dados de futebol indisponíveis."
+
+    # ── Solver — lê incident_log, sem chamada Claude ───────────────────────────
+    solver_bloco = "Sistema sem erros registados hoje."
+    try:
+        import json as _j
+        _il = Path(__file__).parent / "memory" / "incident_log.jsonl"
+        erros_hoje = []
+        if _il.exists():
+            for line in _il.read_text().splitlines()[-50:]:
+                try:
+                    d = _j.loads(line)
+                    if d.get("timestamp", "").startswith(hoje):
+                        erros_hoje.append(d.get("error", d.get("message", "erro"))[:80])
+                except Exception:
+                    pass
+        if erros_hoje:
+            solver_bloco = f"Solver: {len(erros_hoje)} erro(s) hoje — {erros_hoje[0]}"
     except Exception:
         pass
 
-    coach_bloco = coach_str if coach_str else "Dados de futebol indisponíveis."
-    if not coach_novidade and coach_str:
-        coach_bloco += "\n[sem alterações desde ontem]"
+    # ── PAtlas — lê patlas_state.json, sem chamada Claude ─────────────────────
+    patlas_bloco = "PAtlas: dados indisponíveis."
+    try:
+        import json as _j
+        _pp = Path(__file__).parent / "memory" / "patlas_state.json"
+        if _pp.exists():
+            _pd = _j.loads(_pp.read_text())
+            patlas_bloco = (
+                f"PAtlas: {_pd.get('listings_activos', 0)} listings | "
+                f"Vendas 28d: {_pd.get('vendas_28d', 0)} | "
+                f"Total: {_pd.get('vendas_total', 0)} | "
+                f"Fase: {_pd.get('fase', '')}"
+            )
+    except Exception:
+        pass
 
-    bot_bloco = bot_str if bot_str else "Bot indisponível."
-    if not bot_novidade and bot_str:
-        bot_bloco += " [sem alterações]"
+    # ── Pulser — lê pulser_state.json, sem chamada Claude ─────────────────────
+    pulser_bloco = "Pulser: dados indisponíveis."
+    try:
+        import json as _j
+        _pu = Path(__file__).parent / "memory" / "pulser_state.json"
+        if _pu.exists():
+            _pd = _j.loads(_pu.read_text())
+            pulser_bloco = (
+                f"Pulser: {_pd.get('subscribers', 0)} subscribers | "
+                f"Open rate: {_pd.get('open_rate', 0)}% | "
+                f"Fase: {_pd.get('fase', '')}"
+            )
+    except Exception:
+        pass
 
-    scout_bloco = (
-        f"Oportunidade prioritária: {scout_texto}" if scout_texto else "Sem oportunidades novas."
-    )
-    if scout_texto and not scout_novidade:
-        scout_bloco += " [já reportada]"
-    if aprovadas:
-        scout_bloco += f"\nAprovadas em curso: {', '.join(aprovadas[:2])}"
+    # ── Delta reporting ────────────────────────────────────────────────────────
+    try:
+        from episodic_memory import registar_evento
+        registar_evento("cfo", "trading_briefing", cfo_bloco)
+        registar_evento("scout", "oportunidade_top", scout_texto)
+        registar_evento("coach", "moreirense_briefing", coach_bloco)
+    except Exception:
+        pass
 
+    # ── Zep ───────────────────────────────────────────────────────────────────
+    try:
+        from zep_service import registar_evento as zep_reg
+        ts_label = datetime.now().strftime("%d/%m/%Y %H:%M")
+        zep_reg("ceo", "briefing_manha", f"Briefing {ts_label} | CFO: {cfo_bloco[:100]} | Scout: {scout_bloco[:100]} | Coach: {coach_bloco[:100]}")
+    except Exception:
+        pass
+
+    # ── CEO compila — uma chamada Claude ──────────────────────────────────────
     prompt = f"""És o Morgan CEO. Gera o briefing matinal das 7h para o Vasco Botelho da Costa.
 Data: {agora.strftime('%d/%m/%Y')}.
 {f'Tempo: {meteo}' if meteo else ''}
@@ -2375,28 +2414,35 @@ Data: {agora.strftime('%d/%m/%Y')}.
 FUTEBOL (Coach):
 {coach_bloco}
 
-CFO — TRADING:
-{bot_bloco}
+CFO — FINANÇAS:
+{cfo_bloco}
 
 SCOUT:
 {scout_bloco}
+
+SOLVER:
+{solver_bloco}
+
+PATLAS (Etsy + Pinterest):
+{patlas_bloco}
+
+PULSER (Newsletter):
+{pulser_bloco}
 
 MEMÓRIA DO VASCO:
 {load_memory()}
 
 Instruções:
-- Primeira linha: futebol (jogo ou situação na tabela) — omite se [sem alterações desde ontem]
-- Segunda linha: trading (CFO — 1 linha, factual) — omite se [sem alterações]
-- Terceira linha: oportunidade prioritária ou negócio em curso — omite se [já reportada]
-- Se não há novidades em nenhuma área, diz isso directamente numa linha
+- Compila num briefing coeso e directo — só o que é relevante
+- Omite secções sem novidades com uma palavra ("limpo" ou "sem alterações")
 - Tom de braço direito a falar ao chefe de manhã
-- Máximo 5 linhas. Sem emojis. Português europeu."""
+- Máximo 8 linhas. Sem emojis. Português europeu."""
 
     response = await loop.run_in_executor(
         None,
         lambda: claude.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=300,
+            max_tokens=400,
             system=[{"type": "text", "text": get_system_prompt(), "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}]
         )
@@ -2617,18 +2663,8 @@ async def _run_daily_report():
         n_trocas = 0
         resumo_conv = "  (erro ao carregar conversas)"
 
-    # Estado do trading bot
-    try:
-        from trading_bot import get_status
-        bot = get_status()
-        bot_str = (
-            f"PnL hoje: {bot.get('pnl_today', 0):+.4f} USDT | "
-            f"PnL total: {bot.get('pnl_total', 0):+.4f} USDT | "
-            f"Trades: {bot.get('trades', 0)} | "
-            f"Sinal: {bot.get('signal', 'hold')}"
-        )
-    except Exception:
-        bot_str = "indisponível"
+    # Estado dos bots de trading
+    bot_str = "Grid BTC | Grid ETH | SOL — ver /api/grid /api/eth-grid /api/sol-bot"
 
     # Scout — oportunidades aprovadas
     try:
@@ -2825,11 +2861,6 @@ async def _heartbeat_loop():
             chave_pnl = f"reset_pnl_{agora.strftime('%Y-%m-%d')}"
             if agora.hour == 7 and not _dedup_check(chave_pnl):
                 _dedup_mark(chave_pnl)
-                try:
-                    from trading_bot import reset_daily_pnl
-                    asyncio.get_event_loop().run_in_executor(None, reset_daily_pnl)
-                except Exception:
-                    pass
                 try:
                     from sol_bot import reset_daily_pnl as sol_reset_pnl
                     asyncio.get_event_loop().run_in_executor(None, sol_reset_pnl)

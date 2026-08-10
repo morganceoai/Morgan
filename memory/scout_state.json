@@ -5,7 +5,10 @@
   "oportunidades_rejeitadas": [],
   "ultima_missao_a": "",
   "ultima_missao_b": "",
-  "missoes_c": {},
-  "ultima_missao_d": "",
+  "missoes_c": {
+    "etsy_planneratlas": "2026-08-07",
+    "newsletter_ai_pulse": "2026-08-07"
+  },
+  "ultima_missao_d": "2026-08-10",
   "missoes_completadas": 0
 }

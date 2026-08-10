@@ -722,7 +722,7 @@ def missao_d_trading_estrategia() -> str:
     """
     Missão D — corre a cada 14 dias.
     Pesquisa estratégias de trading na Binance: novas estratégias, backtests publicados,
-    mudanças de mercado, se a estratégia actual (Supertrend 4h BTC/USDT) ainda é válida.
+    mudanças de mercado. Avalia as 3 estratégias activas: Grid (BTC/ETH), DCA e Trailing Stop (SOL).
     """
     state = _load_state()
     hoje = date.today().strftime("%Y-%m-%d")
@@ -738,17 +738,17 @@ def missao_d_trading_estrategia() -> str:
 Pesquisa dados reais. Cita fontes. PT-PT. Máximo 20 linhas.
 
 Responde:
-1. A estratégia Supertrend 4h BTC/USDT ainda é válida? (win rate publicado, condições actuais)
-2. Que alterações de parâmetros têm melhor performance no mercado actual?
-3. Há estratégias alternativas com melhor expectancy para BTC com $100-500 capital?
-4. Condições de mercado actuais (trend, volatilidade, dominance BTC)
-5. Recomendação: manter estratégia / ajustar parâmetros / considerar alternativa
+1. Condições actuais de mercado (fase: bull/flat/bear, volatilidade, dominância BTC)
+2. Performance de Grid Bot em BTC/ETH nas condições actuais
+3. Performance de DCA em mercado actual
+4. Trailing Stop — parâmetros óptimos actuais para BTC/ETH/SOL
+5. Recomendação de estratégia para cada par (BTC, ETH, SOL) com base na fase actual
 6. Proposta concreta para o CFO avaliar"""
 
     msgs = [{"role": "user", "content": (
-        "Analisa a estratégia de trading actual do Morgan (Supertrend BTC/USDT 4h, capital $100 USDT, Binance live). "
-        "Pesquisa resultados recentes publicados desta estratégia e alternativas. "
-        "Contexto: operador com pouco tempo, quer rendimento passivo, não quer monitorizar activamente."
+        "Analisa as estratégias de trading activas do Morgan: Grid Bot (BTC/USDT e ETH/USDT), "
+        "DCA (SOL/USDT), e avalia quando usar Trailing Stop. Capital $100 por bot (a escalar para $1000). "
+        "Binance spot, sem alavancagem. Pesquisa resultados recentes e condições actuais de mercado."
     )}]
 
     relatorio = _chamar_claude_scout(system, msgs, max_tokens=1500)

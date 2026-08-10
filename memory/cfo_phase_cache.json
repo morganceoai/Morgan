@@ -1,23 +1,23 @@
 {
-  "ts": "2026-08-06T16:27:36.407192",
-  "symbol": "SOL/USDT",
+  "ts": "2026-08-10T10:39:13.957275",
+  "symbol": "BTC/USDT",
   "fase_estrutural": {
-    "fase": "bear",
-    "preco": 73.0,
-    "sma200": 84.0,
-    "distancia_sma200_pct": -12.9,
+    "fase": "flat",
+    "preco": 65082.0,
+    "sma200": 70050.0,
+    "distancia_sma200_pct": -7.1,
     "acima_sma200": false,
-    "rsi14": 41.4,
-    "razao": "Preço abaixo SMA200 (-12.9%), RSI=41.4"
+    "rsi14": 60.8,
+    "razao": "Preço abaixo SMA200 (-7.1%), RSI=60.8"
   },
   "fase_curto_prazo": {
-    "tendencia": "baixa",
-    "ema9": 73.0,
-    "ema21": 74.0,
-    "diferenca_pct": -0.2
+    "tendencia": "lateral",
+    "ema9": 65173.0,
+    "ema21": 65140.0,
+    "diferenca_pct": 0.05
   },
   "funding_rate": {
-    "rate_pct": -0.0088,
+    "rate_pct": 0.0093,
     "sentimento": "neutro"
   },
   "dominancia_btc": {
@@ -29,10 +29,12 @@
       "data": "2026-08-13",
       "evento": "US CPI Julho 2026",
       "impacto": "alto",
-      "dias_para": 7
+      "dias_para": 3
     }
   ],
-  "estrategia_recomendada": "dca_apenas",
-  "estrategia_razao": "Bear market — parar grid, apenas DCA de longo prazo",
-  "alertas": []
+  "estrategia_recomendada": "grid_bot",
+  "estrategia_razao": "Mercado lateral — grid bot é a estratégia óptima",
+  "alertas": [
+    "EVENTO MACRO EM 3d: US CPI Julho 2026 — reduzir exposição"
+  ]
 }

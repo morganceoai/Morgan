@@ -160,7 +160,7 @@ def detectar_regime(symbol: str = "BTC/USDT", timeframe: str = "1h", lookback: i
         # Estratégia recomendada por regime
         estrategia_recomendada = {
             "LATERAL":  "grid",
-            "TRENDING": "supertrend",
+            "TRENDING": "trailing_stop",
             "VOLATILE": "reduzir_exposicao",
         }.get(regime, "nenhuma")
 

@@ -9,6 +9,20 @@
   "ultimo_envio": "",
   "receita_total": 0.0,
   "alertas_activos": [],
-  "ciclos_executados": 0,
-  "criado_em": "2026-08-03T13:31:17.074352"
+  "ciclos_executados": 2,
+  "criado_em": "2026-08-03T13:31:17.074352",
+  "metrics_history": [
+    {
+      "timestamp": "2026-08-09T18:00:40.764415",
+      "subscribers": 0,
+      "open_rate": 0.0,
+      "receita_total": 0.0
+    },
+    {
+      "timestamp": "2026-08-09T18:54:37.697618",
+      "subscribers": 0,
+      "open_rate": 0.0,
+      "receita_total": 0.0
+    }
+  ]
 }

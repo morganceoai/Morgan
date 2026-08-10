@@ -1,5 +1,28 @@
 {
-  "eventos": [],
-  "contadores": {},
+  "eventos": [
+    {
+      "id": "pulser_update_20260809_180040",
+      "agente": "pulser",
+      "tipo": "update",
+      "mensagem": "Ciclo semanal concluído: Pulser — ciclo semanal completo | Subs: 0 | Fase: setup | Alertas: 0",
+      "nivel": "aviso",
+      "dados": {},
+      "ts": "2026-08-09T18:00:40.765670",
+      "processado": false
+    },
+    {
+      "id": "pulser_update_20260809_185437",
+      "agente": "pulser",
+      "tipo": "update",
+      "mensagem": "Ciclo semanal concluído: Pulser — ciclo semanal completo | Subs: 0 | Fase: setup | Alertas: 0",
+      "nivel": "aviso",
+      "dados": {},
+      "ts": "2026-08-09T18:54:37.702698",
+      "processado": false
+    }
+  ],
+  "contadores": {
+    "pulser_update": 2
+  },
   "ultimo_processado": ""
 }

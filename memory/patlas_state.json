@@ -13,5 +13,180 @@
   "ultima_verificacao": "",
   "alertas_activos": [],
   "etsy_configurado": false,
-  "criado_em": "2026-08-03T13:31:17.122273"
+  "criado_em": "2026-08-03T13:31:17.122273",
+  "metrics_history": [
+    {
+      "timestamp": "2026-08-07T07:59:34.244561",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T08:03:45.005573",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T08:42:36.435485",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T08:46:12.732461",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T09:22:03.080482",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T09:52:53.677585",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T10:00:52.184804",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T10:20:43.139181",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T11:47:06.881281",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T11:50:20.200470",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T12:23:07.184535",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T12:32:41.558697",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T12:45:12.685084",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T12:50:58.975111",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T13:11:13.389230",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T13:18:21.788301",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T19:18:14.889345",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T19:35:56.402005",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-07T19:38:01.986958",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-08T10:00:53.153523",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-08T16:05:24.116232",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-08T16:15:08.243075",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-09T14:28:03.976358",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    },
+    {
+      "timestamp": "2026-08-10T10:00:54.281815",
+      "vendas_total": 0,
+      "receita_total": 0.0,
+      "ctr_medio": 0.0,
+      "conversion_rate": 0.0
+    }
+  ],
+  "pins_publicados_hoje": [
+    "monthly_planner_en",
+    "meal_planner_en"
+  ],
+  "pins_data": "2026-08-10"
 }

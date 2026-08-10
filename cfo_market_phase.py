@@ -1,14 +1,17 @@
 """
-CFO Market Phase — Análise de fase de mercado multi-timeframe para o CFO.
+CFO Market Phase — Análise de fase de mercado multi-sinal para o CFO.
 
-Vai além do cfo_market.py (regime simples) — combina:
-  - SMA200 + RSI14 (timeframe diário) → fase estrutural
-  - EMA9/21 (30m) → fase de curto prazo
+Fontes combinadas:
+  - SMA200 + RSI14 (diário) → fase estrutural
+  - EMA9/21 (30m) → momentum de curto prazo
+  - Volume spike (1h) → detecção de movimentos anómalos
   - Funding rate Binance → sentimento alavancado
-  - Dominância BTC → rotação de capital cripto
-  - Próximos eventos macro (hard-coded + actualizável)
+  - Dominância BTC (CoinGecko) → rotação de capital
+  - Fear & Greed Index (alternative.me) → sentimento geral do mercado
+  - Calendário económico (ForexFactory) → eventos macro de alto impacto
 
-Output estruturado para o ciclo de decisão do CFO.
+Estratégias: trailing_stop (bull) | grid (flat) | dca (bear)
+Decisão só actua quando ≥4 sinais concordam.
 """
 import os
 import json
@@ -17,12 +20,12 @@ from pathlib import Path
 from typing import Literal
 
 _CACHE_FILE = Path(__file__).parent / "memory" / "cfo_phase_cache.json"
-_CACHE_TTL_MINUTES = 30  # fase não muda ao minuto
+_CACHE_TTL_MINUTES = 30
 
 Phase = Literal["bull", "bear", "flat", "unknown"]
 
 
-# ── Cache ────────────────────────────────────────────────────────────────────
+# ── Cache ─────────────────────────────────────────────────────────────────────
 
 def _load_cache() -> dict:
     try:
@@ -40,18 +43,18 @@ def _save_cache(data: dict):
     _CACHE_FILE.write_text(json.dumps({**data, "ts": datetime.now().isoformat()}, ensure_ascii=False, indent=2))
 
 
-# ── Exchange ─────────────────────────────────────────────────────────────────
+# ── Exchange ──────────────────────────────────────────────────────────────────
 
-def _get_exchange():
+def _get_exchange(market_type: str = "spot"):
     import ccxt
     return ccxt.binance({
         "apiKey": os.getenv("BINANCE_API_KEY", ""),
         "secret": os.getenv("BINANCE_SECRET_KEY", ""),
-        "options": {"defaultType": "spot"},
+        "options": {"defaultType": market_type},
     })
 
 
-# ── Indicadores ──────────────────────────────────────────────────────────────
+# ── Indicadores ───────────────────────────────────────────────────────────────
 
 def _sma(closes: list, period: int) -> float | None:
     if len(closes) < period:
@@ -79,11 +82,10 @@ def _rsi(closes: list, period: int = 14) -> float | None:
     avg_loss = sum(losses) / period
     if avg_loss == 0:
         return 100.0
-    rs = avg_gain / avg_loss
-    return round(100 - (100 / (1 + rs)), 1)
+    return round(100 - (100 / (1 + avg_gain / avg_loss)), 1)
 
 
-# ── Fase estrutural (diário) ─────────────────────────────────────────────────
+# ── Fase estrutural (diário) ──────────────────────────────────────────────────
 
 def _fase_estrutural(symbol: str = "BTC/USDT") -> dict:
     """SMA200 + RSI14 em timeframe diário → fase de longo prazo."""
@@ -122,7 +124,7 @@ def _fase_estrutural(symbol: str = "BTC/USDT") -> dict:
         return {"fase": "unknown", "razao": str(e)}
 
 
-# ── Fase curto prazo (30m) ────────────────────────────────────────────────────
+# ── Momentum curto prazo (30m) ────────────────────────────────────────────────
 
 def _fase_curto_prazo(symbol: str = "BTC/USDT") -> dict:
     """EMA9/21 em 30m → momentum de curto prazo."""
@@ -154,31 +156,69 @@ def _fase_curto_prazo(symbol: str = "BTC/USDT") -> dict:
         return {"tendencia": "unknown", "erro": str(e)}
 
 
+# ── Volume spike (1h) ─────────────────────────────────────────────────────────
+
+def _volume_spike(symbol: str = "BTC/USDT") -> dict:
+    """
+    Detecta spikes de volume anómalos em 1h vs média das últimas 24h.
+    Volume >3x da média = sinal de movimentação significativa (possível reversão ou crash).
+    """
+    try:
+        ex = _get_exchange()
+        ohlcv = ex.fetch_ohlcv(symbol, "1h", limit=25)
+        volumes = [c[5] for c in ohlcv]
+
+        vol_actual = volumes[-1]
+        vol_medio_24h = sum(volumes[-25:-1]) / 24
+
+        ratio = vol_actual / vol_medio_24h if vol_medio_24h > 0 else 1.0
+        ratio = round(ratio, 2)
+
+        if ratio >= 5:
+            alerta = "CRÍTICO"
+            descricao = f"Volume {ratio}x da média — possível crash ou pump em curso"
+        elif ratio >= 3:
+            alerta = "ALTO"
+            descricao = f"Volume {ratio}x da média — movimento significativo em curso"
+        elif ratio >= 2:
+            alerta = "MODERADO"
+            descricao = f"Volume {ratio}x da média — actividade acima do normal"
+        else:
+            alerta = "NORMAL"
+            descricao = f"Volume normal ({ratio}x da média)"
+
+        return {
+            "ratio_vs_media": ratio,
+            "alerta": alerta,
+            "descricao": descricao,
+            "volume_actual": round(vol_actual, 0),
+            "volume_medio_24h": round(vol_medio_24h, 0),
+        }
+    except Exception as e:
+        return {"ratio_vs_media": None, "alerta": "indisponível", "erro": str(e)}
+
+
 # ── Funding rate ──────────────────────────────────────────────────────────────
 
 def _funding_rate(symbol: str = "BTC/USDT") -> dict:
     """Funding rate de futuros Binance — indica sentimento alavancado."""
     try:
-        import ccxt
-        ex_fut = ccxt.binance({
-            "apiKey": os.getenv("BINANCE_API_KEY", ""),
-            "secret": os.getenv("BINANCE_SECRET_KEY", ""),
-            "options": {"defaultType": "future"},
-        })
+        ex_fut = _get_exchange("future")
         info = ex_fut.fetch_funding_rate(symbol)
-        rate = info.get("fundingRate", 0) * 100  # em percentagem
+        rate = info.get("fundingRate", 0) * 100
 
-        if rate > 0.05:
+        if rate > 0.1:
+            sentimento = "extremamente sobrecomprado — risco de long squeeze"
+        elif rate > 0.05:
             sentimento = "sobrecomprado (longs pagam shorts)"
+        elif rate < -0.05:
+            sentimento = "extremamente sobrevendido — risco de short squeeze"
         elif rate < -0.01:
             sentimento = "sobrevendido (shorts pagam longs)"
         else:
             sentimento = "neutro"
 
-        return {
-            "rate_pct": round(rate, 4),
-            "sentimento": sentimento,
-        }
+        return {"rate_pct": round(rate, 4), "sentimento": sentimento}
     except Exception as e:
         return {"rate_pct": None, "sentimento": "indisponível", "erro": str(e)}
 
@@ -186,65 +226,133 @@ def _funding_rate(symbol: str = "BTC/USDT") -> dict:
 # ── Dominância BTC ────────────────────────────────────────────────────────────
 
 def _dominancia_btc() -> dict:
-    """Dominância BTC via CoinGecko (sem API key necessária)."""
+    """Dominância BTC via CoinGecko."""
     try:
         import urllib.request
-        url = "https://api.coingecko.com/api/v3/global"
-        req = urllib.request.Request(url, headers={"User-Agent": "Morgan-CFO/1.0"})
+        req = urllib.request.Request(
+            "https://api.coingecko.com/api/v3/global",
+            headers={"User-Agent": "Morgan-CFO/1.0"}
+        )
         with urllib.request.urlopen(req, timeout=8) as r:
             data = json.loads(r.read())
-        dom = data["data"]["market_cap_percentage"].get("btc", 0)
-        dom = round(dom, 1)
+        dom = round(data["data"]["market_cap_percentage"].get("btc", 0), 1)
 
         if dom > 60:
-            interpretacao = "dominância alta — altcoins a sofrer, capital concentrado em BTC"
+            interpretacao = "alta — capital concentrado em BTC, altcoins a sofrer"
         elif dom < 45:
-            interpretacao = "dominância baixa — altcoins a ganhar força (altseason possível)"
+            interpretacao = "baixa — altcoins a ganhar (altseason possível)"
         else:
-            interpretacao = "dominância neutra"
+            interpretacao = "neutra"
 
         return {"dominancia_pct": dom, "interpretacao": interpretacao}
     except Exception as e:
         return {"dominancia_pct": None, "interpretacao": "indisponível", "erro": str(e)}
 
 
-# ── Eventos macro ─────────────────────────────────────────────────────────────
+# ── Fear & Greed Index ────────────────────────────────────────────────────────
+
+def _fear_greed() -> dict:
+    """Fear & Greed Index via alternative.me — sentimento geral do mercado (0-100)."""
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.alternative.me/fng/?limit=1",
+            headers={"User-Agent": "Morgan-CFO/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=8) as r:
+            data = json.loads(r.read())
+        entry = data["data"][0]
+        valor = int(entry["value"])
+        classificacao = entry["value_classification"]
+
+        if valor <= 20:
+            sinal = "bear"
+            descricao = "Medo extremo — oportunidade histórica de compra (DCA)"
+        elif valor <= 40:
+            sinal = "bear"
+            descricao = "Medo — mercado pessimista, DCA favorecido"
+        elif valor <= 60:
+            sinal = "flat"
+            descricao = "Neutro — sem sinal claro"
+        elif valor <= 80:
+            sinal = "bull"
+            descricao = "Ganância — mercado optimista, Trailing Stop a monitorizar"
+        else:
+            sinal = "bull"
+            descricao = "Ganância extrema — risco de reversão iminente"
+
+        return {
+            "valor": valor,
+            "classificacao": classificacao,
+            "sinal": sinal,
+            "descricao": descricao,
+        }
+    except Exception as e:
+        return {"valor": None, "classificacao": "indisponível", "sinal": "unknown", "erro": str(e)}
+
+
+# ── Calendário económico ──────────────────────────────────────────────────────
 
 def _eventos_macro_proximos() -> list[dict]:
     """
-    Calendário de eventos macro de alto impacto.
-    Actualizar manualmente ou via feed externo quando disponível.
-    Retorna eventos nos próximos 14 dias.
+    Eventos macro de alto impacto nos próximos 14 dias.
+    Fonte primária: ForexFactory API (gratuita).
+    Fallback: calendário fixo actualizado manualmente.
     """
     hoje = date.today()
     limite = hoje + timedelta(days=14)
+    eventos = []
 
-    # Calendário fixo — actualizar mensalmente
-    # Formato: {"data": "YYYY-MM-DD", "evento": "...", "impacto": "alto|médio"}
-    calendario = [
-        # Fed FOMC meetings 2026
-        {"data": "2026-09-17", "evento": "Fed FOMC — decisão de taxa de juro", "impacto": "alto"},
-        {"data": "2026-11-05", "evento": "Fed FOMC — decisão de taxa de juro", "impacto": "alto"},
-        {"data": "2026-12-16", "evento": "Fed FOMC — decisão de taxa de juro", "impacto": "alto"},
-        # CPI mensal (estimativas — primeiras semanas do mês)
-        {"data": "2026-08-13", "evento": "US CPI Julho 2026", "impacto": "alto"},
-        {"data": "2026-09-11", "evento": "US CPI Agosto 2026", "impacto": "alto"},
-        {"data": "2026-10-09", "evento": "US CPI Setembro 2026", "impacto": "alto"},
-        # Bitcoin ETF — datas relevantes (exemplo)
-        {"data": "2026-10-01", "evento": "Fim do trimestre — rebalanceamento institucional", "impacto": "médio"},
-    ]
+    # Fonte primária: ForexFactory
+    try:
+        import urllib.request
+        proximos = []
+        for semana in ["thisweek", "nextweek"]:
+            url = f"https://nfs.faireconomy.media/ff_calendar_{semana}.json"
+            req = urllib.request.Request(url, headers={"User-Agent": "Morgan-CFO/1.0"})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                data = json.loads(r.read())
+            proximos.extend(data)
 
-    proximos = []
-    for ev in calendario:
-        try:
-            ev_date = date.fromisoformat(ev["data"])
-            if hoje <= ev_date <= limite:
-                dias_para = (ev_date - hoje).days
-                proximos.append({**ev, "dias_para": dias_para})
-        except Exception:
-            pass
+        moedas_relevantes = {"USD", "BTC", "ETH"}
+        for ev in proximos:
+            try:
+                ev_date = date.fromisoformat(ev.get("date", "")[:10])
+                impacto = ev.get("impact", "").lower()
+                moeda = ev.get("currency", "")
+                if hoje <= ev_date <= limite and impacto == "high" and moeda in moedas_relevantes:
+                    dias_para = (ev_date - hoje).days
+                    eventos.append({
+                        "data": ev.get("date", "")[:10],
+                        "evento": ev.get("title", ""),
+                        "impacto": "alto",
+                        "moeda": moeda,
+                        "dias_para": dias_para,
+                    })
+            except Exception:
+                pass
+    except Exception:
+        pass
 
-    return sorted(proximos, key=lambda x: x["dias_para"])
+    # Fallback: calendário fixo se ForexFactory falhar
+    if not eventos:
+        calendario_fixo = [
+            {"data": "2026-08-13", "evento": "US CPI Julho 2026", "impacto": "alto"},
+            {"data": "2026-09-11", "evento": "US CPI Agosto 2026", "impacto": "alto"},
+            {"data": "2026-09-17", "evento": "Fed FOMC — decisão taxa de juro", "impacto": "alto"},
+            {"data": "2026-10-09", "evento": "US CPI Setembro 2026", "impacto": "alto"},
+            {"data": "2026-11-05", "evento": "Fed FOMC — decisão taxa de juro", "impacto": "alto"},
+            {"data": "2026-12-16", "evento": "Fed FOMC — decisão taxa de juro", "impacto": "alto"},
+        ]
+        for ev in calendario_fixo:
+            try:
+                ev_date = date.fromisoformat(ev["data"])
+                if hoje <= ev_date <= limite:
+                    eventos.append({**ev, "dias_para": (ev_date - hoje).days})
+            except Exception:
+                pass
+
+    return sorted(eventos, key=lambda x: x["dias_para"])
 
 
 # ── Snapshot completo ─────────────────────────────────────────────────────────
@@ -252,7 +360,8 @@ def _eventos_macro_proximos() -> list[dict]:
 def snapshot_fase(symbol: str = "BTC/USDT", use_cache: bool = True) -> dict:
     """
     Snapshot completo de fase de mercado para o CFO.
-    Combina todos os indicadores num único dict estruturado.
+    Combina 6 fontes independentes. Estratégia só muda quando ≥4 sinais concordam.
+    Estratégias: trailing_stop (bull) | grid (flat) | dca (bear)
     """
     if use_cache:
         cached = _load_cache()
@@ -261,52 +370,120 @@ def snapshot_fase(symbol: str = "BTC/USDT", use_cache: bool = True) -> dict:
 
     estrutural = _fase_estrutural(symbol)
     curto_prazo = _fase_curto_prazo(symbol)
+    volume = _volume_spike(symbol)
     funding = _funding_rate(symbol)
     dominancia = _dominancia_btc()
+    fg = _fear_greed()
     macro = _eventos_macro_proximos()
 
-    # Estratégia recomendada baseada na combinação de fases
-    fase = estrutural.get("fase", "unknown")
+    # ── Sistema de votação multi-sinal ────────────────────────────────────────
+    # Cada fonte vota: "bull", "flat", "bear", ou "abstain"
+    votos = []
+
+    # Voto 1: fase estrutural (SMA200 + RSI)
+    fase_est = estrutural.get("fase", "unknown")
+    if fase_est in ("bull", "flat", "bear"):
+        votos.append(fase_est)
+
+    # Voto 2: momentum curto prazo
     tendencia = curto_prazo.get("tendencia", "unknown")
-
-    if fase == "bull" and tendencia == "alta":
-        estrategia = "trailing_stop"
-        estrategia_razao = "Mercado em bull estrutural com momentum de curto prazo — deixar lucros correr"
-    elif fase == "bull" and tendencia in ("lateral", "baixa"):
-        estrategia = "dca_reforco"
-        estrategia_razao = "Bull estrutural mas sem momentum imediato — DCA é seguro, grid pode operar"
-    elif fase == "flat":
-        estrategia = "grid_bot"
-        estrategia_razao = "Mercado lateral — grid bot é a estratégia óptima"
-    elif fase == "bear":
-        estrategia = "dca_apenas"
-        estrategia_razao = "Bear market — parar grid, apenas DCA de longo prazo"
+    if tendencia == "alta":
+        votos.append("bull")
+    elif tendencia == "baixa":
+        votos.append("bear")
     else:
-        estrategia = "observar"
-        estrategia_razao = "Fase indefinida — manter posição actual sem novas entradas"
+        votos.append("flat")
 
-    # Alerta de funding rate extremo
-    alertas = []
+    # Voto 3: Fear & Greed
+    fg_sinal = fg.get("sinal", "unknown")
+    if fg_sinal in ("bull", "flat", "bear"):
+        votos.append(fg_sinal)
+
+    # Voto 4: Funding rate
     fr = funding.get("rate_pct")
     if fr is not None:
-        if fr > 0.1:
-            alertas.append(f"FUNDING RATE EXTREMO: {fr:.3f}% — risco de long squeeze iminente")
-        elif fr < -0.05:
-            alertas.append(f"FUNDING RATE NEGATIVO: {fr:.3f}% — pressão de shorts, possível rebound")
+        if fr > 0.05:
+            votos.append("bull")
+        elif fr < -0.01:
+            votos.append("bear")
+        else:
+            votos.append("flat")
 
+    # Voto 5: Dominância BTC
+    dom = dominancia.get("dominancia_pct")
+    if dom is not None:
+        if dom > 60:
+            votos.append("bear")  # capital fugiu para BTC = altcoins em bear
+        elif dom < 45:
+            votos.append("bull")  # altseason = bull geral
+        else:
+            votos.append("flat")
+
+    # Contagem
+    contagem = {"bull": votos.count("bull"), "flat": votos.count("flat"), "bear": votos.count("bear")}
+    total_votos = len(votos)
+    fase_maioria = max(contagem, key=contagem.get)
+    votos_maioria = contagem[fase_maioria]
+    confianca = round(votos_maioria / total_votos * 100) if total_votos > 0 else 0
+
+    # Estratégia (só actua com ≥4 sinais concordantes de 5)
+    if votos_maioria >= 4:
+        if fase_maioria == "bull":
+            estrategia = "trailing_stop"
+            estrategia_razao = f"Bull confirmado ({votos_maioria}/5 sinais) — Trailing Stop activo"
+        elif fase_maioria == "bear":
+            estrategia = "dca"
+            estrategia_razao = f"Bear confirmado ({votos_maioria}/5 sinais) — DCA activo, Grid parado"
+        else:
+            estrategia = "grid"
+            estrategia_razao = f"Lateral confirmado ({votos_maioria}/5 sinais) — Grid óptimo"
+    else:
+        estrategia = "grid"  # default conservador
+        estrategia_razao = f"Sinal inconclusivo ({votos_maioria}/5 para {fase_maioria}) — manter Grid por precaução"
+
+    # ── Alertas ───────────────────────────────────────────────────────────────
+    alertas = []
+
+    # Volume spike
+    vol_alerta = volume.get("alerta", "NORMAL")
+    if vol_alerta in ("ALTO", "CRÍTICO"):
+        alertas.append(f"VOLUME {vol_alerta}: {volume.get('descricao', '')}")
+
+    # Funding rate extremo
+    if fr is not None:
+        if fr > 0.1:
+            alertas.append(f"FUNDING EXTREMO: {fr:.3f}% — risco de long squeeze")
+        elif fr < -0.05:
+            alertas.append(f"FUNDING NEGATIVO: {fr:.3f}% — risco de short squeeze")
+
+    # Fear & Greed extremo
+    fg_val = fg.get("valor")
+    if fg_val is not None:
+        if fg_val <= 20:
+            alertas.append(f"MEDO EXTREMO (F&G={fg_val}) — oportunidade histórica, aumentar DCA")
+        elif fg_val >= 80:
+            alertas.append(f"GANÂNCIA EXTREMA (F&G={fg_val}) — risco de reversão, reduzir exposição")
+
+    # Eventos macro próximos
     if macro:
         ev = macro[0]
-        if ev["dias_para"] <= 3 and ev["impacto"] == "alto":
+        if ev["dias_para"] <= 3:
             alertas.append(f"EVENTO MACRO EM {ev['dias_para']}d: {ev['evento']} — reduzir exposição")
+        elif ev["dias_para"] <= 7:
+            alertas.append(f"Evento macro em {ev['dias_para']}d: {ev['evento']}")
 
     resultado = {
         "ts": datetime.now().isoformat(),
         "symbol": symbol,
         "fase_estrutural": estrutural,
         "fase_curto_prazo": curto_prazo,
+        "volume_spike": volume,
         "funding_rate": funding,
         "dominancia_btc": dominancia,
+        "fear_greed": fg,
         "eventos_macro_proximos": macro,
+        "votos": contagem,
+        "confianca_pct": confianca,
         "estrategia_recomendada": estrategia,
         "estrategia_razao": estrategia_razao,
         "alertas": alertas,
@@ -320,24 +497,18 @@ def resumo_para_briefing(symbol: str = "BTC/USDT") -> str:
     """Versão compacta para o briefing matinal das 7h."""
     s = snapshot_fase(symbol)
     est = s["fase_estrutural"]
-    cp = s["fase_curto_prazo"]
+    fg = s.get("fear_greed", {})
     fr = s["funding_rate"]
-    dom = s["dominancia_btc"]
+    votos = s.get("votos", {})
 
     linhas = [
-        f"FASE: {est.get('fase','?').upper()} estrutural | {cp.get('tendencia','?').upper()} 30m",
+        f"FASE: {est.get('fase','?').upper()} | Confiança: {s.get('confianca_pct',0)}% ({votos.get('bull',0)}B/{votos.get('flat',0)}F/{votos.get('bear',0)}Be)",
         f"BTC ${est.get('preco','?')} | SMA200 ${est.get('sma200','?')} ({est.get('distancia_sma200_pct',0):+.1f}%) | RSI={est.get('rsi14','?')}",
-        f"Funding: {fr.get('rate_pct','?')}% ({fr.get('sentimento','?')}) | Dom BTC: {dom.get('dominancia_pct','?')}%",
+        f"F&G: {fg.get('valor','?')} ({fg.get('classificacao','?')}) | Funding: {fr.get('rate_pct','?')}%",
         f"Estratégia: {s['estrategia_recomendada'].upper()} — {s['estrategia_razao']}",
     ]
 
-    if s["alertas"]:
-        for a in s["alertas"]:
-            linhas.append(f"⚠ {a}")
-
-    macro = s.get("eventos_macro_proximos", [])
-    if macro:
-        ev = macro[0]
-        linhas.append(f"Próximo evento: {ev['evento']} em {ev['dias_para']}d")
+    for a in s.get("alertas", []):
+        linhas.append(f"⚠ {a}")
 
     return "\n".join(linhas)

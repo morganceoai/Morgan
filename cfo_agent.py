@@ -500,7 +500,6 @@ def relatorio_consistencia() -> dict:
         "saldo_real_usdt": None,
         "saldo_real_btc": None,
         "grid_posicoes_abertas": 0,
-        "supertrend_posicao": None,
         "consistente": True,
     }
     try:
@@ -514,9 +513,6 @@ def relatorio_consistencia() -> dict:
             resultado["grid_posicoes_abertas"] = len(grid_st.get("open_positions", {}))
         except Exception:
             pass
-
-        st = _load_trading_state()
-        resultado["supertrend_posicao"] = st.get("position")
 
         alertas = (
             verificar_saldo_vs_memoria() +
@@ -549,18 +545,21 @@ def run_defesa_completa() -> list:
 
 def parar_bot(razao: str):
     """
-    Para o trading bot escrevendo active=False em trading_state.json.
-    NUNCA fecha posições — isso seria uma trade. Apenas impede novas entradas.
+    Para todos os bots activos escrevendo active=False nos respectivos state files.
+    NUNCA fecha posições — apenas impede novas entradas.
     """
-    try:
-        state = _load_trading_state()
-        state["active"] = False
-        state["circuit_breaker_razao"] = razao
-        state["circuit_breaker_ts"] = datetime.now().isoformat()
-        TRADING_STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
-    except Exception as e:
-        print(f"[cfo] parar_bot: erro a escrever state: {e}", flush=True)
-        return
+    cb_info = {"circuit_breaker_razao": razao, "circuit_breaker_ts": datetime.now().isoformat()}
+    for state_file in [
+        MEMORY_DIR / "grid_state.json",
+        MEMORY_DIR / "eth_grid_state.json",
+        MEMORY_DIR / "sol_bot_state.json",
+    ]:
+        try:
+            state = json.loads(state_file.read_text()) if state_file.exists() else {}
+            state.update({"active": False, **cb_info})
+            state_file.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+        except Exception as e:
+            print(f"[cfo] parar_bot: erro em {state_file.name}: {e}", flush=True)
 
     msg = f"[CFO CIRCUIT BREAKER] Bot parado automaticamente. Razão: {razao}"
     print(msg, flush=True)

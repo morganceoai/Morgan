@@ -137,15 +137,15 @@ def resumo_imperio() -> dict:
 def _seed_contas_iniciais():
     """Regista as contas actuais do império se ainda não existirem."""
     registar_conta(
-        id="binance_supertrend_btc",
-        nome="Supertrend BTC/USDT",
+        id="binance_trailing_btc",
+        nome="Trailing Stop BTC/USDT",
         tipo=TIPO_TRADING,
         plataforma="Binance",
-        capital_alocado=0.0,  # inactivo — sem trades
+        capital_alocado=0.0,
         moeda="USDT",
-        collector="collector_supertrend",
+        collector="collector_trailing",
         estado=ESTADO_PAUSADO,
-        notas="Estratégia lenta 4h — em observação. CFO decide quando activar.",
+        notas="Estratégia bull — activa quando CFO confirma fase bull com ≥4 sinais.",
     )
     registar_conta(
         id="binance_grid_btc",

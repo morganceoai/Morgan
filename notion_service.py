@@ -147,7 +147,7 @@ def setup_estrutura() -> str:
             _bloco_titulo("Receitas mensais"),
             _bloco_titulo("Despesas (APIs, serviços)"),
             _bloco_titulo("Binance Trading"),
-            _bloco_paragrafo("Bot activo: 100 USDT BTC/USDT | Supertrend ATR10×3 | 4h"),
+            _bloco_paragrafo("Bots activos: Grid BTC/USDT | Grid ETH/USDT | SOL DCA — $100 cada, Binance spot"),
         ])
         ids["bc_sprints"] = _criar_pagina(pid, "Sprints de Desenvolvimento", "⚡", [
             _bloco_titulo("Em curso"),
