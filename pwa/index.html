@@ -744,11 +744,20 @@ scene.add(new THREE.Points(starGeo, new THREE.ShaderMaterial({
 
 const sysGroup = new THREE.Group();
 scene.add(sysGroup);
-// Scale only orbit DISTANCES, not the orb sizes — CEO stays full size
-// hFOV half-width = tan(vFOV/2) * aspect * cameraZ = 0.519 * (W/H) * 480
-// max ring 300 * ringScale < hFOV_half * 0.80
-function getRingScale() { return Math.min(1, 0.519 * (W / H) * 480 * 0.80 / 300); }
-let ringScale = getRingScale();
+// Portrait: scale everything proportionally so max ring (300) fits in hFOV.
+// hFOV half = tan(vFOV/2) * aspect * cameraZ = 0.519 * (W/H) * 480
+// scale = hFOV_half * 0.82 / maxRing; capped at 1 for landscape/desktop.
+// Also shift scene UP to visually centre in the area below the header.
+function applySysLayout() {
+  const portrait = W < H;
+  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 * 0.82 / 300) : 1;
+  sysGroup.scale.setScalar(scale);
+  // raise scene to compensate for header eating into usable area
+  // push scene up: compensate for header + bottom bar asymmetry
+  sysGroup.position.y = portrait ? 6 : 0;
+}
+applySysLayout();
+const ringScale = 1; // agents use full ring values; sysGroup.scale handles fitting
 
 const ceoGroup = new THREE.Group();
 sysGroup.add(ceoGroup);
@@ -909,7 +918,7 @@ function animate() {
     const wp  = agentGroups[ag.id].getWorldPosition(new THREE.Vector3());
     const sp  = project(wp);
     const lbl = agentLabels[ag.id];
-    const lblOff = isCentered ? (agentGroups[ag.id].scale.x * 130 + 18) : 22;
+    const lblOff = isCentered ? (agentGroups[ag.id].scale.x * 130 + 18) * sysGroup.scale.x : 22;
     lbl.style.left     = sp.x+'px';
     lbl.style.top      = (sp.y + lblOff)+'px';
     lbl.style.opacity  = isCentered ? '0.9' : '0.7';
@@ -941,7 +950,7 @@ function animate() {
 
   const ceoWp = ceoGroup.getWorldPosition(new THREE.Vector3());
   const ceoSpCenter = project(ceoWp);
-  const ceoLabelPxOff = ceoGroup.scale.x * 130 + 18;
+  const ceoLabelPxOff = (ceoGroup.scale.x * 130 + 18) * sysGroup.scale.x;
   ceoLblEl.style.left    = ceoSpCenter.x+'px';
   ceoLblEl.style.top     = (ceoSpCenter.y + ceoLabelPxOff)+'px';
   ceoLblEl.style.opacity = centeredId ? '0.7' : '0.6';
@@ -960,7 +969,7 @@ window.addEventListener('resize', () => {
   H = centerEl.clientHeight || window.innerHeight;
   camera.aspect = W/H; camera.updateProjectionMatrix();
   renderer.setSize(W, H); composer.setSize(W, H);
-  ringScale = getRingScale();
+  applySysLayout();
 });
 </script>
 
