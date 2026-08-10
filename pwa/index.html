@@ -744,10 +744,11 @@ scene.add(new THREE.Points(starGeo, new THREE.ShaderMaterial({
 
 const sysGroup = new THREE.Group();
 scene.add(sysGroup);
-// FOV=55° vertical → tan(27.5°)=0.519; hFOV half-width at z=480 = 0.519*(W/H)*480
-// Need max orbit (300) * scale < hFOV_half * 0.82 (margin)
-function getSysScale() { return Math.min(1, 0.519 * (W / H) * 480 * 0.82 / 300); }
-sysGroup.scale.setScalar(getSysScale());
+// Scale only orbit DISTANCES, not the orb sizes — CEO stays full size
+// hFOV half-width = tan(vFOV/2) * aspect * cameraZ = 0.519 * (W/H) * 480
+// max ring 300 * ringScale < hFOV_half * 0.80
+function getRingScale() { return Math.min(1, 0.519 * (W / H) * 480 * 0.80 / 300); }
+let ringScale = getRingScale();
 
 const ceoGroup = new THREE.Group();
 sysGroup.add(ceoGroup);
@@ -839,8 +840,8 @@ function selectAgent(id) {
     if (!prevCentered) return;
     const agRef = AGENTS.find(a=>a.id===prevCentered);
     const orbitPos = new THREE.Vector3(
-      agRef.ring * Math.cos(agentAngles[prevCentered]),
-      agRef.ring * Math.sin(agentAngles[prevCentered]) * 0.44, 0
+      agRef.ring * ringScale * Math.cos(agentAngles[prevCentered]),
+      agRef.ring * ringScale * Math.sin(agentAngles[prevCentered]) * 0.44, 0
     );
     ceoGroup.position.set(0, 0, 0);
     agentGroups[prevCentered].position.copy(orbitPos);
@@ -881,8 +882,8 @@ function animate() {
     const isCentered = centeredId === ag.id;
     if (!isCentered) {
       agentAngles[ag.id] += 0.00016 * (200/ag.ring);
-      const x = ag.ring * Math.cos(agentAngles[ag.id]);
-      const y = ag.ring * Math.sin(agentAngles[ag.id]) * 0.44;
+      const x = ag.ring * ringScale * Math.cos(agentAngles[ag.id]);
+      const y = ag.ring * ringScale * Math.sin(agentAngles[ag.id]) * 0.44;
       agentGroups[ag.id].position.set(x, y, 0);
     }
     agentGroups[ag.id].children[0].visible = !isCentered;
@@ -917,8 +918,8 @@ function animate() {
 
   if (centeredId && centeredId !== 'ceo') {
     ceoAngle += 0.00016 * (200 / 285);
-    const cx = 285 * Math.cos(ceoAngle);
-    const cy = 285 * Math.sin(ceoAngle) * 0.44;
+    const cx = 285 * ringScale * Math.cos(ceoAngle);
+    const cy = 285 * ringScale * Math.sin(ceoAngle) * 0.44;
     ceoGroup.position.set(cx, cy, 0);
   }
 
@@ -959,7 +960,7 @@ window.addEventListener('resize', () => {
   H = centerEl.clientHeight || window.innerHeight;
   camera.aspect = W/H; camera.updateProjectionMatrix();
   renderer.setSize(W, H); composer.setSize(W, H);
-  sysGroup.scale.setScalar(getSysScale());
+  ringScale = getRingScale();
 });
 </script>
 
