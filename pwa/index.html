@@ -68,33 +68,37 @@ body::after {
 /* ── HEADER ── */
 .header {
   position:fixed; top:0; left:0; right:0; z-index:30;
-  padding: var(--safe-t) 16px 10px;
-  display:flex; align-items:center; justify-content:space-between;
-  background:linear-gradient(to bottom, rgba(2,5,9,0.92) 70%, transparent);
+  padding: calc(var(--safe-t) + 2px) 12px 8px;
+  display:flex; align-items:center; gap:8px;
+  background:linear-gradient(to bottom, rgba(2,5,9,0.95) 70%, transparent);
   border-bottom:1px solid var(--border2);
 }
 .header::after {
   content:''; position:absolute; bottom:-1px; left:0; right:0; height:1px;
   background:linear-gradient(90deg,transparent,rgba(0,212,255,0.25) 30%,rgba(0,212,255,0.25) 70%,transparent);
 }
-.hdr-l { display:flex; align-items:center; gap:8px; }
 .status-dot {
-  width:5px; height:5px; border-radius:50%; background:var(--green);
+  width:5px; height:5px; border-radius:50%; background:var(--green); flex-shrink:0;
   box-shadow:0 0 8px var(--green); animation:pdot 2.5s ease-in-out infinite;
 }
 @keyframes pdot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
-.hdr-agent { font-size:12px; font-weight:500; color:var(--cyan); letter-spacing:2px; text-transform:uppercase; }
+.hdr-agent { font-size:11px; font-weight:500; color:var(--cyan); letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap; }
 .hdr-badge {
-  font-size:8px; letter-spacing:1.5px; color:var(--green);
-  background:rgba(0,255,157,0.06); padding:2px 7px;
-  border-radius:2px; border:1px solid rgba(0,255,157,0.15); text-transform:uppercase;
+  font-size:7px; letter-spacing:1px; color:var(--green);
+  background:rgba(0,255,157,0.06); padding:2px 6px;
+  border-radius:2px; border:1px solid rgba(0,255,157,0.15); text-transform:uppercase; white-space:nowrap;
 }
-.hdr-c { text-align:center; flex:1; }
-.hdr-time { font-size:17px; font-weight:200; letter-spacing:3px; color:var(--cyan2); }
-.hdr-date { font-size:8px; color:rgba(0,212,255,0.4); margin-top:1px; letter-spacing:1.5px; text-transform:uppercase; }
-.hdr-r { text-align:right; }
-.hdr-org  { font-size:11px; font-weight:500; color:var(--cyan); letter-spacing:2px; text-transform:uppercase; }
-.hdr-name { font-size:8px; color:rgba(0,212,255,0.4); margin-top:2px; letter-spacing:1px; text-transform:uppercase; }
+.hdr-time {
+  flex:1; text-align:center;
+  font-size:15px; font-weight:200; letter-spacing:3px; color:var(--cyan2); white-space:nowrap;
+}
+.hdr-org { font-size:10px; font-weight:500; color:rgba(0,212,255,0.6); letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap; }
+/* hide date on mobile, show on wide screens */
+.hdr-date { display:none; }
+.hdr-r { display:none; }
+.hdr-c { display:none; }
+.hdr-l { display:none; }
+.hdr-name { display:none; }
 
 /* ── PANEL TABS ── */
 .panel-tab {
@@ -301,19 +305,11 @@ body::after {
 
 <!-- HEADER -->
 <header class="header">
-  <div class="hdr-l">
-    <div class="status-dot" id="hdrDot"></div>
-    <span class="hdr-agent" id="hdrAgent">Morgan CEO</span>
-    <span class="hdr-badge" id="hdrBadge">Ativo</span>
-  </div>
-  <div class="hdr-c">
-    <div class="hdr-time" id="clock">--:--:--</div>
-    <div class="hdr-date" id="dateLabel">--</div>
-  </div>
-  <div class="hdr-r">
-    <div class="hdr-org">BCVertex</div>
-    <div class="hdr-name">Vasco B. da Costa</div>
-  </div>
+  <div class="status-dot" id="hdrDot"></div>
+  <span class="hdr-agent" id="hdrAgent">Morgan CEO</span>
+  <span class="hdr-badge" id="hdrBadge">Ativo</span>
+  <div class="hdr-time" id="clock">--:--:--</div>
+  <div class="hdr-org">BCVertex</div>
 </header>
 
 <!-- OVERLAY -->
@@ -748,6 +744,10 @@ scene.add(new THREE.Points(starGeo, new THREE.ShaderMaterial({
 
 const sysGroup = new THREE.Group();
 scene.add(sysGroup);
+// FOV=55° vertical → tan(27.5°)=0.519; hFOV half-width at z=480 = 0.519*(W/H)*480
+// Need max orbit (300) * scale < hFOV_half * 0.82 (margin)
+function getSysScale() { return Math.min(1, 0.519 * (W / H) * 480 * 0.82 / 300); }
+sysGroup.scale.setScalar(getSysScale());
 
 const ceoGroup = new THREE.Group();
 sysGroup.add(ceoGroup);
@@ -959,6 +959,7 @@ window.addEventListener('resize', () => {
   H = centerEl.clientHeight || window.innerHeight;
   camera.aspect = W/H; camera.updateProjectionMatrix();
   renderer.setSize(W, H); composer.setSize(W, H);
+  sysGroup.scale.setScalar(getSysScale());
 });
 </script>
 
