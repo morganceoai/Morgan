@@ -1,8 +1,9 @@
 """
 BCVertex — SOL/USDT Bot
 Estratégia configurável pelo CFO após aprovação do Vasco:
-  - "dca"  : compra quando cai ≥5%, vende quando sobe ≥8%
-  - "grid" : 10 níveis ±7% do preço de referência
+  - "grid"          : 10 níveis ±7% — mercado lateral
+  - "dca"           : compra quando cai ≥5%, vende quando sobe ≥8% — mercado bear
+  - "trailing_stop" : segue o pico, vende se cair ≥8% do máximo — mercado bull
 
 Estado persistido em memory/sol_bot_state.json
 """
@@ -38,6 +39,13 @@ GRID_CONFIG = {
     "fee":          0.001,
 }
 
+TRAILING_CONFIG = {
+    "capital":      float(os.getenv("SOL_CAPITAL", "100")),
+    "capital_pct":  0.90,
+    "trail_pct":    0.08,   # vende se cair 8% do pico
+    "fee":          0.001,
+}
+
 STATE_FILE = Path("memory/sol_bot_state.json")
 
 
@@ -45,7 +53,7 @@ STATE_FILE = Path("memory/sol_bot_state.json")
 
 def _estado_vazio() -> dict:
     return {
-        "estrategia":       "dca",   # "dca" | "grid"
+        "estrategia":       "dca",   # "dca" | "grid" | "trailing_stop"
         "active":           True,
         # DCA
         "cash":             DCA_CONFIG["capital"],
@@ -56,6 +64,11 @@ def _estado_vazio() -> dict:
         "level_size":       None,
         "capital_per_level":None,
         "open_positions":   {},
+        # Trailing Stop
+        "ts_qty":           0.0,
+        "ts_cash":          TRAILING_CONFIG["capital"],
+        "ts_entry":         None,
+        "ts_peak":          None,
         # Comum
         "trades":           [],
         "pnl_total":        0.0,
@@ -189,6 +202,59 @@ def _run_grid(state: dict, ex, price: float) -> dict:
     return {"acoes": acoes, "open_positions": len(positions), "grid_ref": ref}
 
 
+# ── Trailing Stop ─────────────────────────────────────────────────────────────
+
+def _run_trailing_stop(state: dict, ex, price: float) -> dict:
+    cfg = TRAILING_CONFIG
+    acoes = []
+
+    if state.get("ts_qty", 0.0) == 0.0:
+        # Entrada: compra se houver cash
+        cash = state.get("ts_cash", cfg["capital"])
+        if cash > 10:
+            buy_amount = cash * cfg["capital_pct"]
+            size = round(buy_amount / price * (1 - cfg["fee"]), 4)
+            if size * price >= 10:
+                state["ts_qty"] = size
+                state["ts_cash"] = round(cash - buy_amount, 4)
+                state["ts_entry"] = price
+                state["ts_peak"] = price
+                state["trades"].append({"tipo": "ts_compra", "price": round(price, 4), "size": size, "ts": datetime.now(timezone.utc).isoformat()})
+                if not TESTNET:
+                    ex.create_order(SYMBOL, "market", "buy", size)
+                acoes.append(f"TS COMPRA {size:.4f} SOL @ ${price:.4f}")
+                logger.info(f"[SOL TS] COMPRA {size:.4f} @ ${price:.4f}")
+    else:
+        # Actualiza pico
+        if price > state.get("ts_peak", price):
+            state["ts_peak"] = price
+
+        stop_price = state["ts_peak"] * (1 - cfg["trail_pct"])
+        if price <= stop_price:
+            size = state["ts_qty"]
+            revenue = size * price * (1 - cfg["fee"])
+            pnl = revenue - (size * state["ts_entry"])
+            state["pnl_total"] = round(state["pnl_total"] + pnl, 4)
+            state["pnl_today"] = round(state["pnl_today"] + pnl, 4)
+            state["ts_cash"] = round(state.get("ts_cash", 0) + revenue, 4)
+            state["ts_qty"] = 0.0
+            state["ts_entry"] = None
+            state["ts_peak"] = None
+            state["trades"].append({"tipo": "ts_venda", "price": round(price, 4), "size": size, "pnl": round(pnl, 4), "ts": datetime.now(timezone.utc).isoformat()})
+            if not TESTNET:
+                ex.create_order(SYMBOL, "market", "sell", size)
+            acoes.append(f"TS VENDA {size:.4f} SOL @ ${price:.4f} | PnL ${pnl:+.4f}")
+            logger.info(f"[SOL TS] VENDA {size:.4f} @ ${price:.4f} | PnL ${pnl:+.4f}")
+
+    return {
+        "acoes": acoes,
+        "ts_qty": state.get("ts_qty", 0),
+        "ts_peak": state.get("ts_peak"),
+        "ts_cash": state.get("ts_cash", 0),
+        "stop_price": round(state["ts_peak"] * (1 - cfg["trail_pct"]), 4) if state.get("ts_peak") else None,
+    }
+
+
 # ── Ciclo principal ───────────────────────────────────────────────────────────
 
 def run_cycle() -> dict:
@@ -206,6 +272,8 @@ def run_cycle() -> dict:
         estrategia = state.get("estrategia", "dca")
         if estrategia == "dca":
             resultado = _run_dca(state, ex, price)
+        elif estrategia == "trailing_stop":
+            resultado = _run_trailing_stop(state, ex, price)
         else:
             resultado = _run_grid(state, ex, price)
 
@@ -232,24 +300,32 @@ def run_cycle() -> dict:
 
 def tem_posicoes_abertas() -> bool:
     state = load_state()
-    return state.get("qty", 0.0) > 0 or len(state.get("open_positions", {})) > 0
+    return (
+        state.get("qty", 0.0) > 0
+        or len(state.get("open_positions", {})) > 0
+        or state.get("ts_qty", 0.0) > 0
+    )
 
 def set_estrategia(nova: str) -> dict:
     """Muda estratégia. Só chamar após aprovação do Vasco e sem posições abertas."""
-    if nova not in ("dca", "grid"):
+    if nova not in ("dca", "grid", "trailing_stop"):
         return {"status": "erro", "message": f"Estratégia inválida: {nova}"}
     if tem_posicoes_abertas():
         return {"status": "bloqueado", "message": "Posições abertas — fecha antes de mudar estratégia."}
     state = load_state()
     anterior = state.get("estrategia", "dca")
     state["estrategia"] = nova
-    # Reseta estado da nova estratégia
     if nova == "grid":
         state["grid_ref"] = None
         state["level_size"] = None
         state["capital_per_level"] = None
         state["open_positions"] = {}
-    else:
+    elif nova == "trailing_stop":
+        state["ts_qty"] = 0.0
+        state["ts_cash"] = TRAILING_CONFIG["capital"]
+        state["ts_entry"] = None
+        state["ts_peak"] = None
+    else:  # dca
         state["ref_price"] = None
         state["cash"] = DCA_CONFIG["capital"]
         state["qty"] = 0.0
@@ -262,9 +338,12 @@ def set_estrategia(nova: str) -> dict:
 
 def get_status() -> dict:
     state = load_state()
+    estrategia = state.get("estrategia", "dca")
+    cfg = TRAILING_CONFIG
+    ts_peak = state.get("ts_peak")
     return {
         "bot": "SOL/USDT",
-        "estrategia": state.get("estrategia", "dca"),
+        "estrategia": estrategia,
         "active": state.get("active", True),
         "last_price": state.get("last_price"),
         "pnl_total": state.get("pnl_total", 0),
@@ -278,6 +357,11 @@ def get_status() -> dict:
         # Grid
         "open_positions": len(state.get("open_positions", {})),
         "grid_ref": state.get("grid_ref"),
+        # Trailing Stop
+        "ts_qty": state.get("ts_qty", 0),
+        "ts_cash": state.get("ts_cash", 0),
+        "ts_peak": ts_peak,
+        "ts_stop": round(ts_peak * (1 - cfg["trail_pct"]), 4) if ts_peak else None,
     }
 
 def pause_bot():
