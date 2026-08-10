@@ -727,19 +727,6 @@ async def serve_interface(request: Request):
     is_mobile = any(k in ua for k in ["iphone", "android", "mobile", "ipad"])
     if is_mobile:
         return RedirectResponse(url="/app/", status_code=302)
-    desktop_file = DESKTOP_DIR / "jarvis_v3.html"
-    if desktop_file.exists():
-        return FileResponse(desktop_file, headers=_NO_CACHE)
-    return RedirectResponse(url="/app/", status_code=302)
-
-@app.get("/v2")
-@app.get("/v2/")
-async def serve_interface_v2():
-    return FileResponse(DESKTOP_DIR / "index_v2.html", headers=_NO_CACHE)
-
-@app.get("/three")
-@app.get("/three/")
-async def serve_interface_three():
     return FileResponse(DESKTOP_DIR / "galaxy_three.html", headers=_NO_CACHE)
 
 _NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
@@ -815,17 +802,7 @@ async def scout_pdf(stem: str):
 
 from fastapi.responses import RedirectResponse
 
-# /pwa/* redireciona para /app/* (URL nova sem cache no browser)
-@app.get("/pwa/")
-@app.get("/pwa/index.html")
-async def redirect_pwa_root():
-    return RedirectResponse("/app/", status_code=302)
-
-@app.get("/pwa/{filename}")
-async def redirect_pwa_file(filename: str):
-    return RedirectResponse(f"/app/{filename}", status_code=302)
-
-# /app/ — URL principal da PWA (nunca esteve em cache)
+# /app/ — Morgan mobile (PWA)
 @app.get("/app/")
 @app.get("/app/index.html")
 async def serve_app():

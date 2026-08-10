@@ -2,7 +2,7 @@
   "nome": "PlannerAtlas",
   "plataforma": "Etsy",
   "fase": "lançamento",
-  "listings_activos": 0,
+  "listings_activos": 61,
   "vendas_total": 0,
   "vendas_28d": [],
   "ctr_medio": 0.0,
@@ -12,7 +12,7 @@
   "ultima_venda": "",
   "ultima_verificacao": "",
   "alertas_activos": [],
-  "etsy_configurado": false,
+  "etsy_configurado": true,
   "criado_em": "2026-08-03T13:31:17.122273",
   "metrics_history": [
     {
@@ -186,7 +186,15 @@
   ],
   "pins_publicados_hoje": [
     "monthly_planner_en",
-    "meal_planner_en"
+    "meal_planner_en",
+    "weekly_planner_pt",
+    "meal_planner_pt",
+    "habit_tracker_de",
+    "meal_planner_de",
+    "weekly_planner_es",
+    "monthly_planner_es",
+    "weekly_planner_en",
+    "budget_tracker_en"
   ],
   "pins_data": "2026-08-10"
 }

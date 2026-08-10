@@ -1,0 +1,715 @@
+2026-08-09 13:19:47,641 [INFO] httpx: HTTP Request: GET https://nzewcorujofapxymupzr.supabase.co/rest/v1/conversations?user_id=eq.vasco&order=created_at.desc&limit=2000 "HTTP/1.1 200 OK"
+/Users/vascobotelhodacosta/Morgan/desktop_server.py:3034: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [70065]
+INFO:     Waiting for application startup.
+[startup] Scout sweep scheduler iniciado (6h interval)
+[startup] PAtlas scheduler iniciado (24h interval)
+[startup] Pulser scheduler iniciado (domingo 18h)
+[startup] CFO circuit breaker iniciado (30min interval)
+[startup] Solver health scheduler iniciado (5min interval)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8765 (Press CTRL+C to quit)
+INFO:     127.0.0.1:54920 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54920 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54920 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54920 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54920 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54924 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54920 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54929 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54932 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54933 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+2026-08-09 13:20:01,310 [INFO] httpx: HTTP Request: GET https://wttr.in/Moreira+de+Conegos?format=%t|%C "HTTP/1.1 200 OK"
+2026-08-09 13:20:01,630 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&next=1&season=2026 "HTTP/1.1 200 OK"
+2026-08-09 13:20:01,845 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&last=1&season=2026 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:54928 - "GET /api/widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54928 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54946 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54949 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54950 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+2026-08-09 13:20:14,533 [INFO] httpx: HTTP Request: GET https://wttr.in/Moreira+de+Conegos?format=%t|%C "HTTP/1.1 200 OK"
+2026-08-09 13:20:14,737 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&next=1&season=2026 "HTTP/1.1 200 OK"
+2026-08-09 13:20:14,973 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&last=1&season=2026 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:54944 - "GET /api/widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54960 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54944 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54974 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54976 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54978 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54980 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54981 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54981 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55001 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55246 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55248 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55249 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55251 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 13:21:53,811 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.499583 seconds
+2026-08-09 13:21:54,318 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.879143 seconds
+[cfo/ciclo] erro no ciclo de decisão: Connection error.
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+2026-08-09 13:21:59,721 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 13:21:59,737 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 13:21:59,741 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 13:22:00,753 [INFO] morgan: Scout sweep: 0 sinais, 0 fortes, 0 muito fortes
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55244 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:27:51,796 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786282071634&recvWindow=10000&signature=1351f2e894480d5f69b1066f23acd6c289f06e0890ea1cf191ab9f56d09de54c
+2026-08-09 14:27:51,812 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786282071808&recvWindow=10000&signature=abdce758e643c6eca85a131bcc7ff05c86fac9a4d7f25a0fce28e8efe9f04654
+2026-08-09 14:27:51,813 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,821 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,824 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786282071821&recvWindow=10000&signature=7f4a3d17a03ca5cf54861c8c372423ada69e848820ae1c00019dbfb7fb7d589d
+2026-08-09 14:27:51,825 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,831 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,832 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,833 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,840 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,844 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:27:51,854 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+INFO:     127.0.0.1:55448 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55448 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55448 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55461 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55463 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+2026-08-09 14:28:00,264 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+INFO:     127.0.0.1:55465 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+2026-08-09 14:28:00,266 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:00,267 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+INFO:     127.0.0.1:55466 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55466 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:28:03,922 [WARNING] etsy_service: etsy: refresh falhou — HTTPSConnectionPool(host='api.etsy.com', port=443): Max retries exceeded with url: /v3/public/oauth/token (Caused by NameResolutionError("HTTPSConnection(host='api.etsy.com', port=443): Failed to resolve 'api.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,930 [WARNING] etsy_service: etsy GET /shops/66877755/receipts erro: HTTPSConnectionPool(host='openapi.etsy.com', port=443): Max retries exceeded with url: /v3/application/shops/66877755/receipts?limit=100&was_paid=true (Caused by NameResolutionError("HTTPSConnection(host='openapi.etsy.com', port=443): Failed to resolve 'openapi.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,935 [WARNING] etsy_service: etsy: refresh falhou — HTTPSConnectionPool(host='api.etsy.com', port=443): Max retries exceeded with url: /v3/public/oauth/token (Caused by NameResolutionError("HTTPSConnection(host='api.etsy.com', port=443): Failed to resolve 'api.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,962 [WARNING] etsy_service: etsy GET /shops/66877755/listings/active erro: HTTPSConnectionPool(host='openapi.etsy.com', port=443): Max retries exceeded with url: /v3/application/shops/66877755/listings/active?limit=100 (Caused by NameResolutionError("HTTPSConnection(host='openapi.etsy.com', port=443): Failed to resolve 'openapi.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,967 [WARNING] etsy_service: etsy: refresh falhou — HTTPSConnectionPool(host='api.etsy.com', port=443): Max retries exceeded with url: /v3/public/oauth/token (Caused by NameResolutionError("HTTPSConnection(host='api.etsy.com', port=443): Failed to resolve 'api.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,973 [WARNING] etsy_service: etsy GET /shops/66877755/receipts erro: HTTPSConnectionPool(host='openapi.etsy.com', port=443): Max retries exceeded with url: /v3/application/shops/66877755/receipts?limit=100&was_paid=true (Caused by NameResolutionError("HTTPSConnection(host='openapi.etsy.com', port=443): Failed to resolve 'openapi.etsy.com' ([Errno 8] nodename nor servname provided, or not known)"))
+2026-08-09 14:28:03,990 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.404715 seconds
+2026-08-09 14:28:04,403 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.867229 seconds
+2026-08-09 14:28:04,508 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:04,510 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:04,511 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:06,155 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.440152 seconds
+=== ETSY ORDER MESSAGES — 2026-08-09 14:28 ===
+
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:28:06,669 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.874078 seconds
+2026-08-09 14:28:07,010 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections "HTTP/1.1 200 OK"
+2026-08-09 14:28:07,016 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 14:28:08,625 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 14:28:08,670 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 14:28:08,706 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 14:28:08,916 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 14:28:09,245 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:28:09,358 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:55529 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:28:15,323 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:15,324 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:28:15,326 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55583 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55585 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55587 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55588 - "GET /api/usage HTTP/1.1" 200 OK
+2026-08-09 14:28:30,811 [INFO] httpx: HTTP Request: GET https://wttr.in/Moreira+de+Conegos?format=%t|%C "HTTP/1.1 200 OK"
+2026-08-09 14:28:31,145 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&next=1&season=2026 "HTTP/1.1 200 OK"
+2026-08-09 14:28:31,506 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&last=1&season=2026 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:55581 - "GET /api/widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55581 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55597 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55599 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55601 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/usage HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+2026-08-09 14:29:04,580 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:29:04,582 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+2026-08-09 14:29:04,583 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NameResolutionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to resolve 'o4511758153678848.ingest.de.sentry.io' ([Errno 8] nodename nor servname provided, or not known)")': /api/4511758177796176/envelope/
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55602 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55625 - "GET /api/portfolio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55627 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55629 - "GET /api/logs?n=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55630 - "GET /api/usage HTTP/1.1" 200 OK
+2026-08-09 14:29:30,663 [INFO] httpx: HTTP Request: GET https://wttr.in/Moreira+de+Conegos?format=%t|%C "HTTP/1.1 200 OK"
+2026-08-09 14:29:30,835 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&next=1&season=2026 "HTTP/1.1 200 OK"
+2026-08-09 14:29:31,024 [INFO] httpx: HTTP Request: GET https://v3.football.api-sports.io/fixtures?team=229&last=1&season=2026 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:55623 - "GET /api/widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/activity?n=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55623 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55654 - "GET /health HTTP/1.1" 200 OK
+2026-08-09 14:32:35,981 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 14:32:36,418 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 14:32:57,421 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 14:32:57,445 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1119t | $0.0101
+2026-08-09 14:58:34,397 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 14:58:34,399 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1169t | $0.0105
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=82% | modo=observation | resultado=observation
+2026-08-09 15:01:11,362 [WARNING] desktop_server: Health check: 1 anomalia(s): Log sem actividade há 27802 minutos (anómalo para esta hora)
+2026-08-09 15:01:13,282 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 15:01:14,737 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 15:01:45,461 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 15:01:45,465 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1701t | $0.0153
+2026-08-09 15:01:45,467 [CRITICAL] claude_guard: [claude_guard] ALERTA solver: 80% do budget: $0.4001/$0.5
+2026-08-09 15:01:45,802 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 15:01:46,262 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 15:02:59,184 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 15:02:59,463 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 15:03:29,601 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 15:03:29,605 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1497t | $0.0135
+2026-08-09 15:03:29,606 [CRITICAL] claude_guard: [claude_guard] ALERTA solver: 80% do budget: $0.4135/$0.5
+2026-08-09 15:03:30,678 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 15:03:31,171 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 15:29:21,279 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 15:29:21,281 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1230t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-09 16:00:09,175 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 16:00:09,177 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1225t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 16:00:14,164 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-09 16:00:15,386 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-09 16:31:00,206 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 16:31:00,209 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1226t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 17:01:45,014 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 17:01:45,019 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1195t | $0.0108
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=82% | modo=observation | resultado=observation
+2026-08-09 17:32:30,156 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 17:32:30,159 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1195t | $0.0108
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 18:00:40,766 [INFO] desktop_server: Pulser ciclo semanal: Pulser — ciclo semanal completo | Subs: 0 | Fase: setup | Alertas: 0
+📰 THE AI PULSE — Estado
+⚠️ SETU
+2026-08-09 18:00:41,289 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 18:00:41,666 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 18:00:42,180 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 18:00:42,284 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 18:03:17,835 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 18:03:17,837 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1240t | $0.0112
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 18:03:21,865 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-09 18:03:23,536 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-09 18:29:41,977 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296581969&recvWindow=10000&signature=1fb2208fbafda31a53c47fcd653501643a452b40eafdbd17788fcce68f696fe0
+2026-08-09 18:29:41,986 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296581985&recvWindow=10000&signature=b7c51ece9fb624bebb071d0f8dd625fe8923514730a4ae6448de340e57842aa8
+2026-08-09 18:29:41,991 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296581991&recvWindow=10000&signature=58d193647943d86ddddc5c6d465c6225ee7861a24e0d14e6acf1554180090ef5
+2026-08-09 18:31:19,006 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:31:19,008 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:31:19,009 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:31:19,012 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:31:19,013 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:31:19,014 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,308 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296970303&recvWindow=10000&signature=a89269293ae3d0cf23ab540787b9a0719e84be32d91c00bb3d921b60a31209e1
+2026-08-09 18:36:10,318 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296970316&recvWindow=10000&signature=3b5b5b8ce31668f2b210a7b2fa59e1297cf4f718c1b414eea00676f11c294676
+2026-08-09 18:36:10,324 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,325 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786296970324&recvWindow=10000&signature=8f52ffc6a911bf0c3f4d6a74d83ddbfc165d2d939340f2df4163e21029d55895
+2026-08-09 18:36:10,328 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,328 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,331 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,331 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,332 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,334 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,335 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:36:10,335 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,249 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297290240&recvWindow=10000&signature=25c3a63f677a9489419da260ab181ea81f741bf838fbc7c010262f20cb75c359
+2026-08-09 18:41:30,257 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297290256&recvWindow=10000&signature=882aedfa28ac84177108f92c421998e75eed8eb79ad8ea320423eddb7dc478d2
+2026-08-09 18:41:30,263 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,263 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297290262&recvWindow=10000&signature=24be2009d2824f39926a62d8d78bd4de48b3d753613b17e68de41aacdb6eaa04
+2026-08-09 18:41:30,265 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,266 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,267 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,268 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,268 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,269 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,270 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:41:30,270 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,927 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297666920&recvWindow=10000&signature=d69eb687eaecd16a403b2e2e0d38b495a1193ca014e48d4a349c2125492e9aac
+2026-08-09 18:47:46,937 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297666936&recvWindow=10000&signature=e7143245e5a957c4f29d35a65e9579f5191b93295b09a2db8e380c8a81e36cd5
+2026-08-09 18:47:46,944 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,945 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786297666944&recvWindow=10000&signature=716eeff9f1f6376580c0828f8bdadf32dac810a9c9ff5497e8adecd9226de8fd
+2026-08-09 18:47:46,948 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,948 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,950 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,950 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,951 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,952 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,953 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:47:46,953 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,108 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786298010102&recvWindow=10000&signature=3886ba01152560f64eefadca9ca9e463cdb54cd7caa0de0d13610dae9685e858
+2026-08-09 18:53:30,122 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786298010120&recvWindow=10000&signature=3db9ebbe393cf72bb49a25c60bc40f55e10a07e11f4a96e546032832e7e607c1
+2026-08-09 18:53:30,131 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,131 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786298010130&recvWindow=10000&signature=38fce52cab9cbaa3a381c72d63a887cf7dd7a51450e412d57ccc25f038c26683
+2026-08-09 18:53:30,135 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,136 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,138 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,139 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,141 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,147 [WARNING] urllib3.connectionpool: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,148 [WARNING] urllib3.connectionpool: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:53:30,149 [WARNING] urllib3.connectionpool: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPSConnection(host='o4511758153678848.ingest.de.sentry.io', port=443): Failed to establish a new connection: [Errno 51] Network is unreachable")': /api/4511758177796176/envelope/
+2026-08-09 18:54:37,707 [INFO] openai._base_client: Retrying request to /embeddings in 0.493771 seconds
+2026-08-09 18:54:37,707 [INFO] openai._base_client: Retrying request to /embeddings in 0.482771 seconds
+2026-08-09 18:54:38,200 [INFO] openai._base_client: Retrying request to /embeddings in 0.854704 seconds
+2026-08-09 18:54:38,213 [INFO] openai._base_client: Retrying request to /embeddings in 0.960427 seconds
+2026-08-09 19:01:08,478 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 19:01:08,480 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 174t | $0.0005
+2026-08-09 19:01:09,033 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 19:01:09,374 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 19:01:10,463 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 19:01:10,466 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 163t | $0.0005
+2026-08-09 19:01:10,842 [INFO] desktop_server: Pinterest PT: Pins PT:
+✅ habit_tracker (pt)
+✅ daily_planner (pt)
+2026-08-09 19:01:11,016 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 19:01:11,086 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 19:01:57,284 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 19:01:57,499 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 19:02:20,885 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 19:02:20,888 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1077t | $0.0097
+2026-08-09 19:02:20,891 [CRITICAL] claude_guard: [claude_guard] ALERTA solver: 80% do budget: $0.4232/$0.5
+2026-08-09 19:02:21,151 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 19:02:21,389 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 19:02:49,930 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 19:02:49,933 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1218t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-09 19:33:34,896 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 19:33:34,900 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1245t | $0.0112
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 20:00:32,986 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:00:40,653 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:00:40,656 [INFO] claude_guard: [claude_guard] scout | claude-opus-4-8 | 708t | $0.0106
+2026-08-09 20:02:22,957 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 20:02:23,160 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:02:43,260 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:02:43,263 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 984t | $0.0089
+2026-08-09 20:02:43,265 [CRITICAL] claude_guard: [claude_guard] ALERTA solver: 80% do budget: $0.4321/$0.5
+2026-08-09 20:02:43,751 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:02:43,998 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 20:04:43,982 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:04:43,986 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1218t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=78% | modo=observation | resultado=observation
+2026-08-09 20:07:44,843 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-09 20:07:45,183 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:08:04,867 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:08:04,872 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1014t | $0.0091
+2026-08-09 20:08:04,874 [CRITICAL] claude_guard: [claude_guard] ALERTA solver: 80% do budget: $0.4412/$0.5
+2026-08-09 20:08:05,430 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:08:05,753 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 20:09:06,057 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:09:06,061 [INFO] claude_guard: [claude_guard] scout | claude-opus-4-8 | 38126t | $0.5719
+2026-08-09 20:09:21,403 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:09:21,406 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 182t | $0.0005
+2026-08-09 20:09:22,076 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:09:22,406 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 20:09:23,426 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:09:23,430 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 180t | $0.0005
+2026-08-09 20:09:23,776 [INFO] desktop_server: Pinterest DE: Pins DE:
+✅ meal_planner (de)
+✅ habit_tracker (de)
+2026-08-09 20:09:23,942 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:09:24,006 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 20:09:25,716 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:09:25,719 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 175t | $0.0005
+2026-08-09 20:09:26,213 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:09:26,275 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 20:09:27,865 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-09 20:09:27,869 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 180t | $0.0005
+2026-08-09 20:09:28,163 [INFO] desktop_server: Pinterest ES: Pins ES:
+✅ meal_planner (es)
+✅ daily_planner (es)
+2026-08-09 20:09:28,353 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 20:09:28,483 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-09 22:26:38,822 [ERROR] grid_bot: [Grid] Erro: binance GET https://fapi.binance.com/fapi/v1/exchangeInfo
+2026-08-09 22:26:45,427 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786310292122&recvWindow=10000&signature=f381745d0f15963680c499094adfe7c839646bbd7543f44d94c7a16382a336d7
+2026-08-09 22:29:37,853 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-09 23:37:15,982 [INFO] openai._base_client: Retrying request to /embeddings in 0.415206 seconds
+/Users/vascobotelhodacosta/Morgan/venv/lib/python3.12/site-packages/qdrant_client/qdrant_remote.py:290: UserWarning: Failed to obtain server version. Unable to check client-server compatibility. Set check_compatibility=False to skip version check.
+  show_warning(
+2026-08-09 23:37:16,409 [INFO] openai._base_client: Retrying request to /embeddings in 0.834766 seconds
+2026-08-09 23:37:17,266 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.433408 seconds
+2026-08-09 23:37:17,714 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.976699 seconds
+2026-08-10 06:24:46,077 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/api/v3/exchangeInfo
+2026-08-10 07:33:27,460 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 07:33:28,585 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:33:48,062 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:33:48,065 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1027t | $0.0092
+2026-08-10 07:35:36,908 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:35:36,912 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1221t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 07:35:37,172 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:35:37,521 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:35:38,621 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 07:35:39,314 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 07:36:52,919 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.386968 seconds
+2026-08-10 07:37:02,725 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:37:02,726 [INFO] claude_guard: [claude_guard] ceo | claude-sonnet-4-6 | 1001t | $0.0090
+2026-08-10 07:38:28,149 [INFO] httpx: HTTP Request: GET https://wttr.in/Moreira+de+Conegos?format=%t+%C "HTTP/1.1 200 OK"
+2026-08-10 07:38:28,676 [INFO] primp: response: https://grokipedia.com/api/typeahead?query=Moreirense+FC+pr%C3%B3ximos+jogos+calend%C3%A1rio+Liga+Portugal+2026&limit=1 200
+2026-08-10 07:38:28,746 [INFO] primp: response: https://en.wikipedia.org/w/api.php?action=opensearch&profile=fuzzy&limit=1&search=Moreirense%20FC%20pr%C3%B3ximos%20jogos%20calend%C3%A1rio%20Liga%20Portugal%202026 200
+2026-08-10 07:38:29,030 [INFO] primp: response: https://www.mojeek.com/search?q=Moreirense+FC+pr%C3%B3ximos+jogos+calend%C3%A1rio+Liga+Portugal+2026 200
+2026-08-10 07:38:29,289 [INFO] primp: response: https://www.startpage.com/ 200
+2026-08-10 07:38:29,409 [INFO] primp: response: https://www.startpage.com/sp/search 200
+2026-08-10 07:38:29,600 [INFO] primp: response: https://www.google.com/search?q=Moreirense+FC+pr%C3%B3ximos+jogos+calend%C3%A1rio+Liga+Portugal+2026&filter=1&start=0&hl=en-US&lr=lang_en&cr=countryUS 200
+2026-08-10 07:38:30,008 [INFO] primp: response: https://search.yahoo.com/search;_ylt=d_4eqzGep2Df8xMe8PJoRZQA;_ylu=v5CTqiDHU5rcGVt2t_03caDXjCMQ534YXc2StYC1AeEEYL0?p=Moreirense+FC+pr%C3%B3ximos+jogos+calend%C3%A1rio+Liga+Portugal+2026 200
+2026-08-10 07:38:30,733 [INFO] primp: response: https://yandex.com/search/site/?text=Moreirense+FC+pr%C3%B3ximos+jogos+calend%C3%A1rio+Liga+Portugal+2026&web=1&searchid=5096196 200
+2026-08-10 07:38:31,717 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:40,546 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:38:40,549 [INFO] claude_guard: [claude_guard] coach | claude-sonnet-4-6 | 439t | $0.0040
+2026-08-10 07:38:44,449 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:38:44,450 [INFO] claude_guard: [claude_guard] coach | claude-sonnet-4-6 | 614t | $0.0055
+2026-08-10 07:38:44,709 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:44,719 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:44,754 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:44,775 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:44,789 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:38:45,017 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:38:45,082 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:38:46,174 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:38:46,175 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:38:49,136 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:38:49,139 [INFO] claude_guard: [claude_guard] ceo | claude-sonnet-4-6 | 714t | $0.0064
+2026-08-10 07:39:01,160 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:39:01,163 [INFO] claude_guard: [claude_guard] scout | claude-opus-4-8 | 498t | $0.0075
+2026-08-10 07:39:39,618 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 07:39:39,621 [INFO] claude_guard: [claude_guard] scout | claude-opus-4-8 | 50854t | $0.7628
+2026-08-10 07:39:40,023 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 07:39:40,724 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 07:58:09,151 [ERROR] grid_bot: [Grid] Erro: binance {"code":-1021,"msg":"Timestamp for this request is outside of the recvWindow."}
+2026-08-10 07:58:35,544 [INFO] morgan: Scout sweep: 50 sinais, 0 fortes, 0 muito fortes
+2026-08-10 08:01:03,860 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786345239969&recvWindow=10000&signature=47d5620fb80b07e9f41064948a18974ee99ac617a7e37f5ca87093ab24ebf2c9
+2026-08-10 08:01:13,880 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786345263874&recvWindow=10000&signature=7c32d3c6180f956a83bf25f61f25d995854757dea60b2a4fa2699da38337b6a5
+2026-08-10 08:01:23,900 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786345273894&recvWindow=10000&signature=b9399f4c75204c28a9becfdbf6fc0069d7fbac759d5edfa6a1d39c74ece98a6a
+[creator] erro plano etsy: cannot import name 'gerar_plano_semana_planneratlas' from 'creator_agent' (/Users/vascobotelhodacosta/Morgan/creator_agent.py)
+2026-08-10 08:03:48,249 [ERROR] grid_bot: [Grid] Erro: binance GET https://api.binance.com/sapi/v1/capital/config/getall?timestamp=1786345398245&recvWindow=10000&signature=2ad61f14cedd315b02708d9049fb75d753aa7cb8ad80407efd7182e185bbbce3
+2026-08-10 08:06:13,911 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 08:06:13,915 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1161t | $0.0104
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 08:06:14,662 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 08:06:14,982 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 08:36:49,755 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 08:36:49,758 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1154t | $0.0104
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 08:36:51,304 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 08:36:51,555 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 09:07:26,559 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 09:07:26,562 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1221t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 09:07:28,091 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 09:07:28,367 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 09:38:06,301 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 09:38:06,305 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1216t | $0.0109
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 09:38:07,345 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 09:38:07,609 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 09:38:07,963 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 09:38:08,700 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 10:00:51,676 [INFO] etsy_service: etsy_tokens: guardados
+2026-08-10 10:01:04,163 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 10:01:04,166 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 1099t | $0.0033
+2026-08-10 10:01:05,732 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 10:01:05,735 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 152t | $0.0005
+2026-08-10 10:01:07,623 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 10:01:07,624 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 10:01:07,628 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 144t | $0.0004
+2026-08-10 10:01:07,826 [INFO] desktop_server: PAtlas ciclo diário: 🛍️ PLANNERATLAS — Relatório
+Fase: lançamento | Listings: 0
+Vendas total: 0 | Receita: €0.00
+CTR: 0.0
+2026-08-10 10:01:07,918 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 10:01:08,139 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 10:01:08,204 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 10:01:08,266 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 10:01:08,326 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 10:08:45,023 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 10:08:45,024 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1218t | $0.0110
+=== ETSY ORDER MESSAGES — 2026-08-10 10:00 ===
+
+Ordens encontradas: 0
+
+Total enviadas esta execução: 0
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 10:08:45,520 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 10:08:45,786 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 10:39:21,598 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 10:39:21,602 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1217t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 10:39:23,539 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 10:39:23,809 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 11:10:00,072 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 11:10:00,074 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1232t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 11:10:00,500 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 11:10:00,820 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 11:40:39,822 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 11:40:39,825 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1252t | $0.0113
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 11:40:40,245 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 11:40:40,593 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 11:40:41,432 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 11:40:42,250 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 12:42:57,069 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 12:42:57,073 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1207t | $0.0109
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 12:42:58,824 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 12:42:59,161 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 15:13:24,631 [ERROR] eth_grid_bot: [ETH Grid] Erro: binance GET https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT
+2026-08-10 16:14:24,299 [ERROR] sol_bot: [SOL Bot] Erro: binance GET https://api.binance.com/api/v3/exchangeInfo
+2026-08-10 17:02:36,995 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 17:02:38,288 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:03:01,874 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 17:03:01,878 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1225t | $0.0110
+2026-08-10 17:05:26,474 [INFO] anthropic._base_client: Retrying request to /v1/messages in 0.494779 seconds
+2026-08-10 17:05:35,850 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 17:05:35,853 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1238t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 17:05:36,299 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:05:36,511 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 17:08:03,518 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 17:08:03,625 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:08:23,685 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 17:08:23,686 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1089t | $0.0098
+2026-08-10 17:18:25,312 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 17:18:26,001 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:33:27,531 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 17:33:28,274 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:36:13,351 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 17:36:13,353 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1239t | $0.0112
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 17:36:14,267 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 17:36:14,475 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 17:48:29,771 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 17:48:30,531 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 18:06:51,680 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 18:06:51,683 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1237t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 18:06:53,059 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 18:06:53,086 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 18:06:53,349 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 18:06:53,762 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 18:13:21,444 [INFO] morgan: Scout sweep: 48 sinais, 0 fortes, 0 muito fortes
+2026-08-10 18:37:29,898 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 18:37:29,901 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1268t | $0.0114
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 18:37:30,840 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 18:37:31,113 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 19:01:07,926 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 19:01:07,930 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 177t | $0.0005
+2026-08-10 19:01:08,420 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 19:01:08,727 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 19:01:09,872 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 19:01:09,876 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 179t | $0.0005
+2026-08-10 19:01:10,103 [INFO] desktop_server: Pinterest PT: Pins PT:
+✅ weekly_planner (pt)
+✅ meal_planner (pt)
+2026-08-10 19:01:10,284 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 19:01:10,344 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 19:08:07,362 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 19:08:07,366 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1248t | $0.0112
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 19:08:08,180 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 19:08:08,457 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 19:38:44,619 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 19:38:44,623 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1227t | $0.0110
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 19:38:45,511 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 19:38:45,770 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:00:24,111 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:00:24,115 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 172t | $0.0005
+2026-08-10 20:00:25,428 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:00:25,729 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:00:26,208 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:00:26,211 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 179t | $0.0005
+2026-08-10 20:00:26,426 [INFO] desktop_server: Pinterest DE: Pins DE:
+✅ habit_tracker (de)
+✅ meal_planner (de)
+2026-08-10 20:00:26,606 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:00:26,731 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:00:28,166 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:00:28,169 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 177t | $0.0005
+2026-08-10 20:00:28,676 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:00:28,734 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:00:32,092 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:00:32,095 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 176t | $0.0005
+2026-08-10 20:00:32,280 [INFO] desktop_server: Pinterest ES: Pins ES:
+✅ weekly_planner (es)
+✅ monthly_planner (es)
+2026-08-10 20:00:32,500 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:00:32,562 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:03:33,225 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 20:03:33,412 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:09:20,879 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:09:20,882 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1208t | $0.0109
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 20:09:21,341 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:09:21,654 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 20:09:22,858 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 20:09:23,639 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 20:39:58,950 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 20:39:58,954 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1236t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 20:39:59,313 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 20:39:59,589 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 21:00:48,726 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 21:00:48,731 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 148t | $0.0004
+2026-08-10 21:00:50,204 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:00:50,455 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 21:00:50,710 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 21:00:50,714 [INFO] claude_guard: [claude_guard] patlas | claude-haiku-4-5-20251001 | 149t | $0.0004
+2026-08-10 21:00:50,896 [INFO] desktop_server: Pinterest EN: Pins EN:
+✅ weekly_planner (en)
+✅ budget_tracker (en)
+2026-08-10 21:00:51,073 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:00:51,222 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 21:03:35,473 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 21:03:35,651 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:10:35,793 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 21:10:35,797 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1266t | $0.0114
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 21:10:36,715 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:10:37,070 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 21:18:37,576 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 21:18:37,585 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:33:39,588 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 21:33:39,630 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:41:14,215 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 21:41:14,216 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1262t | $0.0114
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 21:41:14,557 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 21:41:14,775 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 21:48:41,730 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 21:48:42,210 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:01:03,381 [INFO] httpx: HTTP Request: GET https://nzewcorujofapxymupzr.supabase.co/rest/v1/conversations?user_id=eq.vasco&order=created_at.desc&limit=2000 "HTTP/1.1 200 OK"
+2026-08-10 22:01:04,302 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:01:13,502 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:01:13,503 [INFO] claude_guard: [claude_guard] ceo | claude-sonnet-4-6 | 967t | $0.0087
+2026-08-10 22:03:44,156 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:03:44,240 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:04:08,215 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:04:08,218 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1289t | $0.0116
+2026-08-10 22:09:10,154 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:09:10,707 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:09:35,425 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:09:35,426 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1289t | $0.0116
+2026-08-10 22:11:50,356 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:11:50,358 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1237t | $0.0111
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 22:11:50,794 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:11:51,061 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 22:11:52,164 [ERROR] yfinance: $CSPX: possibly delisted; no price data found  (period=3mo) (Yahoo error = "No data found, symbol may be delisted")
+2026-08-10 22:11:52,897 [ERROR] yfinance: $^MSCI: possibly delisted; no price data found  (period=3mo)
+2026-08-10 22:19:37,347 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:19:37,502 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:20:00,480 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:20:00,483 [INFO] claude_guard: [claude_guard] solver | claude-sonnet-4-6 | 1192t | $0.0107
+2026-08-10 22:25:02,355 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:25:02,576 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:40:04,477 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:40:04,477 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:42:31,857 [INFO] httpx: HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+2026-08-10 22:42:31,859 [INFO] claude_guard: [claude_guard] cfo | claude-sonnet-4-6 | 1268t | $0.0114
+[cfo_executor] OBSERVATION: teria executado 'manter' (conta: binance_grid_btc)
+[cfo/ciclo] manter | autonomo=True | confianca=72% | modo=observation | resultado=observation
+2026-08-10 22:42:32,179 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-08-10 22:42:32,421 [INFO] httpx: HTTP Request: PUT https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333/collections/episodic_memory/points?wait=true "HTTP/1.1 200 OK"
+2026-08-10 22:55:06,471 [INFO] httpx: HTTP Request: GET https://b67d79ce-732d-4dac-8df6-09d33505cd6f.europe-west3-0.gcp.cloud.qdrant.io:6333 "HTTP/1.1 200 OK"
+2026-08-10 22:55:06,794 [INFO] httpx: HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"

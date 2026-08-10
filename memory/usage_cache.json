@@ -1,0 +1,20 @@
+{
+  "higgsfield": {
+    "plano": "Ultra",
+    "creditos_restantes": 2798,
+    "creditos_ciclo": 3000,
+    "proxima_renovacao": "2026-08-30",
+    "verificado_em": "2026-08-09"
+  },
+  "higgsfield_ts": 1786278019.447013,
+  "elevenlabs": {
+    "plano": "Creator",
+    "chars_usados": 14,
+    "chars_limite": 239159,
+    "chars_pct": 0.0,
+    "proxima_renovacao": "2026-09-05",
+    "proxima_fatura_usd": 27.06,
+    "estado": "active"
+  },
+  "elevenlabs_ts": 1786278019.447444
+}

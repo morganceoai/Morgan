@@ -1,0 +1,32 @@
+Tenho dados suficientes. Aqui está a análise de estratégia.
+
+---
+
+**MORGAN SCOUT — Análise de Estratégia de Trading**
+*Supertrend BTC/USDT 4h · Capital $100 · Binance live*
+
+**1. A estratégia ainda é válida?**
+Parcialmente. Backtests recentes confirmam que o Supertrend *funciona*, mas com nuances brutais: BoringEdge (8,6 anos Binance, ATR 10 × 3.0 diário) dá **win rate 42%, CAGR 33%, DD -61,5%** — abaixo do buy&hold (37,6%). O estudo *chocotrader* (pré-registado, 9,25 anos, OOS selado) é demolidor: **nenhuma estratégia simples bate o buy&hold out-of-sample**; o Supertrend 4h deu Sharpe 0,98 mas equity final $2.190 vs $15.958 do B&H. Crucial: **flips puros têm Sharpe negativo (-0,47)** — o Supertrend só funciona com trailing stop.
+
+**2. Melhores parâmetros no mercado actual**
+Grelha Keel (perps, 2024-2026): o default **ATR 20 × mult 3.0** é o melhor (Sharpe 1,04, +86,8%). ATR 10 × 3.0 (o teu default provável) fica em Sharpe 0,60. PyQuantLab confirma: **entradas só no flip são fracas; ATR-trailing ou trailing % de 3% são obrigatórios**. Recomendação de parâmetros: subir ATR para 14-20, manter mult 3.0, e adicionar trailing stop.
+
+**3. Alternativas com melhor expectancy**
+- **Donchian Breakout 4h** (CoinQuant): Sharpe **1,95**, DD -21,6%, payoff 4,9x — o vencedor risco-ajustado, e igualmente passivo.
+- **Donchian + volume 1h** (10 anos): +773%, Sharpe 0,79.
+- **EMA Crossover 12/26 diário** (dev.to, 50 estratégias testadas): Sharpe 1,30, o mais robusto para conta pequena e mínimo esforço.
+
+**4. Condições de mercado actuais (Nov 2025)**
+Mercado **hostil a trend-following**: BTC caiu 36% do ATH ($126k→$80k), agora ~$81-89k. VanEck: RSI-30d ~32 (mais baixo desde 2022), volatilidade mid-40s, OI em mínimos desde Abril. Dominância BTC **anómala** — caiu para 58,5-59% durante a queda (invulgar). Coinbase: BTC abaixo da SMA-200 e cost-basis, "sem chão óbvio". Regime lateral/baixista = **whipsaw hell** para Supertrend.
+
+**5. Recomendação: AJUSTAR + reduzir exposição**
+Manter o Supertrend com flips puros no regime actual é o pior cenário possível (chop máximo). Duas opções: (a) ajustar parâmetros e adicionar trailing stop; (b) migrar para Donchian, superior em quase todas as métricas. Dado o perfil (pouco tempo, passivo, $100), a matemática é dura: com fees 0,1% e mínimos de ordem $5-10 na Binance, **$100 gera cêntimos/mês** — é ambiente de aprendizagem, não rendimento.
+
+**6. Proposta concreta para o CFO avaliar**
+1. **Pausar entradas Supertrend** enquanto BTC estiver abaixo da SMA-200 (filtro de regime — evita whipsaw actual).
+2. **Reconfigurar**: ATR 14-20 × mult 3.0 + trailing stop ATR 3x, em vez de flip simétrico.
+3. **Testar Donchian 20/10 em paper trading** 30 dias em paralelo (Sharpe 1,95 vs 0,98).
+4. **Expectativa realista**: em $100, alvo é validar execução, não lucro. Escalar só depois de 30+ trades OOS positivos.
+5. **Risco**: DD histórico -60% — dimensionar para sobreviver a isso.
+
+*Fontes: BoringEdge, Keel Research, CoinQuant, PyQuantLab, chocotrader

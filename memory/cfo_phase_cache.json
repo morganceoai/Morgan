@@ -1,27 +1,27 @@
 {
-  "ts": "2026-08-10T10:39:13.957275",
+  "ts": "2026-08-10T22:42:22.889776",
   "symbol": "BTC/USDT",
   "fase_estrutural": {
     "fase": "flat",
-    "preco": 65082.0,
-    "sma200": 70050.0,
-    "distancia_sma200_pct": -7.1,
+    "preco": 64040.0,
+    "sma200": 70045.0,
+    "distancia_sma200_pct": -8.6,
     "acima_sma200": false,
-    "rsi14": 60.8,
-    "razao": "Preço abaixo SMA200 (-7.1%), RSI=60.8"
+    "rsi14": 52.1,
+    "razao": "Preço abaixo SMA200 (-8.6%), RSI=52.1"
   },
   "fase_curto_prazo": {
-    "tendencia": "lateral",
-    "ema9": 65173.0,
-    "ema21": 65140.0,
-    "diferenca_pct": 0.05
+    "tendencia": "baixa",
+    "ema9": 64097.0,
+    "ema21": 64295.0,
+    "diferenca_pct": -0.31
   },
   "funding_rate": {
-    "rate_pct": 0.0093,
+    "rate_pct": 0.0061,
     "sentimento": "neutro"
   },
   "dominancia_btc": {
-    "dominancia_pct": 56.7,
+    "dominancia_pct": 56.5,
     "interpretacao": "dominância neutra"
   },
   "eventos_macro_proximos": [

@@ -21,13 +21,13 @@
   },
   "cfo": {
     "agente": "cfo",
-    "ts": "2026-08-10T07:38:28.150758",
+    "ts": "2026-08-10T22:01:03.397958",
     "status": "✅ activo",
     "resumo": "PnL hoje: +0.0000 USDT | Total: +0.0000 | Trades: 0",
     "pnl_today": 0.0,
     "pnl_total": 0.0,
     "position": null,
-    "last_signal": "hold",
+    "last_signal": "",
     "testnet": false
   }
 }
