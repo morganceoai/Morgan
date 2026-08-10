@@ -941,29 +941,45 @@ async def chat_endpoint(request: Request):
 
 @app.post("/api/chat-stream")
 async def chat_stream(request: Request):
-    """Claude com streaming — tokens aparecem à medida que chegam."""
+    """Claude com streaming — router completo + tokens em tempo real para CEO."""
     body = await request.json()
     user_text = body.get("message", "").strip()
     if not user_text:
         return StreamingResponse(iter([""]), media_type="text/plain")
 
-    store_save(DESKTOP_USER_ID, "user", user_text)
-    conversation_history.append({"role": "user", "content": user_text})
+    agente = _classificar_agente(user_text)
+    _desktop_agent["current"] = agente
 
     async def generate():
-        full_reply = ""
-        with claude._client.messages.stream(
-            model="claude-sonnet-4-6",
-            max_tokens=512,
-            system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}],
-            messages=conversation_history[-50:],
-        ) as stream:
-            for text in stream.text_stream:
-                full_reply += text
-                yield text
-        conversation_history.append({"role": "assistant", "content": full_reply})
-        store_save(DESKTOP_USER_ID, "assistant", full_reply)
-        _mem0_guardar_se_relevante(user_text, full_reply)
+        # Primeiro chunk: identifica o agente para o PWA actualizar o header
+        yield f"[AGENT:{agente}]\n"
+
+        if agente == "ceo":
+            full_reply = ""
+            with claude._client.messages.stream(
+                model="claude-sonnet-4-6",
+                max_tokens=512,
+                system=[{"type": "text", "text": get_system_prompt(user_text), "cache_control": {"type": "ephemeral"}}],
+                messages=(conversation_history[-50:] + [{"role": "user", "content": user_text}]),
+            ) as stream:
+                for text in stream.text_stream:
+                    full_reply += text
+                    yield text
+            conversation_history.append({"role": "user", "content": user_text})
+            conversation_history.append({"role": "assistant", "content": full_reply})
+            store_save(DESKTOP_USER_ID, "user", user_text)
+            store_save(DESKTOP_USER_ID, "assistant", full_reply)
+            _mem0_guardar_se_relevante(user_text, full_reply)
+        else:
+            # Outros agentes: resposta síncrona num thread, devolvida como bloco
+            import concurrent.futures
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                reply = await loop.run_in_executor(pool, chat_with_morgan, user_text)
+            # Remove prefix [AGENTE] se presente — o header já foi enviado
+            import re as _re
+            reply_clean = _re.sub(r"^\[[A-Z]+\]\s*", "", reply)
+            yield reply_clean
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
