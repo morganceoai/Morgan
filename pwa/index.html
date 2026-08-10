@@ -268,16 +268,16 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
             <div class="hier-name" style="color:var(--amber)">CFO</div>
           </div>
           <div class="hier-line" style="cursor:pointer" onclick="selectAgent('creator')" id="abtn-creator">
-            <div class="hier-dot" style="background:#ffaa00;box-shadow:0 0 4px #ffaa00"></div>
-            <div class="hier-name" style="color:#ffaa00">Creator</div>
+            <div class="hier-dot" style="background:#ff3333;box-shadow:0 0 4px #ff3333"></div>
+            <div class="hier-name" style="color:#ff3333">Creator</div>
           </div>
-          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('operator')" id="abtn-operator">
-            <div class="hier-dot" style="background:#00c882;box-shadow:0 0 4px #00c882"></div>
-            <div class="hier-name" style="color:#00c882">Operator</div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('patlas')" id="abtn-patlas">
+            <div class="hier-dot" style="background:#ff3c8c;box-shadow:0 0 4px #ff3c8c"></div>
+            <div class="hier-name" style="color:#ff3c8c">PAtlas</div>
           </div>
-          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('marketeer')" id="abtn-marketeer">
-            <div class="hier-dot" style="background:#b388ff;box-shadow:0 0 4px #b388ff"></div>
-            <div class="hier-name" style="color:#b388ff">Marketeer</div>
+          <div class="hier-line" style="cursor:pointer" onclick="selectAgent('pulser')" id="abtn-pulser">
+            <div class="hier-dot" style="background:#aaff00;box-shadow:0 0 4px #aaff00"></div>
+            <div class="hier-name" style="color:#aaff00">Pulser</div>
           </div>
           <div id="abtn-dynamic-agents"></div>
         </div>
@@ -318,6 +318,71 @@ body.speaking  .state-lbl { color: rgba(0,255,157,0.7); }
     <div class="p-block">
       <div class="p-label">Scout — Oportunidades</div>
       <div id="pScout"></div>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Cotações ao Vivo</div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,212,255,0.06)">
+        <span style="font-size:10px;color:rgba(0,212,255,0.5)">BTC</span>
+        <span style="font-size:11px;color:rgba(0,212,255,0.85)" id="pBtcPrice">--</span>
+        <span style="font-size:9px" id="pBtcChg">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,212,255,0.06)">
+        <span style="font-size:10px;color:rgba(0,212,255,0.5)">ETH</span>
+        <span style="font-size:11px;color:rgba(0,212,255,0.85)" id="pEthPrice">--</span>
+        <span style="font-size:9px" id="pEthChg">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0">
+        <span style="font-size:10px;color:rgba(0,212,255,0.5)">SOL</span>
+        <span style="font-size:11px;color:rgba(0,212,255,0.85)" id="pSolPrice">--</span>
+        <span style="font-size:9px" id="pSolChg">--</span>
+      </div>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Portfolio BCVertex</div>
+      <div style="font-size:18px;font-weight:200;color:var(--cyan);letter-spacing:1px;margin-bottom:8px" id="pPortTotal">-- USDT</div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">USDT</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="pPortUsdt">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">BTC</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="pPortBtc">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">ETH</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.7)" id="pPortEth">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Grid BTC PnL</span>
+        <span style="font-size:10px" id="pPortBtcPnl">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Grid ETH PnL</span>
+        <span style="font-size:10px" id="pPortEthPnl">--</span>
+      </div>
+      <div style="font-size:7px;color:rgba(0,212,255,0.2);text-align:right;margin-top:4px" id="pPortTs">—</div>
+    </div>
+    <div class="p-block">
+      <div class="p-label" style="display:flex;justify-content:space-between;align-items:center">
+        Últimas Acções
+        <span style="font-size:10px;opacity:.5;cursor:pointer" onclick="loadActivity()">↺</span>
+      </div>
+      <div id="pActivity" style="display:flex;flex-direction:column;gap:4px;margin-top:4px"></div>
+    </div>
+    <div class="p-block">
+      <div class="p-label">Consumos Anthropic</div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Custo hoje</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.8)" id="pAntHoje">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,212,255,0.05)">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Tokens hoje</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.65)" id="pAntTok">--</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0">
+        <span style="font-size:9px;color:rgba(0,212,255,0.4)">Este mês</span>
+        <span style="font-size:10px;color:rgba(0,212,255,0.65)" id="pAntMes">--</span>
+      </div>
     </div>
     <div class="p-block">
       <div class="p-label">Sistema</div>
@@ -493,7 +558,7 @@ function togglePanel(side) {
   document.getElementById('tabL').textContent = side==='left'?'‹':'›';
   document.getElementById('tabR').textContent = side==='right'?'›':'‹';
   if (side==='left') loadHistory();
-  if (side==='right') { loadNotifications(); loadReports(); }
+  if (side==='right') { loadNotifications(); loadReports(); loadActivity(); fetchUsageLite(); }
 }
 function closePanels(reset=true) {
   document.getElementById('panelLeft').classList.remove('open');
@@ -601,9 +666,9 @@ function showTranscript(u,m) {
   if(u){const d=document.createElement('div');d.className='t-user';d.textContent=u;el.appendChild(d);}
   if(m){const d=document.createElement('div');d.className='t-morgan';d.textContent=m;el.appendChild(d);}
 }
-const AGENTS = ['ceo','cfo','coach','scout','creator','operator','marketeer'];
-const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT',creator:'CREATOR',operator:'OPERATOR',marketeer:'MARKETEER'};
-const AGENT_COLORS = {ceo:'var(--cyan)',cfo:'var(--amber)',coach:'var(--amber)',scout:'var(--amber)',creator:'#ffaa00',operator:'#00c882',marketeer:'#b388ff'};
+const AGENTS = ['ceo','cfo','coach','scout','creator','patlas','pulser'];
+const AGENT_LABELS = {ceo:'CEO',cfo:'CFO',coach:'COACH',scout:'SCOUT',creator:'CREATOR',patlas:'PATLAS',pulser:'PULSER'};
+const AGENT_COLORS = {ceo:'var(--cyan)',cfo:'#aa44ff',coach:'#00ff9d',scout:'#ff5a32',creator:'#ff3333',patlas:'#ff3c8c',pulser:'#aaff00'};
 let _currentAgent = 'ceo';
 
 async function loadDynamicAgents(){
@@ -849,6 +914,75 @@ async function activarNotificacoes() {
     console.warn('[Morgan] Push falhou:', e);
   }
 }
+
+// ── PORTFOLIO + COTAÇÕES ──────────────────────────────────────────────────────
+function fmt(n,dec=2){return n!=null?Number(n).toFixed(dec):'--';}
+function fmtU(n){return n!=null?Number(n).toFixed(2)+' USDT':'--';}
+async function fetchPortfolio(){
+  try{
+    const d=await fetch(API+'/api/portfolio').then(r=>r.json());
+    document.getElementById('pPortTotal').textContent=fmtU(d.total_usdt);
+    document.getElementById('pPortUsdt').textContent=fmtU(d.usdt);
+    document.getElementById('pPortBtc').textContent=fmt(d.btc,6)+' BTC';
+    document.getElementById('pPortEth').textContent=fmt(d.eth,4)+' ETH';
+    const bp=d.btc_grid_pnl??0,ep=d.eth_grid_pnl??0;
+    const bEl=document.getElementById('pPortBtcPnl');
+    bEl.textContent=(bp>=0?'+':'')+fmt(bp)+' USDT';
+    bEl.style.color=bp>=0?'rgba(0,255,100,.8)':'rgba(255,80,80,.8)';
+    const eEl=document.getElementById('pPortEthPnl');
+    eEl.textContent=(ep>=0?'+':'')+fmt(ep)+' USDT';
+    eEl.style.color=ep>=0?'rgba(0,255,100,.8)':'rgba(255,80,80,.8)';
+    if(d.ts)document.getElementById('pPortTs').textContent=d.ts.slice(11,16);
+    // cotações
+    if(d.preco_btc){
+      document.getElementById('pBtcPrice').textContent='$'+Number(d.preco_btc).toLocaleString('pt-PT',{maximumFractionDigits:0});
+      const c=document.getElementById('pBtcChg');
+      c.textContent=d.btc_chg!=null?(d.btc_chg>=0?'+':'')+fmt(d.btc_chg,2)+'%':'--';
+      c.style.color=d.btc_chg>0?'#00E596':d.btc_chg<0?'#FF5A5A':'rgba(0,212,255,.4)';
+    }
+    if(d.preco_eth){
+      document.getElementById('pEthPrice').textContent='$'+Number(d.preco_eth).toLocaleString('pt-PT',{maximumFractionDigits:0});
+      const c=document.getElementById('pEthChg');
+      c.textContent=d.eth_chg!=null?(d.eth_chg>=0?'+':'')+fmt(d.eth_chg,2)+'%':'--';
+      c.style.color=d.eth_chg>0?'#00E596':d.eth_chg<0?'#FF5A5A':'rgba(0,212,255,.4)';
+    }
+    if(d.preco_sol){
+      document.getElementById('pSolPrice').textContent='$'+Number(d.preco_sol).toLocaleString('pt-PT',{maximumFractionDigits:2});
+      const c=document.getElementById('pSolChg');
+      c.textContent=d.sol_chg!=null?(d.sol_chg>=0?'+':'')+fmt(d.sol_chg,2)+'%':'--';
+      c.style.color=d.sol_chg>0?'#00E596':d.sol_chg<0?'#FF5A5A':'rgba(0,212,255,.4)';
+    }
+  }catch(e){}
+}
+fetchPortfolio(); setInterval(fetchPortfolio,30000);
+
+// ── ACTIVIDADE ────────────────────────────────────────────────────────────────
+async function loadActivity(){
+  try{
+    const lines=await fetch(API+'/api/activity?n=15').then(r=>r.json());
+    const el=document.getElementById('pActivity');
+    el.innerHTML='';
+    (Array.isArray(lines)?lines:[]).slice().reverse().forEach(line=>{
+      const d=document.createElement('div');
+      d.style.cssText='font-size:10px;color:rgba(0,212,255,.5);border-bottom:1px solid rgba(0,212,255,.04);padding-bottom:4px';
+      d.textContent=typeof line==='string'?line:JSON.stringify(line);
+      el.appendChild(d);
+    });
+  }catch(e){}
+}
+loadActivity(); setInterval(loadActivity,15000);
+
+// ── CONSUMOS ─────────────────────────────────────────────────────────────────
+async function fetchUsageLite(){
+  try{
+    const d=await fetch(API+'/api/usage').then(r=>r.json());
+    const ant=d.anthropic||{},hoje=ant.hoje||{},mes=ant.mes||{};
+    document.getElementById('pAntHoje').textContent=hoje.custo_usd!=null?'$'+hoje.custo_usd.toFixed(4):'--';
+    document.getElementById('pAntTok').textContent=hoje.tokens!=null?hoje.tokens.toLocaleString()+' tok':'--';
+    document.getElementById('pAntMes').textContent=mes.custo_usd!=null?'$'+mes.custo_usd.toFixed(2):'--';
+  }catch(e){}
+}
+fetchUsageLite(); setInterval(fetchUsageLite,60000);
 
 if ('serviceWorker' in navigator) {
   // desregistar SW antigos (sw.js v1-v5) para limpar cache
