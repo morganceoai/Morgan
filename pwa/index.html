@@ -746,12 +746,13 @@ const sysGroup = new THREE.Group();
 scene.add(sysGroup);
 // Portrait: scale everything proportionally so max ring (300) fits in hFOV.
 // hFOV half = tan(vFOV/2) * aspect * cameraZ = 0.519 * (W/H) * 480
-// scale = hFOV_half * 0.82 / maxRing; capped at 1 for landscape/desktop.
-// Also shift scene UP to visually centre in the area below the header.
+// Em portrait, ellipseY = 0.75*(H/W) faz a órbita parecer circular no ecrã.
+let ellipseY = 0.44;
 function applySysLayout() {
   const portrait = W < H;
-  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 * 1.0 / 300) : 1;
+  const scale = portrait ? Math.min(1, 0.519 * (W / H) * 480 / 300) : 1;
   sysGroup.scale.setScalar(scale);
+  ellipseY = portrait ? 0.75 * (H / W) : 0.44;
   const standalone = window.navigator.standalone;
   sysGroup.position.y = portrait ? (standalone ? 6 : 31) : 0;
 }
@@ -849,7 +850,7 @@ function selectAgent(id) {
     const agRef = AGENTS.find(a=>a.id===prevCentered);
     const orbitPos = new THREE.Vector3(
       agRef.ring * ringScale * Math.cos(agentAngles[prevCentered]),
-      agRef.ring * ringScale * Math.sin(agentAngles[prevCentered]) * 0.44, 0
+      agRef.ring * ringScale * Math.sin(agentAngles[prevCentered]) * ellipseY, 0
     );
     ceoGroup.position.set(0, 0, 0);
     agentGroups[prevCentered].position.copy(orbitPos);
@@ -891,7 +892,7 @@ function animate() {
     if (!isCentered) {
       agentAngles[ag.id] += 0.00016 * (200/ag.ring);
       const x = ag.ring * ringScale * Math.cos(agentAngles[ag.id]);
-      const y = ag.ring * ringScale * Math.sin(agentAngles[ag.id]) * 0.44;
+      const y = ag.ring * ringScale * Math.sin(agentAngles[ag.id]) * ellipseY;
       agentGroups[ag.id].position.set(x, y, 0);
     }
     agentGroups[ag.id].children[0].visible = !isCentered;
@@ -927,7 +928,7 @@ function animate() {
   if (centeredId && centeredId !== 'ceo') {
     ceoAngle += 0.00016 * (200 / 285);
     const cx = 285 * ringScale * Math.cos(ceoAngle);
-    const cy = 285 * ringScale * Math.sin(ceoAngle) * 0.44;
+    const cy = 285 * ringScale * Math.sin(ceoAngle) * ellipseY;
     ceoGroup.position.set(cx, cy, 0);
   }
 
