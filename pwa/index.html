@@ -1202,7 +1202,7 @@ setInterval(() => {
 }, 30000);
 
 // ── Panels ────────────────────────────────────────────────────────────────────
-let openPanel = null;
+var openPanel = null;
 function togglePanel(side) {
   if (openPanel === side) { closePanels(); return; }
   closePanels(false);
