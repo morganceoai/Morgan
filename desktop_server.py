@@ -2877,10 +2877,6 @@ async def _heartbeat_loop():
             if _should_run_briefing():
                 await _run_briefing(agora.hour)
 
-            # Relatório diário às 22h
-            if _should_run_report():
-                await _run_daily_report()
-
             # Scout Missão A — oportunidades de negócio (domingo 20h)
             if _should_run_scout():
                 await _run_scout_push()

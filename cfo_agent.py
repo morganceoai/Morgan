@@ -305,8 +305,25 @@ def verificar_alertas_criticos() -> list:
 
 # ── Sistema de defesa ────────────────────────────────────────────────────────
 
+def _push_directo(titulo: str, corpo: str):
+    """Envia push directo ao Vasco — só para situações urgentes do CFO.
+    Respeita silêncio 23h-7h."""
+    try:
+        from datetime import datetime as _dt
+        import pytz
+        hora = _dt.now(pytz.timezone("Europe/Lisbon")).hour
+        if 23 <= hora or hora < 7:
+            print(f"[cfo/push] silêncio — guardado para briefing: {titulo}", flush=True)
+            return
+        from push_service import send_push
+        send_push(title=f"CFO — {titulo}", body=corpo, url="/pwa/")
+        print(f"[cfo/push] PUSH ENVIADO: {titulo}", flush=True)
+    except Exception as e:
+        print(f"[cfo/push] erro: {e}", flush=True)
+
+
 def _notificar_cfo(tipo: str, mensagem: str, urgencia: str = "alta"):
-    """Escreve evento em ceo_events.json e imprime no log."""
+    """Regista evento. Se urgência crítica, envia push directo ao Vasco."""
     print(f"[cfo/{tipo}] {mensagem}", flush=True)
     try:
         ceo_events_file = MEMORY_DIR / "ceo_events.json"
@@ -325,6 +342,9 @@ def _notificar_cfo(tipo: str, mensagem: str, urgencia: str = "alta"):
         ceo_events_file.write_text(json.dumps(eventos, ensure_ascii=False, indent=2))
     except Exception as e:
         print(f"[cfo] erro ceo_events: {e}", flush=True)
+
+    if urgencia == "critica":
+        _push_directo(tipo.replace("_", " ").title(), mensagem)
 
 
 def _get_exchange():
@@ -590,6 +610,9 @@ def parar_bot(razao: str):
     except Exception:
         pass
 
+    # Push directo ao Vasco — circuit breaker é sempre crítico
+    _push_directo("Circuit Breaker", f"Todos os bots pausados. {razao}")
+
 
 def circuit_breaker() -> bool:
     """
@@ -779,8 +802,15 @@ Responde APENAS com JSON válido, sem mais texto:
             flush=True
         )
 
-        # Regista apenas quando há mudança — não regista "manter" rotineiro
+        # Push directo para escaladas urgentes
         acao = decisao.get("acao", "manter")
+        if acao == "escalar_vasco":
+            _push_directo(
+                "Decisão necessária",
+                f"{decisao.get('razao', acao)[:150]} (confiança {decisao.get('confianca')}%)"
+            )
+
+        # Regista apenas quando há mudança — não regista "manter" rotineiro
         if acao != "manter" or alertas_fase or risco_trading.get("alertas"):
             try:
                 from episodic_memory import registar_evento
