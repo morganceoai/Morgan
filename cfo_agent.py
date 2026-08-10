@@ -775,6 +775,36 @@ Responde APENAS com JSON válido, sem mais texto:
   "observacoes_futuras": "o que monitorizar na próxima análise"
 }"""
 
+        # 2. VERIFICAR SE HÁ MUDANÇA REAL (evitar chamadas LLM desnecessárias)
+        _PHASE_CACHE = Path(__file__).parent / "memory" / "cfo_phase_cache.json"
+        try:
+            cache = json.loads(_PHASE_CACHE.read_text()) if _PHASE_CACHE.exists() else {}
+        except Exception:
+            cache = {}
+
+        fase_atual = fase_est.get("fase", "?")
+        risco_atual = risco_trading.get("nivel_risco", "verde")
+        ultima_llm = cache.get("ultima_llm_ts")
+        horas_desde_llm = 999
+        if ultima_llm:
+            try:
+                horas_desde_llm = (datetime.now() - datetime.fromisoformat(ultima_llm)).total_seconds() / 3600
+            except Exception:
+                pass
+
+        fase_mudou = cache.get("ultima_fase") != fase_atual
+        risco_mudou = cache.get("ultimo_risco") != risco_atual
+        tem_alertas = bool(alertas_fase or risco_trading.get("alertas"))
+        heartbeat = horas_desde_llm >= 2  # chamada de garantia a cada 2h
+
+        if not (fase_mudou or risco_mudou or tem_alertas or heartbeat):
+            print(
+                f"[cfo/ciclo] sem mudança (fase={fase_atual}, risco={risco_atual}) — LLM saltado",
+                flush=True,
+            )
+            return {"acao": "manter", "autonomo": True, "confianca": 95,
+                    "razao": "sem alterações desde última análise", "saltou_llm": True}
+
         # 2. ANÁLISE LLM
         from claude_guard import GuardedClient
         client = GuardedClient("cfo")
@@ -791,6 +821,15 @@ Responde APENAS com JSON válido, sem mais texto:
             raw = raw.split("```")[1].replace("json", "").strip()
 
         decisao = json.loads(raw)
+
+        # Actualizar cache após chamada LLM
+        try:
+            cache["ultima_fase"] = fase_atual
+            cache["ultimo_risco"] = risco_atual
+            cache["ultima_llm_ts"] = datetime.now().isoformat()
+            _PHASE_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
 
         # 3. EXECUÇÃO
         resultado = executar_decisao(decisao)
