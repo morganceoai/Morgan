@@ -2,7 +2,7 @@
   "name": "Morgan",
   "short_name": "Morgan",
   "description": "Morgan CEO — Assistente pessoal de IA",
-  "start_url": "/pwa/",
+  "start_url": "/app/",
   "display": "standalone",
   "background_color": "#080c10",
   "theme_color": "#00d4ff",
