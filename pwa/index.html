@@ -1265,24 +1265,48 @@ function setPushStatus(msg, showBtn) {
   if (btn) btn.style.display = showBtn ? 'block' : 'none';
 }
 
+function pushLog(msg) {
+  const t = document.getElementById('transcript');
+  if (t) {
+    const d = document.createElement('div');
+    d.style.cssText = 'font-size:10px;color:rgba(0,212,255,0.5);padding:4px 8px;margin:2px 0;background:rgba(0,0,0,0.3);border-radius:4px;font-family:monospace';
+    d.textContent = '[push] ' + msg;
+    t.appendChild(d);
+    t.scrollTop = t.scrollHeight;
+  }
+}
+
 async function activarPush() {
-  setPushStatus('A pedir permissão...', false);
+  setPushStatus('A activar...', false);
+  pushLog('a iniciar...');
   try {
+    pushLog('PushManager: ' + ('PushManager' in window));
+    pushLog('standalone: ' + (window.navigator.standalone));
+    pushLog('permission: ' + Notification.permission);
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { setPushStatus('❌ Permissão negada nas definições', true); return; }
+    pushLog('permission após pedido: ' + perm);
+    if (perm !== 'granted') { setPushStatus('❌ Permissão negada', true); pushLog('NEGADO'); return; }
     const res = await fetch('/api/push/vapid-public-key');
     const { key } = await res.json();
+    pushLog('vapid key: ' + key.slice(0,20) + '...');
     const appKey = Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    pushLog('appKey bytes: ' + appKey.length);
     const existing = await _swReg.pushManager.getSubscription();
-    if (existing) await existing.unsubscribe();
+    pushLog('sub existente: ' + (existing ? existing.endpoint.slice(0,40) : 'nenhuma'));
+    if (existing) { await existing.unsubscribe(); pushLog('unsubscribed'); }
+    pushLog('a subscrever...');
     const sub = await _swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+    pushLog('subscrito! endpoint: ' + sub.endpoint.slice(0,40));
     await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
-    setPushStatus('✅ Activas — a testar...', false);
+    pushLog('enviado ao servidor');
+    setPushStatus('✅ Activas', false);
     const r = await fetch('/api/push/test', { method: 'POST' });
     const d = await r.json();
-    setPushStatus(d.sent > 0 ? '✅ Activas — notificação enviada!' : '⚠️ Subscrito mas envio falhou: ' + JSON.stringify(d), false);
+    pushLog('teste: ' + JSON.stringify(d));
+    setPushStatus(d.sent > 0 ? '✅ Notificação enviada!' : '⚠️ ' + JSON.stringify(d), false);
   } catch(e) {
-    setPushStatus('❌ Erro: ' + e.message, true);
+    pushLog('ERRO: ' + e.name + ': ' + e.message);
+    setPushStatus('❌ ' + e.message, true);
   }
 }
 
