@@ -1617,6 +1617,17 @@ async def get_vapid_public_key():
     return JSONResponse({"key": VAPID_PUBLIC_KEY})
 
 
+@app.get("/api/push/status")
+async def push_status():
+    from push_service import _load_subs
+    subs = _load_subs()
+    return JSONResponse({
+        "subscricoes": len(subs),
+        "vapid_key_prefix": VAPID_PUBLIC_KEY[:20],
+        "endpoints": [s.get("endpoint","")[:60] for s in subs],
+    })
+
+
 @app.post("/api/push/subscribe")
 async def push_subscribe(request: Request):
     sub = await request.json()
