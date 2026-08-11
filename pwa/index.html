@@ -615,6 +615,12 @@ body::after {
         <div style="font-size:7px;color:rgba(0,212,255,0.18);margin-top:5px;text-align:right" id="portTs">—</div>
       </div>
 
+      <div class="info-panel" style="margin-top:10px">
+        <div class="i-label">Notificações Push</div>
+        <div id="push-status" style="font-size:9px;color:rgba(0,212,255,0.5);margin-top:6px;line-height:1.8">A verificar...</div>
+        <button id="push-btn" onclick="activarPush()" style="margin-top:8px;background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.8);padding:6px 14px;border-radius:6px;font-size:10px;letter-spacing:1px;cursor:pointer;display:none">ACTIVAR NOTIFICAÇÕES</button>
+      </div>
+
     </div><!-- /panel-sistema -->
   </div>
 </div>
@@ -1250,6 +1256,36 @@ async function sendText() {
 }
 
 // ── Service Worker + Push ─────────────────────────────────────────────────────
+let _swReg = null;
+
+function setPushStatus(msg, showBtn) {
+  const el = document.getElementById('push-status');
+  const btn = document.getElementById('push-btn');
+  if (el) el.textContent = msg;
+  if (btn) btn.style.display = showBtn ? 'block' : 'none';
+}
+
+async function activarPush() {
+  setPushStatus('A pedir permissão...', false);
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { setPushStatus('❌ Permissão negada nas definições', true); return; }
+    const res = await fetch('/api/push/vapid-public-key');
+    const { key } = await res.json();
+    const appKey = Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+    const existing = await _swReg.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
+    const sub = await _swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+    await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
+    setPushStatus('✅ Activas — a testar...', false);
+    const r = await fetch('/api/push/test', { method: 'POST' });
+    const d = await r.json();
+    setPushStatus(d.sent > 0 ? '✅ Activas — notificação enviada!' : '⚠️ Subscrito mas envio falhou: ' + JSON.stringify(d), false);
+  } catch(e) {
+    setPushStatus('❌ Erro: ' + e.message, true);
+  }
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => { if (!r.active?.scriptURL?.includes('sw2.js')) r.unregister(); });
@@ -1257,40 +1293,28 @@ if ('serviceWorker' in navigator) {
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 
   navigator.serviceWorker.register('/app/sw2.js').then(async reg => {
-    // Aguardar SW activo
+    _swReg = reg;
     const sw = reg.installing || reg.waiting || reg.active;
     if (sw && sw.state !== 'activated') {
-      await new Promise(r => sw.addEventListener('statechange', function h(e) {
+      await new Promise(r => sw.addEventListener('statechange', function h() {
         if (sw.state === 'activated') { sw.removeEventListener('statechange', h); r(); }
       }));
     }
 
-    // Buscar VAPID key do servidor
-    const res = await fetch('/api/push/vapid-public-key');
-    const { key } = await res.json();
-    const appKey = Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
-
-    // Se há subscrição existente, verificar se a key corresponde; se não, forçar re-subscrição
+    if (!('PushManager' in window)) { setPushStatus('❌ Browser não suporta push', false); return; }
+    const perm = Notification.permission;
     const existing = await reg.pushManager.getSubscription();
-    if (existing) {
-      const existingKey = existing.options?.applicationServerKey;
-      const existingB64 = existingKey ? btoa(String.fromCharCode(...new Uint8Array(existingKey))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'') : '';
-      if (existingB64 === key) {
-        // Key correcta — re-registar no servidor (pode ter sido limpo)
-        await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(existing.toJSON()) });
-        return;
-      }
-      await existing.unsubscribe();
+
+    if (perm === 'denied') { setPushStatus('❌ Bloqueadas nas definições', false); return; }
+
+    if (existing && perm === 'granted') {
+      // Re-registar no servidor (pode ter sido limpo)
+      await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(existing.toJSON()) });
+      setPushStatus('✅ Activas', false);
+    } else {
+      setPushStatus('Notificações não activadas', true);
     }
-
-    // Pedir permissão
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') return;
-
-    // Subscrever com a nova key
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
-    await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
-  }).catch(() => {});
+  }).catch(e => { setPushStatus('❌ SW erro: ' + e.message, false); });
 }
 </script>
 </body>
