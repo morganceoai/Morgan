@@ -13,7 +13,7 @@ VAPID_PEM = BASE_DIR / "vapid_private.pem"
 
 VAPID_PUBLIC_KEY = os.getenv(
     "VAPID_PUBLIC_KEY",
-    "BPS8nx_zt3elDVtgUE4fW7741CqUVEtkrTVg8epTb5qbPcbO3F1PcRDcYZBJsyioK_FPUOaqiBqzOUOLk82sjCk"
+    "BK0z8ZFQLi2wlwz4hkdhwRQdhk3aaz-6DAn3I40zAAEKq9wlAdUiM4ysOkebh5cGnvH4qb4EBhLeoS5-hLrSSf8"
 )
 VAPID_CLAIMS = {"sub": "mailto:morganceoai@gmail.com"}
 
