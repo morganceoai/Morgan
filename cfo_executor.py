@@ -147,6 +147,8 @@ def _notificar_escalada(decisao: dict):
         ceo_events = _BASE / "memory" / "ceo_events.json"
         try:
             eventos = json.loads(ceo_events.read_text())
+            if not isinstance(eventos, list):
+                eventos = []
         except Exception:
             eventos = []
         eventos.append({
