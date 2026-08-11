@@ -22,13 +22,16 @@ THRESHOLDS = {
 
 
 def _load() -> dict:
+    _default = {"eventos": [], "contadores": {}, "ultimo_processado": ""}
     with _lock:
         if EVENTS_FILE.exists():
             try:
-                return json.loads(EVENTS_FILE.read_text())
+                data = json.loads(EVENTS_FILE.read_text())
+                if isinstance(data, dict) and "eventos" in data:
+                    return data
             except Exception:
                 pass
-        return {"eventos": [], "contadores": {}, "ultimo_processado": ""}
+        return _default
 
 
 def _save(state: dict):
