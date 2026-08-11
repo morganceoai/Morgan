@@ -1249,13 +1249,39 @@ async function sendText() {
   } catch { showTranscript(txt, 'Erro de ligação.'); }
 }
 
-// ── Service Worker ────────────────────────────────────────────────────────────
+// ── Service Worker + Push ─────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => { if (!r.active?.scriptURL?.includes('sw2.js')) r.unregister(); });
   });
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-  navigator.serviceWorker.register('/app/sw2.js').catch(()=>{});
+
+  navigator.serviceWorker.register('/app/sw2.js').then(async reg => {
+    // Aguardar SW activo
+    const sw = reg.installing || reg.waiting || reg.active;
+    if (sw && sw.state !== 'activated') {
+      await new Promise(r => sw.addEventListener('statechange', function h(e) {
+        if (sw.state === 'activated') { sw.removeEventListener('statechange', h); r(); }
+      }));
+    }
+
+    // Verificar se já há subscrição válida
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) return; // já subscrito
+
+    // Pedir permissão (silencioso — sem prompt intrusivo)
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+
+    // Buscar VAPID key do servidor
+    const res = await fetch('/api/push/vapid-public-key');
+    const { key } = await res.json();
+    const appKey = Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
+
+    // Subscrever
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+    await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
+  }).catch(() => {});
 }
 </script>
 </body>
