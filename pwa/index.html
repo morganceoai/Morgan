@@ -1292,25 +1292,29 @@ async function activarPush() {
     return;
   }
   try {
-    // iOS: permission + subscribe na mesma cadeia de gesture, sem awaits externos no meio
+    setPushStatus('1. A pedir permissão...', false);
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { alert('Permissão negada.'); return; }
+    setPushStatus('2. Permissão: ' + perm, false);
+    if (perm !== 'granted') return;
+    setPushStatus('3. A cancelar sub anterior...', false);
     const existing = await _swReady.pushManager.getSubscription();
     if (existing) await existing.unsubscribe();
-    const sub = await _swReady.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _vapidAppKey });
-    // A partir daqui já não precisa de gesture
+    setPushStatus('4. A subscrever...', false);
+    let sub;
+    try {
+      sub = await _swReady.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _vapidAppKey });
+    } catch(se) {
+      setPushStatus('❌ subscribe falhou: ' + se.name + ' — ' + se.message, false);
+      return;
+    }
+    setPushStatus('5. A guardar no servidor...', false);
     await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
-    setPushStatus('✅ A testar envio...', false);
+    setPushStatus('6. A enviar notificação teste...', false);
     const r = await fetch('/api/push/test', { method: 'POST' });
     const d = await r.json();
-    if (d.sent > 0) {
-      setPushStatus('✅ Notificações activas!', false);
-      document.getElementById('push-fab')?.remove();
-    } else {
-      setPushStatus('⚠️ Subscrito, envio falhou: ' + JSON.stringify(d), false);
-    }
+    setPushStatus(d.sent > 0 ? '✅ Notificações activas!' : '⚠️ ' + JSON.stringify(d), false);
   } catch(e) {
-    alert('Erro: ' + e.name + '\n' + e.message);
+    setPushStatus('❌ Erro: ' + e.name + ' — ' + e.message, false);
   }
 }
 
