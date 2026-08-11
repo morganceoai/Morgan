@@ -1265,48 +1265,35 @@ function setPushStatus(msg, showBtn) {
   if (btn) btn.style.display = showBtn ? 'block' : 'none';
 }
 
-function pushLog(msg) {
-  const t = document.getElementById('transcript');
-  if (t) {
-    const d = document.createElement('div');
-    d.style.cssText = 'font-size:10px;color:rgba(0,212,255,0.5);padding:4px 8px;margin:2px 0;background:rgba(0,0,0,0.3);border-radius:4px;font-family:monospace';
-    d.textContent = '[push] ' + msg;
-    t.appendChild(d);
-    t.scrollTop = t.scrollHeight;
-  }
-}
-
+// Chamada DIRECTAMENTE de um click — iOS exige user gesture
 async function activarPush() {
-  setPushStatus('A activar...', false);
-  pushLog('a iniciar...');
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  if (!isStandalone) {
+    alert('Para activar notificações:\nPartilhar → Adicionar ao Ecrã Principal\nDepois abre pelo ícone e clica aqui.');
+    return;
+  }
+  if (!('PushManager' in window)) { alert('Push não suportado neste browser.'); return; }
   try {
-    pushLog('PushManager: ' + ('PushManager' in window));
-    pushLog('standalone: ' + (window.navigator.standalone));
-    pushLog('permission: ' + Notification.permission);
     const perm = await Notification.requestPermission();
-    pushLog('permission após pedido: ' + perm);
-    if (perm !== 'granted') { setPushStatus('❌ Permissão negada', true); pushLog('NEGADO'); return; }
+    if (perm !== 'granted') { alert('Notificações bloqueadas nas definições do iPhone.'); return; }
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
     const res = await fetch('/api/push/vapid-public-key');
     const { key } = await res.json();
-    pushLog('vapid key: ' + key.slice(0,20) + '...');
     const appKey = Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
-    pushLog('appKey bytes: ' + appKey.length);
-    const existing = await _swReg.pushManager.getSubscription();
-    pushLog('sub existente: ' + (existing ? existing.endpoint.slice(0,40) : 'nenhuma'));
-    if (existing) { await existing.unsubscribe(); pushLog('unsubscribed'); }
-    pushLog('a subscrever...');
-    const sub = await _swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
-    pushLog('subscrito! endpoint: ' + sub.endpoint.slice(0,40));
+    const sub = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
     await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
-    pushLog('enviado ao servidor');
-    setPushStatus('✅ Activas', false);
     const r = await fetch('/api/push/test', { method: 'POST' });
     const d = await r.json();
-    pushLog('teste: ' + JSON.stringify(d));
-    setPushStatus(d.sent > 0 ? '✅ Notificação enviada!' : '⚠️ ' + JSON.stringify(d), false);
+    if (d.sent > 0) {
+      setPushStatus('✅ Activas', false);
+      document.getElementById('push-fab')?.remove();
+    } else {
+      alert('Subscrito mas envio falhou: ' + JSON.stringify(d));
+    }
   } catch(e) {
-    pushLog('ERRO: ' + e.name + ': ' + e.message);
-    setPushStatus('❌ ' + e.message, true);
+    alert('Erro ao activar notificações:\n' + e.name + ': ' + e.message);
   }
 }
 
@@ -1325,24 +1312,24 @@ if ('serviceWorker' in navigator) {
       }));
     }
 
-    if (!('PushManager' in window)) { setPushStatus('❌ Browser não suporta push', false); return; }
-    const perm = Notification.permission;
+    if (!('PushManager' in window)) { setPushStatus('❌ Push não suportado', false); return; }
+
     const existing = await reg.pushManager.getSubscription();
-
-    if (perm === 'denied') { setPushStatus('❌ Bloqueadas nas definições', false); return; }
-
-    if (existing && perm === 'granted') {
-      // Re-registar no servidor (pode ter sido limpo)
+    if (existing && Notification.permission === 'granted') {
+      // Já subscrito — re-registar no servidor
       await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(existing.toJSON()) });
       setPushStatus('✅ Activas', false);
-    } else if (perm === 'granted') {
-      // Permissão já dada mas sem subscrição — subscrever automaticamente
-      await activarPush();
-    } else {
-      // Permissão ainda não pedida — pedir após 2s
-      setPushStatus('Notificações não activadas', true);
-      setTimeout(() => activarPush(), 2000);
+      return;
     }
+
+    // Sem subscrição — mostrar botão flutuante para o utilizador clicar
+    const fab = document.createElement('button');
+    fab.id = 'push-fab';
+    fab.textContent = '🔔 Activar notificações';
+    fab.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.5);color:rgba(0,212,255,0.9);padding:10px 20px;border-radius:20px;font-size:13px;letter-spacing:1px;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)';
+    fab.onclick = () => activarPush();
+    document.body.appendChild(fab);
+    setPushStatus('Clica no botão para activar', false);
   }).catch(e => { setPushStatus('❌ SW erro: ' + e.message, false); });
 }
 </script>
