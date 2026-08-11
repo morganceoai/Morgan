@@ -265,6 +265,21 @@ def acionar_solver_se_necessario(anomalias: list[str]) -> None:
     if not anomalias_para_solver:
         return
 
+    # Push directo ao Vasco para anomalias críticas
+    _CRITICOS = ("disco", "processo morto", "trading parado", "circuit breaker", "saldo")
+    criticos = [a for a in anomalias_para_solver if any(k in a.lower() for k in _CRITICOS)]
+    if criticos:
+        try:
+            import pytz
+            hora = datetime.now(pytz.timezone("Europe/Lisbon")).hour
+            if not (23 <= hora or hora < 7):
+                from push_service import send_push
+                corpo = "\n".join(f"• {a}" for a in criticos[:3])
+                send_push(title="Solver — Alerta Crítico", body=corpo, url="/app/")
+                print(f"[solver/push] PUSH ENVIADO: {len(criticos)} anomalia(s) crítica(s)", flush=True)
+        except Exception as e:
+            print(f"[solver/push] erro push: {e}", flush=True)
+
     problema = "Health check detectou anomalias passivas:\n" + "\n".join(f"- {a}" for a in anomalias_para_solver)
     try:
         from solver_graph import solver_diagnosticar
