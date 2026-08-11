@@ -3047,7 +3047,8 @@ async def _heartbeat_loop():
 
         except Exception as e:
             import traceback
-            print(f"[heartbeat] erro: {e}\n{traceback.format_exc()}", flush=True)
+            tb = traceback.format_exc().replace("\n", " | ")
+            print(f"[heartbeat] erro: {e} | TRACE: {tb}", flush=True)
         await asyncio.sleep(60)
 
 

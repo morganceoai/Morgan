@@ -30,7 +30,7 @@ def configure(level: str = "INFO"):
                 logging.getLevelName(level)
             ),
             context_class=dict,
-            logger_factory=structlog.PrintLoggerFactory(),
+            logger_factory=structlog.stdlib.LoggerFactory(),
         )
     except ImportError:
         logging.basicConfig(
